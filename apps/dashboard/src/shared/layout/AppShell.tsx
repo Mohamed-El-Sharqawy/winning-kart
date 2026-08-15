@@ -1,15 +1,15 @@
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import { useLogout } from "@/shared/services/session.service";
 import { Button } from "@/shared/components/Button";
 import { NAV_GROUPS } from "@/shared/data/roles.data";
 import { usePermissions } from "@/shared/hooks/usePermissions";
 
-const ITEM_PATHS: Record<string, string> = {
+const ITEM_PATHS = {
   Overview: "/overview",
   Clients: "/clients",
   Settings: "/settings/tokens",
-};
+} as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { displayName, role } = usePermissions();
@@ -66,11 +66,23 @@ function Sidebar({ pathname }: { pathname: string }) {
 }
 
 function NavItem({ item, pathname }: { item: string; pathname: string }) {
-  const path = ITEM_PATHS[item];
+  const path = (ITEM_PATHS as Record<string, string | undefined>)[item];
   const active = path !== undefined && (pathname === path || pathname.startsWith(`${path}/`));
+
+  if (path === undefined) {
+    return (
+      <span
+        title="Ships in a later milestone"
+        className="cursor-default rounded-[10px] px-3 py-1.5 text-sm text-volt-text-3/60"
+      >
+        {item}
+      </span>
+    );
+  }
+
   return (
-    <a
-      href="#"
+    <Link
+      to={path as "/overview"}
       className={cn(
         "rounded-[10px] px-3 py-1.5 text-sm transition-colors",
         active
@@ -79,6 +91,6 @@ function NavItem({ item, pathname }: { item: string; pathname: string }) {
       )}
     >
       {item}
-    </a>
+    </Link>
   );
 }
