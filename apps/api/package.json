@@ -17,9 +17,10 @@
     "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
-    "@wk/config": "workspace:*",
+    "@types/bcryptjs": "^2.4.6",
     "@types/bun": "^1.2.0",
-    "typescript": "^5.7.0",
-    "@types/bcryptjs": "^2.4.6"
+    "@types/node": "^26.2.0",
+    "@wk/config": "workspace:*",
+    "typescript": "^5.7.0"
   }
 }
