@@ -7,6 +7,9 @@ import {
   boolean,
   numeric,
   jsonb,
+  bigint,
+  date,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable(
@@ -107,8 +110,142 @@ export const apiTokens = pgTable(
   ]
 );
 
+export const campaigns = pgTable(
+  "campaigns",
+  {
+    id: text("id").primaryKey(),
+    adAccountId: text("ad_account_id")
+      .notNull()
+      .references(() => adAccounts.id, { onDelete: "cascade" }),
+    platformCampaignId: text("platform_campaign_id").notNull(),
+    name: text("name").notNull(),
+    status: text("status", {
+      enum: ["ACTIVE", "PAUSED", "ARCHIVED", "DELETED"],
+    }).notNull(),
+    objective: text("objective"),
+    buyingType: text("buying_type"),
+    dailyBudget: numeric("daily_budget", { precision: 14, scale: 2 }),
+    lifetimeBudget: numeric("lifetime_budget", { precision: 14, scale: 2 }),
+    currency: text("currency").notNull().default("AED"),
+    scheduleStart: timestamp("schedule_start", { withTimezone: true }),
+    scheduleEnd: timestamp("schedule_end", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("campaigns_ad_account_platform_uq").on(
+      t.adAccountId,
+      t.platformCampaignId
+    ),
+  ]
+);
+
+export const adSets = pgTable(
+  "ad_sets",
+  {
+    id: text("id").primaryKey(),
+    campaignId: text("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    platformAdsetId: text("platform_adset_id").notNull(),
+    name: text("name").notNull(),
+    status: text("status", {
+      enum: ["ACTIVE", "PAUSED", "ARCHIVED", "DELETED"],
+    }).notNull(),
+    optimizationGoal: text("optimization_goal"),
+    bidStrategy: text("bid_strategy"),
+    dailyBudget: numeric("daily_budget", { precision: 14, scale: 2 }),
+    lifetimeBudget: numeric("lifetime_budget", { precision: 14, scale: 2 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("ad_sets_campaign_platform_uq").on(t.campaignId, t.platformAdsetId),
+  ]
+);
+
+export const ads = pgTable(
+  "ads",
+  {
+    id: text("id").primaryKey(),
+    adSetId: text("ad_set_id")
+      .notNull()
+      .references(() => adSets.id, { onDelete: "cascade" }),
+    platformAdId: text("platform_ad_id").notNull(),
+    name: text("name").notNull(),
+    status: text("status", {
+      enum: ["ACTIVE", "PAUSED", "ARCHIVED", "DELETED"],
+    }).notNull(),
+    format: text("format"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("ads_ad_set_platform_uq").on(t.adSetId, t.platformAdId)]
+);
+
+export const dailyInsights = pgTable(
+  "daily_insights",
+  {
+    id: text("id").primaryKey(),
+    adAccountId: text("ad_account_id")
+      .notNull()
+      .references(() => adAccounts.id, { onDelete: "cascade" }),
+    entityLevel: text("entity_level", {
+      enum: ["account", "campaign", "adset", "ad"],
+    }).notNull(),
+    entityId: text("entity_id").notNull(),
+    date: date("date").notNull(),
+    spend: numeric("spend", { precision: 14, scale: 2 }).notNull().default("0"),
+    impressions: bigint("impressions", { mode: "number" }).notNull().default(0),
+    reach: bigint("reach", { mode: "number" }).notNull().default(0),
+    clicks: bigint("clicks", { mode: "number" }).notNull().default(0),
+    ctr: numeric("ctr", { precision: 8, scale: 4 }),
+    cpc: numeric("cpc", { precision: 10, scale: 4 }),
+    cpm: numeric("cpm", { precision: 10, scale: 4 }),
+    frequency: numeric("frequency", { precision: 8, scale: 4 }),
+    purchases: integer("purchases").notNull().default(0),
+    revenue: numeric("revenue", { precision: 14, scale: 2 }).notNull().default("0"),
+    currency: text("currency").notNull().default("AED"),
+  },
+  (t) => [
+    uniqueIndex("daily_insights_entity_date_uq").on(
+      t.adAccountId,
+      t.entityLevel,
+      t.entityId,
+      t.date
+    ),
+    index("daily_insights_entity_idx").on(t.entityLevel, t.entityId),
+  ]
+);
+
+export const syncJobs = pgTable(
+  "sync_jobs",
+  {
+    id: text("id").primaryKey(),
+    adAccountId: text("ad_account_id")
+      .notNull()
+      .references(() => adAccounts.id, { onDelete: "cascade" }),
+    stage: text("stage", {
+      enum: ["account_info", "campaigns", "ad_sets", "ads", "insights", "daily_series"],
+    }).notNull(),
+    status: text("status", { enum: ["running", "succeeded", "failed"] }).notNull(),
+    errorClass: text("error_class"),
+    detail: jsonb("detail"),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("sync_jobs_account_started_idx").on(t.adAccountId, t.startedAt.desc()),
+  ]
+);
+
 export type User = typeof users.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type AdAccount = typeof adAccounts.$inferSelect;
 export type ApiToken = typeof apiTokens.$inferSelect;
 export type Pat = typeof apiTokens.$inferSelect;
+export type Campaign = typeof campaigns.$inferSelect;
+export type AdSet = typeof adSets.$inferSelect;
+export type Ad = typeof ads.$inferSelect;
+export type DailyInsight = typeof dailyInsights.$inferSelect;
+export type SyncJob = typeof syncJobs.$inferSelect;

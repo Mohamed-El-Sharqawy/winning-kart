@@ -17,9 +17,11 @@ export interface DataTableProps<Row> {
   columns: Array<DataTableColumn<Row>>;
   rows: Row[];
   rowKey: (row: Row) => string;
+  onRowClick?: (row: Row) => void;
+  rowClassName?: (row: Row) => string;
 }
 
-export function DataTable<Row>({ columns, rows, rowKey }: DataTableProps<Row>) {
+export function DataTable<Row>({ columns, rows, rowKey, onRowClick, rowClassName }: DataTableProps<Row>) {
   return (
     <div className="overflow-x-auto rounded-[10px] border border-volt-border bg-volt-surface">
       <table className="w-full border-collapse text-sm">
@@ -42,7 +44,15 @@ export function DataTable<Row>({ columns, rows, rowKey }: DataTableProps<Row>) {
           {rows.map((row) => (
             <tr
               key={rowKey(row)}
-              className="border-b border-volt-border last:border-b-0 hover:bg-volt-surface-2/60"
+              onClick={(event) => {
+                if (event.target instanceof HTMLElement && event.target.closest("a, button")) return;
+                onRowClick?.(row);
+              }}
+              className={cn(
+                "border-b border-volt-border last:border-b-0 hover:bg-volt-surface-2/60",
+                onRowClick !== undefined && "cursor-pointer",
+                rowClassName?.(row),
+              )}
             >
               {columns.map((column) => (
                 <td

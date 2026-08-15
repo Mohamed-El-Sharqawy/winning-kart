@@ -1,12 +1,14 @@
-import { formatAed } from "@/lib/format";
+import { formatAed, formatNumber, formatRoas } from "@/lib/format";
 import { AppShell } from "@/shared/layout/AppShell";
 import { usePermissions } from "@/shared/hooks/usePermissions";
-import { useClients } from "@/shared/services/clients.service";
-import { KpiCard } from "./components/KpiCard";
+import { useOverview } from "@/shared/services/overview.service";
+import { ClientsSummaryTable } from "./components/ClientsSummaryTable";
+import { HealthStrip } from "./components/HealthStrip";
+import { KpiCard } from "@/shared/components/KpiCard";
 
 export function OverviewPage() {
   const { displayName } = usePermissions();
-  const { data: clients, isPending } = useClients();
+  const { data: overview, isPending, isError } = useOverview();
 
   return (
     <AppShell>
@@ -14,13 +16,27 @@ export function OverviewPage() {
         <h1 className="text-2xl font-semibold text-volt-text">
           Good morning, {displayName ?? "there"}
         </h1>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="Clients" value={isPending ? "—" : String(clients?.length ?? 0)} />
-          <KpiCard label="Ad accounts" value="4" />
-          <KpiCard label="Spend" value={formatAed(0)} meta="M1" />
-          <KpiCard label="ROAS" value="—" meta="M1" />
-        </div>
-        <p className="text-sm text-volt-text-3">M1 connects live Meta insights.</p>
+        {isPending ? (
+          <p className="text-sm text-volt-text-3">Loading portfolio…</p>
+        ) : isError || !overview ? (
+          <p className="text-sm text-volt-down">Failed to load overview.</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
+              <KpiCard label="Spend" value={formatAed(overview.spend)} />
+              <KpiCard label="Revenue" value={formatAed(overview.revenue)} />
+              <KpiCard label="ROAS" value={formatRoas(overview.roas)} valueClassName="text-volt-primary-strong" />
+              <KpiCard label="CPA" value={formatAed(overview.cpa)} />
+              <KpiCard label="Purchases" value={formatNumber(overview.purchases)} />
+              <KpiCard
+                label="Account health"
+                value={`${overview.accountsHealthy}/${overview.accountsTotal}`}
+              />
+            </div>
+            <HealthStrip issues={overview.issues} accountsTotal={overview.accountsTotal} />
+            <ClientsSummaryTable clients={overview.clients} />
+          </>
+        )}
       </div>
     </AppShell>
   );
