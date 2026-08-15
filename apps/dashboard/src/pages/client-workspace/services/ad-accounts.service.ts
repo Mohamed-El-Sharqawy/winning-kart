@@ -42,7 +42,7 @@ export function adAccountsQueryOptions(clientId: string) {
   return queryOptions({
     queryKey: ["clients", clientId, "ad-accounts"],
     queryFn: async (): Promise<AdAccount[]> => {
-      const { data, error } = await looseApi.clients({ clientId }).adAccounts.get();
+      const { data, error } = await looseApi.clients({ clientId })["ad-accounts"].get();
       if (error) throw new Error("Failed to load ad accounts");
       return toAdAccounts(data as AdAccountDto[]);
     },
@@ -59,7 +59,7 @@ export function useCampaigns(accountId: string | null, days: number) {
     enabled: accountId !== null,
     queryFn: async (): Promise<Campaign[]> => {
       const { data, error } = await looseApi
-        .adAccounts({ id: accountId as string })
+        ["ad-accounts"]({ id: accountId as string })
         .campaigns.get({ query: { days } });
       if (error) throw new Error("Failed to load campaigns");
       return toCampaigns(data as CampaignDto[]);
@@ -77,7 +77,7 @@ export function useCreateAdAccount(clientId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateAdAccountInput): Promise<AdAccount> => {
-      const { data, error } = await looseApi.clients({ clientId }).adAccounts.post(input);
+      const { data, error } = await looseApi.clients({ clientId })["ad-accounts"].post(input);
       if (error) throw callFailed(error, "Failed to add ad account");
       return toAdAccount(data as AdAccountDto);
     },
@@ -89,7 +89,7 @@ export function useSyncAdAccount() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (accountId: string): Promise<SyncResult> => {
-      const { data, error } = await looseApi.adAccounts({ id: accountId }).sync.post(null);
+      const { data, error } = await looseApi["ad-accounts"]({ id: accountId }).sync.post(null);
       if (error) throw callFailed(error, "Sync failed");
       return toSyncResult(data as SyncResponseDto);
     },
@@ -102,7 +102,7 @@ export function useReconnectAdAccount() {
   return useMutation({
     mutationFn: async (input: { id: string; accessToken: string }): Promise<boolean> => {
       const { data, error } = await looseApi
-        .adAccounts({ id: input.id })
+        ["ad-accounts"]({ id: input.id })
         .reconnect.post({ accessToken: input.accessToken });
       if (error) throw callFailed(error, "Reconnect failed");
       return Boolean((data as OkResponseDto | null)?.ok);
@@ -116,7 +116,7 @@ export function useRemoveAdAccount() {
   return useMutation({
     mutationFn: async (input: { id: string; confirmSlug: string }): Promise<boolean> => {
       const { data, error } = await looseApi
-        .adAccounts({ id: input.id })
+        ["ad-accounts"]({ id: input.id })
         .delete({ confirmSlug: input.confirmSlug });
       if (error) throw callFailed(error, "Failed to remove ad account");
       return Boolean((data as OkResponseDto | null)?.ok);
