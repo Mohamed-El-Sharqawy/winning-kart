@@ -234,7 +234,7 @@ export class MetaClient {
         pageParams.after = after;
       }
       const body = (await this.request(path, pageParams)) as PagedBody<T> | null;
-      const data = Array.isArray(body?.data) ? (body as PagedBody<T>).data : [];
+      const data: T[] = body?.data ?? [];
       rows.push(...data);
       after = body?.paging?.cursors?.after;
       if (!body?.paging?.next || after === undefined || data.length === 0) {
