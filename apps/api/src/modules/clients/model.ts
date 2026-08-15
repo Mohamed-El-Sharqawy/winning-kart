@@ -1,11 +1,23 @@
+import { asc, eq } from "drizzle-orm";
+import { clients, db } from "@wk/db";
 import type { Client } from "@wk/db";
 
 export class ClientsModel {
-  async listClients(): Promise<Client[]> {
-    throw new Error("ClientsModel.listClients: wire to @wk/db in M0");
+  listClients(): Promise<Client[]> {
+    return db.select().from(clients).orderBy(asc(clients.createdAt));
   }
 
-  async insertClient(_input: { name: string; slug: string }): Promise<Client> {
-    throw new Error("ClientsModel.insertClient: wire to @wk/db in M0");
+  async slugTaken(slug: string): Promise<boolean> {
+    const rows = await db
+      .select({ id: clients.id })
+      .from(clients)
+      .where(eq(clients.slug, slug))
+      .limit(1);
+    return rows.length > 0;
+  }
+
+  async insertClient(input: { id: string; name: string; slug: string }): Promise<Client> {
+    const rows = await db.insert(clients).values(input).returning();
+    return rows[0];
   }
 }

@@ -3,6 +3,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  index,
   boolean,
   numeric,
   jsonb,
@@ -83,7 +84,10 @@ export const adAccounts = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("ad_accounts_slug_uq").on(t.slug)]
+  (t) => [
+    uniqueIndex("ad_accounts_slug_uq").on(t.slug),
+    index("ad_accounts_client_idx").on(t.clientId),
+  ]
 );
 
 export const apiTokens = pgTable(
@@ -97,7 +101,10 @@ export const apiTokens = pgTable(
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("api_tokens_hash_uq").on(t.tokenHash)]
+  (t) => [
+    uniqueIndex("api_tokens_hash_uq").on(t.tokenHash),
+    index("api_tokens_user_idx").on(t.userId),
+  ]
 );
 
 export type User = typeof users.$inferSelect;

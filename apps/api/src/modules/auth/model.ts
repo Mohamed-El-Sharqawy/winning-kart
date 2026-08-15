@@ -1,26 +1,93 @@
-import { compare } from "bcryptjs";
-import type { User, Pat } from "@wk/db";
+import { and, desc, eq, isNull } from "drizzle-orm";
+import { apiTokens, db, users } from "@wk/db";
+import type { Pat, User } from "@wk/db";
 
-export interface UserWithPassword extends User {
-  passwordHash: string;
-}
+export type SafeUser = Omit<User, "passwordHash">;
+
+const safeUserColumns = {
+  id: users.id,
+  email: users.email,
+  displayName: users.displayName,
+  role: users.role,
+  agencyRole: users.agencyRole,
+  clientRoleTier: users.clientRoleTier,
+  status: users.status,
+  lastActiveAt: users.lastActiveAt,
+  createdAt: users.createdAt,
+  updatedAt: users.updatedAt,
+};
 
 export class AuthModel {
-  async findUserByEmail(_email: string): Promise<UserWithPassword | null> {
-    throw new Error("AuthModel.findUserByEmail: wire to @wk/db in M0");
+  async findUserByEmail(email: string): Promise<User | null> {
+    const rows = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return rows[0] ?? null;
   }
 
-  async verifyPassword(user: UserWithPassword, password: string): Promise<boolean> {
-    return compare(password, user.passwordHash);
+  async findUserById(id: string): Promise<SafeUser | null> {
+    const rows = await db.select(safeUserColumns).from(users).where(eq(users.id, id)).limit(1);
+    return rows[0] ?? null;
   }
 
-  async findPatByToken(token: string): Promise<{ userId: string; role: "admin" | "client" } | null> {
-    void token;
-    throw new Error("AuthModel.findPatByToken: wire to @wk/db in M0");
+  listPats(userId: string) {
+    return db
+      .select({
+        id: apiTokens.id,
+        name: apiTokens.name,
+        createdAt: apiTokens.createdAt,
+        lastUsedAt: apiTokens.lastUsedAt,
+        revokedAt: apiTokens.revokedAt,
+      })
+      .from(apiTokens)
+      .where(eq(apiTokens.userId, userId))
+      .orderBy(desc(apiTokens.createdAt));
   }
 
-  async insertPat(input: { name: string; userId: string; tokenHash: string }): Promise<Pat> {
-    void input;
-    throw new Error("AuthModel.insertPat: wire to @wk/db in M0");
+  async insertPat(input: {
+    id: string;
+    name: string;
+    userId: string;
+    tokenHash: string;
+  }): Promise<Pick<Pat, "id" | "name">> {
+    const rows = await db
+      .insert(apiTokens)
+      .values(input)
+      .returning({ id: apiTokens.id, name: apiTokens.name });
+    return rows[0];
+  }
+
+  async findActivePatByHash(tokenHash: string): Promise<{ id: string; userId: string } | null> {
+    const rows = await db
+      .select({ id: apiTokens.id, userId: apiTokens.userId })
+      .from(apiTokens)
+      .where(and(eq(apiTokens.tokenHash, tokenHash), isNull(apiTokens.revokedAt)))
+      .limit(1);
+    const row = rows[0];
+    if (!row || row.userId === null) {
+      return null;
+    }
+    return { id: row.id, userId: row.userId };
+  }
+
+  async touchPatLastUsed(id: string): Promise<void> {
+    await db.update(apiTokens).set({ lastUsedAt: new Date() }).where(eq(apiTokens.id, id));
+  }
+
+  async revokePatForUser(id: string, userId: string): Promise<boolean> {
+    const revoked = await db
+      .update(apiTokens)
+      .set({ revokedAt: new Date() })
+      .where(
+        and(eq(apiTokens.id, id), eq(apiTokens.userId, userId), isNull(apiTokens.revokedAt))
+      )
+      .returning({ id: apiTokens.id });
+    if (revoked.length > 0) {
+      return true;
+    }
+    const existing = await db
+      .select({ id: apiTokens.id })
+      .from(apiTokens)
+      .where(and(eq(apiTokens.id, id), eq(apiTokens.userId, userId)))
+      .limit(1);
+    return existing.length > 0;
   }
 }

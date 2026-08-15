@@ -2,6 +2,9 @@
   "name": "api",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "build": "bun build src/index.ts --target bun --outdir dist",
@@ -15,6 +18,7 @@
   },
   "devDependencies": {
     "@wk/config": "workspace:*",
+    "@types/bun": "^1.2.0",
     "typescript": "^5.7.0",
     "@types/bcryptjs": "^2.4.6"
   }

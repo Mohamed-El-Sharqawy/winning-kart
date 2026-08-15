@@ -2,15 +2,7 @@ import { LoginForm } from "./components/LoginForm";
 
 export function AuthPage() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "var(--color-volt-ground)",
-      }}
-    >
+    <main className="flex min-h-screen items-center justify-center bg-volt-ground px-4">
       <LoginForm />
     </main>
   );

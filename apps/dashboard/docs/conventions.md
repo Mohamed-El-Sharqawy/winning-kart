@@ -17,6 +17,8 @@
 
 - `index.tsx` pages stay under ~150 lines — split into `components/` when exceeded.
 - Only create the per-page subfolders a page actually needs.
+- Server data needed by more than one page is promoted to `shared/` together with its
+  `dto/`, `types/`, and `transformers/` siblings (e.g. `shared/services/clients.service.ts`).
 - Tests: `cypress/e2e/` mirrors `pages/` 1:1.
 
 ## Styling

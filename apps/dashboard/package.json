@@ -20,6 +20,8 @@
   },
   "devDependencies": {
     "@wk/config": "workspace:*",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "cypress": "^13.17.0",
     "typescript": "^5.7.0",

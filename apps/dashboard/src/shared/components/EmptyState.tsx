@@ -1,18 +1,8 @@
 export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div
-      style={{
-        padding: 40,
-        textAlign: "center",
-        border: "1px solid var(--color-volt-border)",
-        borderRadius: "var(--radius-wk)",
-        backgroundColor: "var(--color-volt-surface)",
-      }}
-    >
-      <p style={{ margin: 0, color: "var(--color-volt-text)", fontWeight: 600 }}>{title}</p>
-      {hint ? (
-        <p style={{ margin: "6px 0 0", color: "var(--color-volt-text-3)", fontSize: 13 }}>{hint}</p>
-      ) : null}
+    <div className="rounded-[10px] border border-volt-border bg-volt-surface px-6 py-10 text-center">
+      <p className="font-semibold text-volt-text">{title}</p>
+      {hint ? <p className="mt-1.5 text-[13px] text-volt-text-3">{hint}</p> : null}
     </div>
   );
 }
