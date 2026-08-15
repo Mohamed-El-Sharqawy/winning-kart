@@ -17,6 +17,8 @@ export function toAdAccount(dto: AdAccountDto): AdAccount {
     timezone: dto.timezone,
     lastSyncAt: toDate(dto.lastSyncAt),
     campaignCount: dto.campaignCount ?? 0,
+    tokenType: dto.tokenType,
+    tokenExpiresAt: toDate(dto.tokenExpiresAt),
   };
 }
 

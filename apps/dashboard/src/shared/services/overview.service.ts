@@ -10,9 +10,10 @@ export function overviewQueryOptions() {
   return queryOptions({
     queryKey: OVERVIEW_QUERY_KEY,
     queryFn: async (): Promise<Overview> => {
-      const { data, error } = await looseApi.overview.get();
+      const { data: body, error } = await looseApi.overview.get();
       if (error) throw new Error("Failed to load overview");
-      return toOverview(data as OverviewDto);
+      const payload = (body as { data: OverviewDto }).data;
+      return toOverview(payload);
     },
   });
 }

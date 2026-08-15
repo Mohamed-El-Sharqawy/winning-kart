@@ -1,3 +1,5 @@
+export type TokenTypeDto = "system_user" | "user_60d";
+
 export interface AdAccountDto {
   id: string;
   name: string;
@@ -9,6 +11,8 @@ export interface AdAccountDto {
   timezone: string;
   lastSyncAt: string | null;
   campaignCount: number | null;
+  tokenType: TokenTypeDto;
+  tokenExpiresAt: string | null;
 }
 
 export interface CampaignDto {

@@ -75,6 +75,10 @@ export const adAccounts = pgTable(
       .default("meta"),
     platformPayload: jsonb("platform_payload"),
     accessTokenEncrypted: text("access_token_encrypted").notNull(),
+    tokenType: text("token_type", { enum: ["system_user", "user_60d"] })
+      .notNull()
+      .default("system_user"),
+    tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }),
     currency: text("currency").notNull().default("AED"),
     timezone: text("timezone").notNull().default("Asia/Dubai"),
     monthlyCapAmount: numeric("monthly_cap_amount", { precision: 14, scale: 2 }),

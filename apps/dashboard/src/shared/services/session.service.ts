@@ -15,9 +15,10 @@ export function sessionQueryOptions() {
   return queryOptions({
     queryKey: SESSION_QUERY_KEY,
     queryFn: async (): Promise<Session | null> => {
-      const { data, error } = await api.auth.me.get();
+      const { data: body, error } = await api.auth.me.get();
       if (error) return null;
-      return toSession(data as MeDto);
+      const payload = (body as unknown as { data: MeDto }).data;
+      return toSession(payload);
     },
     staleTime: 60_000,
   });
@@ -36,9 +37,10 @@ export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: LoginInput): Promise<LoginResponseDto> => {
-      const { data, error } = await api.auth.login.post(input);
+      const { data: body, error } = await api.auth.login.post(input);
       if (error) throw new Error("Invalid credentials");
-      return data as LoginResponseDto;
+      const payload = (body as unknown as { data: LoginResponseDto }).data;
+      return payload;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
@@ -50,9 +52,10 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (): Promise<LogoutResponseDto> => {
-      const { data, error } = await api.auth.logout.post(null);
+      const { data: body, error } = await api.auth.logout.post(null);
       if (error) throw new Error("Sign out failed");
-      return data as LogoutResponseDto;
+      const payload = (body as unknown as { data: LogoutResponseDto }).data;
+      return payload;
     },
     onSuccess: () => {
       queryClient.setQueryData(SESSION_QUERY_KEY, null);

@@ -16,6 +16,8 @@ export interface UnhealthyAccount {
   id: string;
   name: string;
   healthState: string;
+  tokenType: "system_user" | "user_60d";
+  tokenExpiresAt: Date | null;
   lastSyncAt: Date | null;
 }
 
@@ -74,6 +76,8 @@ export class OverviewModel {
         id: adAccounts.id,
         name: adAccounts.name,
         healthState: adAccounts.healthState,
+        tokenType: adAccounts.tokenType,
+        tokenExpiresAt: adAccounts.tokenExpiresAt,
         lastSyncAt: adAccounts.lastSyncAt,
       })
       .from(adAccounts)

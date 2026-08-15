@@ -4,10 +4,24 @@ import { Button } from "@/shared/components/Button";
 import { Input } from "@/shared/components/Input";
 import { errorCopy } from "../data/sync-copy.data";
 import { useCreateAdAccount, useSyncAdAccount } from "../services/ad-accounts.service";
-import type { SyncResult } from "../types/ad-accounts.types";
+import type { SyncResult, TokenType } from "../types/ad-accounts.types";
 import { Modal } from "./Modal";
 import { SyncStageList } from "./SyncStageList";
 import { TokenField } from "./TokenField";
+
+const TOKEN_TYPE_OPTIONS: Array<{ value: TokenType; label: string; helper: string }> = [
+  {
+    value: "system_user",
+    label: "System user token — permanent, recommended",
+    helper:
+      "No expiry. Create it in Meta Business Settings with ads_read, ads_management, business_management, read_insights, pages_read_engagement, catalogs_read.",
+  },
+  {
+    value: "user_60d",
+    label: "User token — expires in 60 days",
+    helper: "Meta expires this token in 60 days. You'll get a warning 7 days before it lapses.",
+  },
+];
 
 type WizardPhase =
   | { kind: "form" }
@@ -24,6 +38,7 @@ export function AddAccountWizard({ clientId, onClose }: { clientId: string; onCl
   const [name, setName] = useState("");
   const [adAccountId, setAdAccountId] = useState("");
   const [accessToken, setAccessToken] = useState("");
+  const [tokenType, setTokenType] = useState<TokenType>("system_user");
   const [phase, setPhase] = useState<WizardPhase>({ kind: "form" });
   const [formError, setFormError] = useState<string | null>(null);
   const create = useCreateAdAccount(clientId);
@@ -48,7 +63,7 @@ export function AddAccountWizard({ clientId, onClose }: { clientId: string; onCl
     setFormError(null);
     try {
       setPhase({ kind: "creating" });
-      const account = await create.mutateAsync({ name, adAccountId, accessToken });
+      const account = await create.mutateAsync({ name, adAccountId, accessToken, tokenType });
       await runSync(account.id);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Failed to add ad account");
@@ -68,10 +83,6 @@ export function AddAccountWizard({ clientId, onClose }: { clientId: string; onCl
     <Modal title="Add ad account" onClose={busy ? () => undefined : onClose}>
       {inForm ? (
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <p className="text-[13px] leading-relaxed text-volt-text-2">
-            System-user token path: create a Meta system user with the ads_read and ads_management
-            scopes on the ad account, then paste its access token here.
-          </p>
           <Input
             label="Name"
             value={name}
@@ -87,6 +98,25 @@ export function AddAccountWizard({ clientId, onClose }: { clientId: string; onCl
             disabled={phase.kind === "creating"}
             onChange={(event) => setAdAccountId(event.target.value)}
           />
+          <label htmlFor="wizard-token-type" className="flex flex-col gap-1.5 text-[13px] text-volt-text-2">
+            Token type
+            <select
+              id="wizard-token-type"
+              value={tokenType}
+              disabled={phase.kind === "creating"}
+              onChange={(event) => setTokenType(event.target.value as TokenType)}
+              className="w-full rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none"
+            >
+              {TOKEN_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="text-[13px] leading-relaxed text-volt-text-3">
+            {TOKEN_TYPE_OPTIONS.find((option) => option.value === tokenType)?.helper}
+          </p>
           <label htmlFor="wizard-token" className="flex flex-col gap-1.5 text-[13px] text-volt-text-2">
             Access token
             <TokenField id="wizard-token" value={accessToken} onChange={setAccessToken} disabled={phase.kind === "creating"} />

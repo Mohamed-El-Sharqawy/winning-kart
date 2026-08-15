@@ -1,3 +1,4 @@
+import { Badge } from "@/shared/components/Badge";
 import { Button } from "@/shared/components/Button";
 import { DataTable } from "@/shared/components/DataTable";
 import type { DataTableColumn } from "@/shared/components/DataTable";
@@ -6,6 +7,23 @@ import { formatRelativeTime } from "@/lib/format";
 import type { AdAccount } from "../types/ad-accounts.types";
 
 const ACTION_BUTTON = "px-2.5 py-1 text-xs";
+const DAY_MS = 86_400_000;
+
+function tokenBadge(account: AdAccount) {
+  if (account.tokenType !== "user_60d") return null;
+  if (!account.tokenExpiresAt) return <Badge variant="neutral">60-day</Badge>;
+  const remainingMs = account.tokenExpiresAt.getTime() - Date.now();
+  if (remainingMs <= 0) return <Badge variant="down">Expired</Badge>;
+  const days = Math.ceil(remainingMs / DAY_MS);
+  if (days <= 7) {
+    return (
+      <Badge variant="down">
+        Expires in <span className="tabular">{days}d</span>
+      </Badge>
+    );
+  }
+  return <Badge variant="neutral">60-day</Badge>;
+}
 
 export interface AccountsTableProps {
   accounts: AdAccount[];
@@ -40,6 +58,11 @@ export function AccountsTable({ accounts, onSync, onReconnect, onRemove, syncPen
           {row.healthState.toLowerCase().replace(/_/g, " ")}
         </StatusDot>
       ),
+    },
+    {
+      key: "token",
+      header: "Token",
+      render: (row) => tokenBadge(row),
     },
     { key: "currency", header: "Currency" },
     {

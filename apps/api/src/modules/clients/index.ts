@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
 import { resolveSessionUser } from "../../lib/session";
+import { problem } from "../../lib/problem";
 import { ClientsModel } from "./model";
 import { ClientsService } from "./service";
 import type { SafeUser } from "../auth/model";
@@ -11,56 +12,34 @@ const createClientDto = t.Object({
   slug: t.String({ minLength: 1 }),
 });
 
-async function requireUser(
-  headers: Record<string, string | undefined>,
-  set: { status?: number | string }
-): Promise<SafeUser | { error: string }> {
+async function requireUser(headers: Record<string, string | undefined>): Promise<SafeUser> {
   const user = await resolveSessionUser({ cookie: headers.cookie, headers });
   if (!user) {
-    set.status = 401;
-    return { error: "unauthorized" };
+    throw problem(401, "UNAUTHENTICATED", "Authentication required");
   }
   return user;
 }
 
-async function requireAdmin(
-  headers: Record<string, string | undefined>,
-  set: { status?: number | string }
-): Promise<SafeUser | { error: string }> {
-  const user = await resolveSessionUser({ cookie: headers.cookie, headers });
-  if (!user) {
-    set.status = 401;
-    return { error: "unauthorized" };
-  }
+async function requireAdmin(headers: Record<string, string | undefined>): Promise<SafeUser> {
+  const user = await requireUser(headers);
   if (user.role !== "admin") {
-    set.status = 403;
-    return { error: "forbidden" };
+    throw problem(403, "FORBIDDEN", "Admin role required");
   }
   return user;
 }
 
 export const clientsModule = new Elysia({ prefix: "/clients" })
-  .get("/", async ({ headers, set }) => {
-    const guard = await requireUser(headers, set);
-    if ("error" in guard) {
-      return guard;
-    }
-    return service.list();
+  .get("/", async ({ headers }) => {
+    await requireUser(headers);
+    return { data: await service.list() };
   })
   .post(
     "/",
     async ({ body, headers, set }) => {
-      const guard = await requireAdmin(headers, set);
-      if ("error" in guard) {
-        return guard;
-      }
-      const result = await service.create(body);
-      if (!result.ok) {
-        set.status = 409;
-        return { error: "slug already taken" };
-      }
+      await requireAdmin(headers);
+      const client = await service.create(body);
       set.status = 201;
-      return result.client;
+      return { data: client };
     },
     { body: createClientDto }
   );

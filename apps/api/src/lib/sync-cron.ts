@@ -4,6 +4,7 @@ import { AdAccountsService } from "../modules/ad-accounts/service";
 const model = new AdAccountsModel();
 const service = new AdAccountsService(model);
 const HOURLY_MS = 3600000;
+const TOKEN_WARNING_MS = 7 * 86400000;
 
 export function startSyncCron(): void {
   if (process.env.WK_SYNC_CRON === "off") {
@@ -35,7 +36,24 @@ function scheduleInterval(tick: () => void): void {
   timer.unref();
 }
 
+async function applyTokenExpiry(): Promise<void> {
+  const accounts = await model.listUserTokenExpiries();
+  const now = Date.now();
+  for (const account of accounts) {
+    const expiresAt = account.tokenExpiresAt?.getTime();
+    if (expiresAt === undefined) {
+      continue;
+    }
+    if (expiresAt <= now) {
+      await model.setHealthState(account.id, "error");
+    } else if (expiresAt - now <= TOKEN_WARNING_MS) {
+      await model.setHealthStateIfNotError(account.id, "warning");
+    }
+  }
+}
+
 async function runSyncTick(): Promise<void> {
+  await applyTokenExpiry();
   const accounts = await model.listSyncEligible();
   for (const account of accounts) {
     try {

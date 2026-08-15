@@ -13,6 +13,8 @@ export interface SyncResult {
   errorClass?: string;
 }
 
+export type TokenType = "system_user" | "user_60d";
+
 export interface AdAccount {
   id: string;
   name: string;
@@ -24,6 +26,8 @@ export interface AdAccount {
   timezone: string;
   lastSyncAt: Date | null;
   campaignCount: number;
+  tokenType: TokenType;
+  tokenExpiresAt: Date | null;
 }
 
 export interface Campaign {

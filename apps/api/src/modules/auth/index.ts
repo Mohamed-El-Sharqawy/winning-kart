@@ -1,21 +1,21 @@
 import { Elysia, t } from "elysia";
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession } from "../../lib/auth";
 import { resolveSessionUser } from "../../lib/session";
-import { createPatDto, errorDto, loginDto, loginResponseDto, meDto, okDto } from "../../dto/auth";
+import { problem } from "../../lib/problem";
+import { createPatDto, loginDto, loginResponseDto, meDto, okDto } from "../../dto/auth";
 import { AuthModel } from "./model";
 import { AuthService } from "./service";
 import type { SafeUser } from "./model";
 
 const service = new AuthService(new AuthModel());
 
-async function requireAdmin(
-  headers: Record<string, string | undefined>,
-  set: { status?: number | string }
-): Promise<SafeUser | { error: string }> {
+async function requireAdmin(headers: Record<string, string | undefined>): Promise<SafeUser> {
   const user = await resolveSessionUser({ cookie: headers.cookie, headers });
-  if (!user || user.role !== "admin") {
-    set.status = 403;
-    return { error: "forbidden" };
+  if (!user) {
+    throw problem(401, "UNAUTHENTICATED", "Authentication required");
+  }
+  if (user.role !== "admin") {
+    throw problem(403, "FORBIDDEN", "Admin role required");
   }
   return user;
 }
@@ -23,11 +23,10 @@ async function requireAdmin(
 export const authModule = new Elysia({ prefix: "/auth" })
   .post(
     "/login",
-    async ({ body, cookie, set }) => {
+    async ({ body, cookie }) => {
       const user = await service.login(body.email, body.password);
       if (!user) {
-        set.status = 401;
-        return { error: "invalid credentials" };
+        throw problem(401, "INVALID_CREDENTIALS", "Invalid email or password");
       }
       const token = await signSession({ sub: user.id, role: user.role });
       cookie[SESSION_COOKIE].set({
@@ -38,69 +37,61 @@ export const authModule = new Elysia({ prefix: "/auth" })
         maxAge: SESSION_TTL_SECONDS,
         secure: process.env.NODE_ENV === "production",
       });
-      return { role: user.role };
+      return { data: { role: user.role } };
     },
-    { body: loginDto, response: { 200: loginResponseDto, 401: errorDto } }
+    { body: loginDto, response: { 200: loginResponseDto } }
   )
   .post(
     "/logout",
     ({ cookie }) => {
       cookie[SESSION_COOKIE].remove();
-      return { ok: true };
+      return { data: { ok: true } };
     },
     { response: { 200: okDto } }
   )
   .get(
     "/me",
-    async ({ headers, set }) => {
+    async ({ headers }) => {
       const user = await resolveSessionUser({ cookie: headers.cookie, headers });
       if (!user) {
-        set.status = 401;
-        return { error: "unauthorized" };
+        throw problem(401, "UNAUTHENTICATED", "Authentication required");
       }
       return {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        role: user.role,
-        agencyRole: user.agencyRole,
-        clientRoleTier: user.clientRoleTier,
+        data: {
+          id: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          role: user.role,
+          agencyRole: user.agencyRole,
+          clientRoleTier: user.clientRoleTier,
+        },
       };
     },
-    { response: { 200: meDto, 401: errorDto } }
+    { response: { 200: meDto } }
   )
-  .get("/pats", async ({ headers, set }) => {
-    const guard = await requireAdmin(headers, set);
-    if ("error" in guard) {
-      return guard;
-    }
-    return service.listPats(guard.id);
+  .get("/pats", async ({ headers }) => {
+    const admin = await requireAdmin(headers);
+    return { data: await service.listPats(admin.id) };
   })
   .post(
     "/pats",
     async ({ body, headers, set }) => {
-      const guard = await requireAdmin(headers, set);
-      if ("error" in guard) {
-        return guard;
-      }
+      const admin = await requireAdmin(headers);
+      const pat = await service.createPat(admin.id, body.name);
       set.status = 201;
-      return service.createPat(guard.id, body.name);
+      return { data: pat };
     },
     { body: createPatDto }
   )
   .post(
     "/pats/:id/revoke",
-    async ({ params, headers, set }) => {
-      const guard = await requireAdmin(headers, set);
-      if ("error" in guard) {
-        return guard;
-      }
-      const revoked = await service.revokePat(guard.id, params.id);
+    async ({ params, headers }) => {
+      const admin = await requireAdmin(headers);
+      const revoked = await service.revokePat(admin.id, params.id);
       if (!revoked) {
-        set.status = 404;
-        return { error: "not found" };
+        throw problem(404, "RESOURCE_NOT_FOUND", `No personal access token with id ${params.id}`);
       }
-      return { ok: true };
+      return { data: { ok: true } };
     },
-    { params: t.Object({ id: t.String() }), response: { 200: okDto, 404: errorDto } }
+    { params: t.Object({ id: t.String() }), response: { 200: okDto } }
   );

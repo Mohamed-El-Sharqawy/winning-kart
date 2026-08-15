@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
 import { resolveSessionUser } from "../../lib/session";
+import { problem } from "../../lib/problem";
 import {
   adAccountCampaignsQueryDto,
   createAdAccountDto,
@@ -12,30 +13,18 @@ import type { SafeUser } from "../auth/model";
 
 const service = new AdAccountsService(new AdAccountsModel());
 
-async function requireUser(
-  headers: Record<string, string | undefined>,
-  set: { status?: number | string }
-): Promise<SafeUser | { error: string }> {
+async function requireUser(headers: Record<string, string | undefined>): Promise<SafeUser> {
   const user = await resolveSessionUser({ cookie: headers.cookie, headers });
   if (!user) {
-    set.status = 401;
-    return { error: "unauthorized" };
+    throw problem(401, "UNAUTHENTICATED", "Authentication required");
   }
   return user;
 }
 
-async function requireAdmin(
-  headers: Record<string, string | undefined>,
-  set: { status?: number | string }
-): Promise<SafeUser | { error: string }> {
-  const user = await resolveSessionUser({ cookie: headers.cookie, headers });
-  if (!user) {
-    set.status = 401;
-    return { error: "unauthorized" };
-  }
+async function requireAdmin(headers: Record<string, string | undefined>): Promise<SafeUser> {
+  const user = await requireUser(headers);
   if (user.role !== "admin") {
-    set.status = 403;
-    return { error: "forbidden" };
+    throw problem(403, "FORBIDDEN", "Admin role required");
   }
   return user;
 }
@@ -54,109 +43,63 @@ function parseDays(value: string | undefined): number {
 export const adAccountsModule = new Elysia()
   .get(
     "/clients/:clientId/ad-accounts",
-    async ({ params, headers, set }) => {
-      const guard = await requireUser(headers, set);
-      if ("error" in guard) {
-        return guard;
-      }
-      return service.listForClient(params.clientId);
+    async ({ params, headers }) => {
+      await requireUser(headers);
+      return { data: await service.listForClient(params.clientId) };
     },
     { params: clientIdParamsDto }
   )
   .post(
     "/clients/:clientId/ad-accounts",
     async ({ params, body, headers, set }) => {
-      const guard = await requireAdmin(headers, set);
-      if ("error" in guard) {
-        return guard;
-      }
-      const result = await service.create(params.clientId, body);
-      if (!result.ok) {
-        set.status = result.error.status;
-        return { error: result.error.error };
-      }
+      await requireAdmin(headers);
+      const account = await service.create(params.clientId, body);
       set.status = 201;
-      return result.account;
+      return { data: account };
     },
     { params: clientIdParamsDto, body: createAdAccountDto }
   )
   .get(
     "/ad-accounts/:id",
-    async ({ params, headers, set }) => {
-      const guard = await requireUser(headers, set);
-      if ("error" in guard) {
-        return guard;
-      }
-      const detail = await service.detail(params.id);
-      if (!detail) {
-        set.status = 404;
-        return { error: "not found" };
-      }
-      return detail;
+    async ({ params, headers }) => {
+      await requireUser(headers);
+      return { data: await service.detail(params.id) };
     },
     { params: idParamsDto }
   )
   .post(
     "/ad-accounts/:id/sync",
-    async ({ params, headers, set }) => {
-      const guard = await requireAdmin(headers, set);
-      if ("error" in guard) {
-        return guard;
-      }
-      const outcome = await service.sync(params.id);
-      if (!outcome) {
-        set.status = 404;
-        return { error: "not found" };
-      }
-      return outcome;
+    async ({ params, headers }) => {
+      await requireAdmin(headers);
+      return { data: await service.sync(params.id) };
     },
     { params: idParamsDto }
   )
   .post(
     "/ad-accounts/:id/reconnect",
-    async ({ params, body, headers, set }) => {
-      const guard = await requireAdmin(headers, set);
-      if ("error" in guard) {
-        return guard;
-      }
-      const result = await service.reconnect(params.id, body.accessToken);
-      if (!result.ok) {
-        set.status = result.error.status;
-        return { error: result.error.error };
-      }
-      return { ok: true };
+    async ({ params, body, headers }) => {
+      await requireAdmin(headers);
+      await service.reconnect(params.id, body.accessToken, body.tokenType);
+      return { data: { ok: true } };
     },
     { params: idParamsDto, body: reconnectAdAccountDto }
   )
   .delete(
     "/ad-accounts/:id",
-    async ({ params, body, headers, set }) => {
-      const guard = await requireAdmin(headers, set);
-      if ("error" in guard) {
-        return guard;
-      }
-      const result = await service.remove(params.id, body.confirmSlug);
-      if (!result.ok) {
-        set.status = result.error.status;
-        return { error: result.error.error };
-      }
-      return { ok: true };
+    async ({ params, body, headers }) => {
+      await requireAdmin(headers);
+      await service.remove(params.id, body.confirmSlug);
+      return { data: { ok: true } };
     },
     { params: idParamsDto, body: deleteAdAccountDto }
   )
   .get(
     "/ad-accounts/:id/campaigns",
-    async ({ params, query, headers, set }) => {
-      const guard = await requireUser(headers, set);
-      if ("error" in guard) {
-        return guard;
-      }
-      const campaigns = await service.campaignsWithMetrics(params.id, parseDays(query.days));
-      if (!campaigns) {
-        set.status = 404;
-        return { error: "not found" };
-      }
-      return campaigns;
+    async ({ params, query, headers }) => {
+      await requireUser(headers);
+      return {
+        data: await service.campaignsWithMetrics(params.id, parseDays(query.days)),
+      };
     },
     { params: idParamsDto, query: adAccountCampaignsQueryDto }
   );

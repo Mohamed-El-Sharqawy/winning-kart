@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, notLike, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, ne, notLike, sql } from "drizzle-orm";
 import { adAccounts, ads, adSets, campaigns, dailyInsights, db, syncJobs } from "@wk/db";
 import type { AdAccount } from "@wk/db";
 import type {
@@ -80,6 +80,8 @@ export class AdAccountsModel {
         adAccountId: adAccounts.adAccountId,
         platform: adAccounts.platform,
         healthState: adAccounts.healthState,
+        tokenType: adAccounts.tokenType,
+        tokenExpiresAt: adAccounts.tokenExpiresAt,
         currency: adAccounts.currency,
         timezone: adAccounts.timezone,
         lastSyncAt: adAccounts.lastSyncAt,
@@ -319,6 +321,32 @@ export class AdAccountsModel {
           notLike(adAccounts.accessTokenEncrypted, "pending-oauth%")
         )
       );
+  }
+
+  listUserTokenExpiries(): Promise<{ id: string; tokenExpiresAt: Date | null }[]> {
+    return db
+      .select({ id: adAccounts.id, tokenExpiresAt: adAccounts.tokenExpiresAt })
+      .from(adAccounts)
+      .where(
+        and(
+          eq(adAccounts.tokenType, "user_60d"),
+          isNotNull(adAccounts.tokenExpiresAt)
+        )
+      );
+  }
+
+  async setHealthState(id: string, state: "error"): Promise<void> {
+    await db
+      .update(adAccounts)
+      .set({ healthState: state, updatedAt: new Date() })
+      .where(eq(adAccounts.id, id));
+  }
+
+  async setHealthStateIfNotError(id: string, state: "warning"): Promise<void> {
+    await db
+      .update(adAccounts)
+      .set({ healthState: state, updatedAt: new Date() })
+      .where(and(eq(adAccounts.id, id), ne(adAccounts.healthState, "error")));
   }
 
   async campaignMetricsSince(since: string): Promise<CampaignWindowMetrics[]> {

@@ -1,5 +1,7 @@
 import type { AdAccount } from "@wk/db";
 import { decrypt, encrypt } from "../../lib/crypto";
+import { problem } from "../../lib/problem";
+import type { ProblemError, ProblemErrorClass } from "../../lib/problem";
 import { getMetaAdapter, MetaError } from "../../platforms/meta";
 import type {
   AdPlatformAdapter,
@@ -26,6 +28,8 @@ import type {
 } from "./model";
 import type { AdAccountsModel } from "./model";
 
+export type TokenType = "system_user" | "user_60d";
+
 export type SyncStage =
   | "account_info"
   | "campaigns"
@@ -51,17 +55,14 @@ export type SyncOutcome =
   | { ok: true; stages: StageResult[]; summary: SyncSummary }
   | { ok: false; failedStage: SyncStage; errorClass: string; stages: StageResult[] };
 
-export interface HttpServiceError {
-  status: number;
-  error: string;
-}
-
 export interface AdAccountView {
   id: string;
   name: string;
   slug: string;
   adAccountId: string;
   healthState: string;
+  tokenType: TokenType;
+  tokenExpiresAt: Date | null;
   currency: string;
   timezone: string;
 }
@@ -77,19 +78,8 @@ export interface CreateAdAccountInput {
   name: string;
   adAccountId: string;
   accessToken: string;
+  tokenType?: TokenType;
 }
-
-export type CreateAdAccountResult =
-  | { ok: true; account: AdAccountView }
-  | { ok: false; error: HttpServiceError };
-
-export type ReconnectResult =
-  | { ok: true }
-  | { ok: false; error: HttpServiceError };
-
-export type RemoveResult =
-  | { ok: true }
-  | { ok: false; error: HttpServiceError };
 
 export interface CampaignWithMetrics {
   id: string;
@@ -113,6 +103,8 @@ export interface CampaignWithMetrics {
 
 const RECENT_JOBS_LIMIT = 12;
 const DAY_MS = 86400000;
+const USER_TOKEN_TTL_DAYS = 60;
+const TOKEN_WARNING_DAYS = 7;
 
 export function utcWindow(days: number): { since: string; until: string } {
   const now = new Date();
@@ -134,6 +126,15 @@ function isUniqueViolation(error: unknown): boolean {
   );
 }
 
+function isForeignKeyViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "23503"
+  );
+}
+
 function toMetaError(error: unknown): MetaError {
   if (error instanceof MetaError) {
     return error;
@@ -142,18 +143,46 @@ function toMetaError(error: unknown): MetaError {
   return new MetaError("server_error", message);
 }
 
-export function mapMetaHttpError(error: MetaError): HttpServiceError {
+function metaProblem(error: MetaError): ProblemError {
   switch (error.errorClass) {
     case "invalid_token":
+      return problem(422, "INVALID_TOKEN", error.message, "invalid_token");
     case "permission_denied":
-      return { status: 422, error: error.errorClass };
+      return problem(422, "PERMISSION_DENIED", error.message, "permission_denied");
     case "rate_limited":
-      return { status: 429, error: "rate_limited" };
+      return problem(429, "RATE_LIMITED", error.message, "rate_limited");
     case "not_found":
-      return { status: 422, error: "not_found" };
+      return problem(422, "ACCOUNT_NOT_FOUND", error.message, "not_found");
     default:
-      return { status: 502, error: error.errorClass };
+      return problem(502, "UPSTREAM_ERROR", error.message, error.errorClass as ProblemErrorClass);
   }
+}
+
+function toProblemError(error: unknown): ProblemError {
+  return metaProblem(toMetaError(error));
+}
+
+function accountNotFound(id: string): ProblemError {
+  return problem(404, "RESOURCE_NOT_FOUND", `No ad account with id ${id}`);
+}
+
+function tokenExpiry(tokenType: TokenType): Date | null {
+  if (tokenType !== "user_60d") {
+    return null;
+  }
+  return new Date(Date.now() + USER_TOKEN_TTL_DAYS * DAY_MS);
+}
+
+function tokenWarningActive(account: AdAccount): boolean {
+  if (account.tokenType !== "user_60d" || account.tokenExpiresAt === null) {
+    return false;
+  }
+  const remaining = account.tokenExpiresAt.getTime() - Date.now();
+  return remaining > 0 && remaining <= TOKEN_WARNING_DAYS * DAY_MS;
+}
+
+function successHealthState(account: AdAccount): "healthy" | "warning" {
+  return tokenWarningActive(account) ? "warning" : "healthy";
 }
 
 function buildSlug(name: string): string {
@@ -173,6 +202,8 @@ function toAccountView(account: AdAccount): AdAccountView {
     slug: account.slug,
     adAccountId: account.adAccountId,
     healthState: account.healthState,
+    tokenType: account.tokenType,
+    tokenExpiresAt: account.tokenExpiresAt,
     currency: account.currency,
     timezone: account.timezone,
   };
@@ -223,10 +254,10 @@ export class AdAccountsService {
     return this.model.listByClient(clientId);
   }
 
-  async detail(id: string): Promise<AdAccountDetailView | null> {
+  async detail(id: string): Promise<AdAccountDetailView> {
     const account = await this.model.findById(id);
     if (!account) {
-      return null;
+      throw accountNotFound(id);
     }
     const recentJobs = await this.model.listRecentJobs(id, RECENT_JOBS_LIMIT);
     return {
@@ -236,6 +267,8 @@ export class AdAccountsService {
       adAccountId: account.adAccountId,
       platform: account.platform,
       healthState: account.healthState,
+      tokenType: account.tokenType,
+      tokenExpiresAt: account.tokenExpiresAt,
       currency: account.currency,
       timezone: account.timezone,
       lastSyncAt: account.lastSyncAt,
@@ -244,14 +277,15 @@ export class AdAccountsService {
     };
   }
 
-  async create(clientId: string, input: CreateAdAccountInput): Promise<CreateAdAccountResult> {
+  async create(clientId: string, input: CreateAdAccountInput): Promise<AdAccountView> {
     let info: MetaAccountInfo;
     try {
       info = await getMetaAdapter(input.accessToken).getAccountInfo(input.adAccountId);
     } catch (error) {
-      return { ok: false, error: mapMetaHttpError(toMetaError(error)) };
+      throw toProblemError(error);
     }
     const snapshot = normalizeAccountInfo(info);
+    const tokenType = input.tokenType ?? "system_user";
     const shared = {
       platformPayload: {
         businessId: null,
@@ -277,26 +311,31 @@ export class AdAccountsService {
           adAccountId: input.adAccountId,
           platform: "meta",
           healthState: "healthy",
+          tokenType,
+          tokenExpiresAt: tokenExpiry(tokenType),
           ...shared,
         });
-        return { ok: true, account: toAccountView(account) };
+        return toAccountView(account);
       } catch (error) {
         if (isUniqueViolation(error) && attempt < 2) {
           attempt += 1;
           continue;
         }
         if (isUniqueViolation(error)) {
-          return { ok: false, error: { status: 409, error: "slug already taken" } };
+          throw problem(409, "SLUG_TAKEN", "An ad account with this slug already exists");
+        }
+        if (isForeignKeyViolation(error)) {
+          throw problem(404, "RESOURCE_NOT_FOUND", `No client with id ${clientId}`);
         }
         throw error;
       }
     }
   }
 
-  async sync(id: string): Promise<SyncOutcome | null> {
+  async sync(id: string): Promise<SyncOutcome> {
     const account = await this.model.findById(id);
     if (!account) {
-      return null;
+      throw accountNotFound(id);
     }
 
     const stages: StageResult[] = [];
@@ -313,7 +352,7 @@ export class AdAccountsService {
 
     const finalize = async (ok: boolean): Promise<SyncOutcome> => {
       await this.model.updateAdAccount(account.id, {
-        healthState: ok ? "healthy" : "error",
+        healthState: ok ? successHealthState(account) : "error",
         lastSyncAt: new Date(),
       });
       if (ok) {
@@ -536,42 +575,43 @@ export class AdAccountsService {
     return finalize(true);
   }
 
-  async reconnect(id: string, accessToken: string): Promise<ReconnectResult> {
+  async reconnect(id: string, accessToken: string, tokenType?: TokenType): Promise<void> {
     const account = await this.model.findById(id);
     if (!account) {
-      return { ok: false, error: { status: 404, error: "not found" } };
+      throw accountNotFound(id);
     }
     try {
       await getMetaAdapter(accessToken).getAccountInfo(account.adAccountId);
     } catch (error) {
-      return { ok: false, error: mapMetaHttpError(toMetaError(error)) };
+      throw toProblemError(error);
     }
+    const resolvedTokenType = tokenType ?? "system_user";
     await this.model.updateAdAccount(id, {
       accessTokenEncrypted: encrypt(accessToken),
       healthState: "healthy",
+      tokenType: resolvedTokenType,
+      tokenExpiresAt: tokenExpiry(resolvedTokenType),
     });
-    return { ok: true };
   }
 
-  async remove(id: string, confirmSlug: string): Promise<RemoveResult> {
+  async remove(id: string, confirmSlug: string): Promise<void> {
     const account = await this.model.findById(id);
     if (!account) {
-      return { ok: false, error: { status: 404, error: "not found" } };
+      throw accountNotFound(id);
     }
     if (confirmSlug !== account.slug) {
-      return { ok: false, error: { status: 422, error: "slug mismatch" } };
+      throw problem(422, "SLUG_MISMATCH", "confirmSlug does not match the ad account slug");
     }
     const deleted = await this.model.deleteAdAccount(id);
     if (!deleted) {
-      return { ok: false, error: { status: 404, error: "not found" } };
+      throw accountNotFound(id);
     }
-    return { ok: true };
   }
 
-  async campaignsWithMetrics(id: string, days: number): Promise<CampaignWithMetrics[] | null> {
+  async campaignsWithMetrics(id: string, days: number): Promise<CampaignWithMetrics[]> {
     const account = await this.model.findById(id);
     if (!account) {
-      return null;
+      throw accountNotFound(id);
     }
     const window = utcWindow(Math.min(Math.max(days, 1), 90));
     const campaignRows = await this.model.listCampaignsByAccount(id);

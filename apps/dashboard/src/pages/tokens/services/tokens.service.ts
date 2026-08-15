@@ -15,9 +15,10 @@ export function patsQueryOptions() {
   return queryOptions({
     queryKey: PATS_QUERY_KEY,
     queryFn: async (): Promise<Pat[]> => {
-      const { data, error } = await api.auth.pats.get();
+      const { data: body, error } = await api.auth.pats.get();
       if (error) throw new Error("Failed to load tokens");
-      return toPats(data as unknown as PatDto[]);
+      const payload = (body as unknown as { data: PatDto[] }).data;
+      return toPats(payload);
     },
   });
 }
@@ -30,9 +31,10 @@ export function useCreatePat() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { name: string }): Promise<CreatedPat> => {
-      const { data, error } = await api.auth.pats.post(input);
+      const { data: body, error } = await api.auth.pats.post(input);
       if (error) throw new Error("Failed to create token");
-      return toCreatedPat(data as CreatePatResponseDto);
+      const payload = (body as unknown as { data: CreatePatResponseDto }).data;
+      return toCreatedPat(payload);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: PATS_QUERY_KEY });
@@ -44,9 +46,10 @@ export function useRevokePat() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (patId: string): Promise<RevokePatResponseDto> => {
-      const { data, error } = await api.auth.pats({ id: patId }).revoke.post(null);
+      const { data: body, error } = await api.auth.pats({ id: patId }).revoke.post(null);
       if (error) throw new Error("Failed to revoke token");
-      return data as RevokePatResponseDto;
+      const payload = (body as unknown as { data: RevokePatResponseDto }).data;
+      return payload;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: PATS_QUERY_KEY });

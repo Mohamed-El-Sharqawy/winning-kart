@@ -21,9 +21,10 @@ type LooseNode = LooseCallable & LooseIndex;
 export const looseApi = api as unknown as LooseNode;
 
 export function asErrorClass(error: unknown): string | null {
-  if (error && typeof error === "object" && "error" in error) {
-    const value = (error as { error: unknown }).error;
-    if (typeof value === "string") return value;
+  if (error && typeof error === "object") {
+    const problem = error as { errorClass?: unknown; code?: unknown };
+    if (typeof problem.errorClass === "string") return problem.errorClass;
+    if (typeof problem.code === "string") return problem.code;
   }
   return null;
 }

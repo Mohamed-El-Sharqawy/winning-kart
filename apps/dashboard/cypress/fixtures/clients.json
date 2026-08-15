@@ -1,26 +1,28 @@
-[
-  {
-    "id": "cli_maison_nour",
-    "name": "Maison Nour",
-    "slug": "maison-nour",
-    "status": "active",
-    "displayCurrency": "AED",
-    "createdAt": "2026-01-05T09:00:00.000Z"
-  },
-  {
-    "id": "cli_dune_coffee",
-    "name": "Dune Coffee",
-    "slug": "dune-coffee",
-    "status": "active",
-    "displayCurrency": "AED",
-    "createdAt": "2026-01-07T10:30:00.000Z"
-  },
-  {
-    "id": "cli_zaytoun",
-    "name": "Zaytoun",
-    "slug": "zaytoun",
-    "status": "paused",
-    "displayCurrency": "AED",
-    "createdAt": "2026-01-12T14:15:00.000Z"
-  }
-]
+{
+  "data": [
+    {
+      "id": "cli_maison_nour",
+      "name": "Maison Nour",
+      "slug": "maison-nour",
+      "status": "active",
+      "displayCurrency": "AED",
+      "createdAt": "2026-01-05T09:00:00.000Z"
+    },
+    {
+      "id": "cli_dune_coffee",
+      "name": "Dune Coffee",
+      "slug": "dune-coffee",
+      "status": "active",
+      "displayCurrency": "AED",
+      "createdAt": "2026-01-07T10:30:00.000Z"
+    },
+    {
+      "id": "cli_zaytoun",
+      "name": "Zaytoun",
+      "slug": "zaytoun",
+      "status": "paused",
+      "displayCurrency": "AED",
+      "createdAt": "2026-01-12T14:15:00.000Z"
+    }
+  ]
+}

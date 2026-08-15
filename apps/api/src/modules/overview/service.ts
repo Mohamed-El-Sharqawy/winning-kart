@@ -1,5 +1,6 @@
 import { round2 } from "../../platforms/meta";
 import { utcWindow } from "../ad-accounts/service";
+import type { UnhealthyAccount } from "./model";
 import type { OverviewModel } from "./model";
 
 export interface OverviewIssue {
@@ -32,6 +33,23 @@ export interface OverviewPayload {
 }
 
 const OVERVIEW_WINDOW_DAYS = 30;
+const DAY_MS = 86400000;
+const TOKEN_WARNING_DAYS = 7;
+
+function tokenErrorHint(account: UnhealthyAccount): string | null {
+  if (account.tokenType !== "user_60d" || account.tokenExpiresAt === null) {
+    return null;
+  }
+  const remaining = account.tokenExpiresAt.getTime() - Date.now();
+  if (remaining <= 0) {
+    return "Token expired — reconnect";
+  }
+  const days = Math.ceil(remaining / DAY_MS);
+  if (days <= TOKEN_WARNING_DAYS) {
+    return `Token expires in ${days} day(s) — reconnect`;
+  }
+  return null;
+}
 
 export class OverviewService {
   constructor(private readonly model: OverviewModel) {}
@@ -56,10 +74,13 @@ export class OverviewService {
     }
     const issues: OverviewIssue[] = unhealthy.map((account) => {
       const job = latestJobByAccount.get(account.id);
+      const tokenHint = tokenErrorHint(account);
       const errorHint =
-        job && job.status === "failed"
-          ? `${job.stage}: ${job.errorClass ?? "unknown"}`
-          : account.healthState;
+        tokenHint !== null
+          ? tokenHint
+          : job && job.status === "failed"
+            ? `${job.stage}: ${job.errorClass ?? "unknown"}`
+            : account.healthState;
       return {
         adAccountId: account.id,
         name: account.name,

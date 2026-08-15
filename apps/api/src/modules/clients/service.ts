@@ -1,3 +1,4 @@
+import { problem } from "../../lib/problem";
 import type { Client } from "@wk/db";
 import type { ClientsModel } from "./model";
 
@@ -6,10 +7,6 @@ export interface CreateClientInput {
   slug: string;
 }
 
-export type CreateClientResult =
-  | { ok: true; client: Client }
-  | { ok: false; reason: "slug_taken" };
-
 export class ClientsService {
   constructor(private model: ClientsModel) {}
 
@@ -17,20 +14,19 @@ export class ClientsService {
     return this.model.listClients();
   }
 
-  async create(input: CreateClientInput): Promise<CreateClientResult> {
+  async create(input: CreateClientInput): Promise<Client> {
     if (await this.model.slugTaken(input.slug)) {
-      return { ok: false, reason: "slug_taken" };
+      throw problem(409, "SLUG_TAKEN", "A client with this slug already exists");
     }
     try {
-      const client = await this.model.insertClient({
+      return await this.model.insertClient({
         id: crypto.randomUUID(),
         name: input.name,
         slug: input.slug,
       });
-      return { ok: true, client };
     } catch (error) {
       if (isUniqueViolation(error)) {
-        return { ok: false, reason: "slug_taken" };
+        throw problem(409, "SLUG_TAKEN", "A client with this slug already exists");
       }
       throw error;
     }

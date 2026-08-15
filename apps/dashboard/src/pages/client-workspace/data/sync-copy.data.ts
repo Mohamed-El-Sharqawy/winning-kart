@@ -18,10 +18,17 @@ export const SYNC_STAGE_LABELS: Record<string, string> = {
 
 export const ERROR_COPY: Record<string, string> = {
   invalid_token: "Meta rejected the token — reconnect with a fresh system-user token",
+  INVALID_TOKEN: "Meta rejected the token — reconnect with a fresh system-user token",
   permission_denied: "Token lacks required scopes (ads_read, ads_management)",
+  PERMISSION_DENIED: "Token lacks required scopes (ads_read, ads_management)",
   rate_limited: "Rate limited by Meta — retry shortly",
+  RATE_LIMITED: "Rate limited by Meta — retry shortly",
   not_found: "Ad account not found for this token",
+  NOT_FOUND: "Ad account not found for this token",
+  RESOURCE_NOT_FOUND: "Ad account not found for this token",
+  ACCOUNT_NOT_FOUND: "Ad account not found for this token",
   server_error: "Meta is unavailable — retrying later",
+  UPSTREAM_ERROR: "Meta is unavailable — retrying later",
   network_error: "Network error reaching Meta",
 };
 
