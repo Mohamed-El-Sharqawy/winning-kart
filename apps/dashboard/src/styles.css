@@ -1,3 +1,7 @@
+@import "tailwindcss";
+@import "@wk/ui/theme.css";
+@source "./";
+
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -5,6 +9,13 @@ body {
   color: var(--color-volt-text);
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }

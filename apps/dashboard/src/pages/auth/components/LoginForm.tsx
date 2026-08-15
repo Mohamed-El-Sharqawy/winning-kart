@@ -12,7 +12,7 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
 
   return (
-    <Card className="w-[360px]">
+    <Card className="w-90">
       <h1 className="mb-5 text-xl font-semibold text-volt-text">Winning Kart</h1>
       <form
         className="flex flex-col gap-4"
