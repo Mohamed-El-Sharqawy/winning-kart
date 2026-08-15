@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { hashSync } from "bcryptjs";
 import { sql } from "drizzle-orm";
 import { adAccounts, apiTokens, clients, db, users } from "./index";
+import "./env";
 
 const DEMO_PASSWORD = "demo-pass-123";
 const HERMES_PAT_PLAINTEXT = "wkpat_demo_hermes_0000000000000000000000000000";
