@@ -1,1 +1,1 @@
-export { default as themeCss } from "./theme.css?inline";
+export const THEME_CSS_PATH = "@wk/ui/theme.css";

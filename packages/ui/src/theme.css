@@ -1,5 +1,3 @@
-@import "tailwindcss";
-
 @theme {
   --color-volt-ground: #0b0714;
   --color-volt-surface: #151022;
@@ -20,21 +18,8 @@
   --font-mono: "Geist Mono", ui-monospace, "JetBrains Mono", monospace;
 
   --radius-wk: 10px;
-
-  --font-numeric-tabular-nums: tabular-nums;
 }
 
 :root {
   color-scheme: dark;
-}
-
-body {
-  background-color: var(--color-volt-ground);
-  color: var(--color-volt-text);
-  font-family: var(--font-sans);
-}
-
-.tabular {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
 }

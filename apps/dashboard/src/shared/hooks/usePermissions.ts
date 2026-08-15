@@ -1,4 +1,4 @@
-import { useSession } from "@/pages/auth/hooks/useAuth";
+import { useSession } from "@/shared/services/session.service";
 
 const ADMIN_WRITE_ROLES = new Set(["owner", "admin", "marketer"]);
 
@@ -8,7 +8,9 @@ export function usePermissions() {
   return {
     isAdmin,
     canWrite: isAdmin,
-    canManageTeam: isAdmin && ADMIN_WRITE_ROLES.has("admin"),
+    canManageTeam: isAdmin && session?.agencyRole !== undefined && ADMIN_WRITE_ROLES.has(session.agencyRole),
     isClient: session?.role === "client",
+    displayName: session?.displayName,
+    role: session?.role,
   };
 }
