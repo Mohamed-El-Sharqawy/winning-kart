@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.local
+.DS_Store
+*.log
+coverage/
+cypress/videos/
+cypress/screenshots/
+.turbo/
+drizzle/meta/_journal.json.bak

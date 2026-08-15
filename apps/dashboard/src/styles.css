@@ -1,0 +1,10 @@
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-volt-ground);
+  color: var(--color-volt-text);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}

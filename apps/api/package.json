@@ -1,0 +1,21 @@
+{
+  "name": "api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --target bun --outdir dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@wk/db": "workspace:*",
+    "elysia": "^1.2.0",
+    "jose": "^5.9.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@wk/config": "workspace:*",
+    "typescript": "^5.7.0",
+    "@types/bcryptjs": "^2.4.6"
+  }
+}

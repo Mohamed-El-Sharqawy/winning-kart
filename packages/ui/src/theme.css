@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-volt-ground: #0b0714;
+  --color-volt-surface: #151022;
+  --color-volt-surface-2: #1a142a;
+  --color-volt-border: #2c2342;
+  --color-volt-border-2: #3b3057;
+  --color-volt-primary: #8b5cf6;
+  --color-volt-primary-strong: #a78bfa;
+  --color-volt-up: #a3e635;
+  --color-volt-down: #fb7185;
+  --color-volt-text: #f5f3ff;
+  --color-volt-text-2: #cfc6e8;
+  --color-volt-text-3: #9d92c9;
+  --color-volt-up-tint: #182413;
+  --color-volt-down-tint: #2e141b;
+
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "JetBrains Mono", monospace;
+
+  --radius-wk: 10px;
+
+  --font-numeric-tabular-nums: tabular-nums;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-volt-ground);
+  color: var(--color-volt-text);
+  font-family: var(--font-sans);
+}
+
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

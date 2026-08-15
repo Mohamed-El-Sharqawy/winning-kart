@@ -1,0 +1,8 @@
+{
+  "id": "cli_test_1",
+  "name": "Maison Nour",
+  "slug": "maison-nour",
+  "status": "active",
+  "displayCurrency": "AED",
+  "shareCostAndMarginWithClient": false
+}

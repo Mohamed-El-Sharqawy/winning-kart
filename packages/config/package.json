@@ -1,0 +1,13 @@
+{
+  "name": "@wk/config",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./eslint.config.base.js": "./eslint.config.base.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.18.0"
+  }
+}

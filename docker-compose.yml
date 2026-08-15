@@ -1,0 +1,29 @@
+# Coolify-managed deployment (Traefik labels drive routing + auto SSL).
+# Postgres runs on the VPS host (not in this file) with WAL archiving off-host.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3000
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.wk-api.rule: "Host(`${WK_HOST}`)"
+      traefik.http.routers.wk-api.entrypoints: "websecure"
+      traefik.http.routers.wk-api.tls.certresolver: "letsencrypt"
+      traefik.http.services.wk-api.loadbalancer.server.port: "3000"
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.wk-dash.rule: "Host(`${WK_HOST}`)"
+      traefik.http.routers.wk-dash.entrypoints: "websecure"
+      traefik.http.routers.wk-dash.tls.certresolver: "letsencrypt"
+      traefik.http.services.wk-dash.loadbalancer.server.port: "80"

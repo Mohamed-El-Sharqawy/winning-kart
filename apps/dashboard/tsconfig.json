@@ -1,0 +1,11 @@
+{
+  "extends": "@wk/config/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["*"]
+    }
+  },
+  "include": ["src", "cypress/support", "vite.config.ts"]
+}

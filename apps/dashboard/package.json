@@ -1,0 +1,28 @@
+{
+  "name": "dashboard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.62.0",
+    "@tanstack/react-router": "^1.87.0",
+    "@wk/api-client": "workspace:*",
+    "@wk/ui": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@wk/config": "workspace:*",
+    "@vitejs/plugin-react": "^4.3.0",
+    "cypress": "^13.17.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}

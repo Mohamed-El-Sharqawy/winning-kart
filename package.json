@@ -1,0 +1,17 @@
+{
+  "name": "winning-kart",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "packageManager": "bun@1.2.0",
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:api": "bun run --filter 'api' dev",
+    "dev:dashboard": "bun run --filter 'dashboard' dev",
+    "build": "bun run --filter '*' build",
+    "db:generate": "bun run --filter '@wk/db' generate",
+    "db:migrate": "bun run --filter '@wk/db' migrate",
+    "db:seed": "bun run --filter '@wk/db' seed",
+    "test:e2e": "bun run --filter 'dashboard' test:e2e",
+    "typecheck": "bun run --filter '*' typecheck"
+  }
+}
