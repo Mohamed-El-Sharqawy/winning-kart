@@ -1,0 +1,60 @@
+{
+  "data": {
+    "client": {
+      "name": "Maison Nour",
+      "slug": "maison-nour",
+      "displayCurrency": "AED"
+    },
+    "kpis": {
+      "spend": 61300,
+      "revenue": 203500,
+      "roas": 3.32,
+      "purchases": 847
+    },
+    "series": [
+      { "date": "2026-08-11", "spend": 11200, "revenue": 35800, "roas": 3.2 },
+      { "date": "2026-08-12", "spend": 12450, "revenue": 42100, "roas": 3.38 },
+      { "date": "2026-08-13", "spend": 11900, "revenue": 39600, "roas": 3.33 },
+      { "date": "2026-08-14", "spend": 12800, "revenue": 44200, "roas": 3.45 },
+      { "date": "2026-08-15", "spend": 12950, "revenue": 41800, "roas": 3.22 }
+    ],
+    "campaigns": [
+      {
+        "id": "camp_mn_01",
+        "name": "Ramadan Retargeting",
+        "status": "ACTIVE",
+        "spend": 28400,
+        "revenue": 118900,
+        "roas": 4.19,
+        "purchases": 512
+      },
+      {
+        "id": "camp_mn_02",
+        "name": "Prospecting Broad",
+        "status": "ACTIVE",
+        "spend": 32900,
+        "revenue": 84600,
+        "roas": 2.57,
+        "purchases": 335
+      }
+    ],
+    "creatives": [
+      {
+        "id": "cr_mn_11",
+        "name": "Ramadan Hero Square",
+        "format": "IMAGE",
+        "thumbnailUrl": null,
+        "spend": 9800,
+        "roas": 4.6
+      },
+      {
+        "id": "cr_mn_12",
+        "name": "Eid Carousel Story",
+        "format": "IMAGE",
+        "thumbnailUrl": null,
+        "spend": 7400,
+        "roas": 3.1
+      }
+    ]
+  }
+}

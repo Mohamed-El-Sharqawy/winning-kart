@@ -10,6 +10,7 @@ import { AccountsTab } from "./components/AccountsTab";
 import { CampaignsTab } from "./components/CampaignsTab";
 import { CreativesTab } from "./components/CreativesTab";
 import { OverviewTab } from "./components/OverviewTab";
+import { RevenueTab } from "./components/RevenueTab";
 import { WorkspaceHeader } from "./components/WorkspaceHeader";
 import { WorkspaceTabs } from "./components/WorkspaceTabs";
 import { useAdAccounts } from "./services/ad-accounts.service";
@@ -95,6 +96,7 @@ function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
       {tab === "creatives" && accountsReady ? (
         <CreativesTab accountId={selectedAccountId} days={days} clientSlug={client.slug} />
       ) : null}
+      {tab === "revenue" ? <RevenueTab client={client} /> : null}
       {metricsTab && !accountsPending && list.length === 0 ? (
         <EmptyState
           title="No ad accounts yet"

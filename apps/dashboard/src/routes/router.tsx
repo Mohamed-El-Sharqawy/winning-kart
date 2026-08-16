@@ -13,6 +13,8 @@ import { ClientWorkspacePage } from "@/pages/client-workspace";
 import { ClientsPage } from "@/pages/clients";
 import { OverviewPage } from "@/pages/overview";
 import { PortalPage } from "@/pages/portal";
+import { SettingsAuditPage } from "@/pages/settings-audit";
+import { SettingsDataPage } from "@/pages/settings-data";
 import { TokensPage } from "@/pages/tokens";
 import { sessionQueryOptions } from "@/shared/services/session.service";
 
@@ -34,7 +36,13 @@ async function requireClient() {
   if (session.role !== "client") throw redirect({ to: "/overview" });
 }
 
-export type WorkspaceTab = "overview" | "ad-accounts" | "campaigns" | "ad-sets" | "creatives";
+export type WorkspaceTab =
+  | "overview"
+  | "ad-accounts"
+  | "campaigns"
+  | "ad-sets"
+  | "creatives"
+  | "revenue";
 
 export interface ClientWorkspaceSearch {
   tab: WorkspaceTab;
@@ -65,7 +73,8 @@ function isWorkspaceTab(value: unknown): value is WorkspaceTab {
     value === "ad-accounts" ||
     value === "campaigns" ||
     value === "ad-sets" ||
-    value === "creatives"
+    value === "creatives" ||
+    value === "revenue"
   );
 }
 
@@ -160,6 +169,20 @@ const tokensRoute = createRoute({
   component: TokensPage,
 });
 
+const settingsAuditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings/audit",
+  beforeLoad: requireAdmin,
+  component: SettingsAuditPage,
+});
+
+const settingsDataRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings/data",
+  beforeLoad: requireAdmin,
+  component: SettingsDataPage,
+});
+
 const portalRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/portal",
@@ -176,6 +199,8 @@ const routeTree = rootRoute.addChildren([
   clientWorkspaceRoute,
   campaignDetailRoute,
   tokensRoute,
+  settingsAuditRoute,
+  settingsDataRoute,
   portalRoute,
 ]);
 

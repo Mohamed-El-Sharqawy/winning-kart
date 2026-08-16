@@ -8,6 +8,7 @@ const TABS: Array<{ id: WorkspaceTab; label: string }> = [
   { id: "campaigns", label: "Campaigns" },
   { id: "ad-sets", label: "Ad Sets" },
   { id: "creatives", label: "Creatives" },
+  { id: "revenue", label: "Revenue" },
 ];
 
 export function WorkspaceTabs({ slug, tab }: { slug: string; tab: WorkspaceTab }) {

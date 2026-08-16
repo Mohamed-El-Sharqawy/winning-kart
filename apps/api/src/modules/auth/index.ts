@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession } from "../../lib/auth";
 import { resolveSessionUser } from "../../lib/session";
 import { problem } from "../../lib/problem";
+import { clientIp, recordAudit } from "../../lib/audit";
 import { createPatDto, loginDto, loginResponseDto, meDto, okDto } from "../../dto/auth";
 import { AuthModel } from "./model";
 import { AuthService } from "./service";
@@ -23,7 +24,7 @@ async function requireAdmin(headers: Record<string, string | undefined>): Promis
 export const authModule = new Elysia({ prefix: "/auth" })
   .post(
     "/login",
-    async ({ body, cookie }) => {
+    async ({ body, cookie, headers }) => {
       const user = await service.login(body.email, body.password);
       if (!user) {
         throw problem(401, "INVALID_CREDENTIALS", "Invalid email or password");
@@ -36,6 +37,13 @@ export const authModule = new Elysia({ prefix: "/auth" })
         path: "/",
         maxAge: SESSION_TTL_SECONDS,
         secure: process.env.NODE_ENV === "production",
+      });
+      void recordAudit({
+        actorUserId: user.id,
+        action: "auth.login",
+        targetEntityType: "user",
+        targetEntityId: user.id,
+        request: { ip: clientIp(headers), userAgent: headers["user-agent"] },
       });
       return { data: { role: user.role } };
     },
@@ -78,6 +86,14 @@ export const authModule = new Elysia({ prefix: "/auth" })
     async ({ body, headers, set }) => {
       const admin = await requireAdmin(headers);
       const pat = await service.createPat(admin.id, body.name);
+      void recordAudit({
+        actorUserId: admin.id,
+        action: "pat.create",
+        targetEntityType: "api_token",
+        targetEntityId: pat.id,
+        newValue: { name: body.name },
+        request: { ip: clientIp(headers), userAgent: headers["user-agent"] },
+      });
       set.status = 201;
       return { data: pat };
     },
@@ -91,6 +107,13 @@ export const authModule = new Elysia({ prefix: "/auth" })
       if (!revoked) {
         throw problem(404, "RESOURCE_NOT_FOUND", `No personal access token with id ${params.id}`);
       }
+      void recordAudit({
+        actorUserId: admin.id,
+        action: "pat.revoke",
+        targetEntityType: "api_token",
+        targetEntityId: params.id,
+        request: { ip: clientIp(headers), userAgent: headers["user-agent"] },
+      });
       return { data: { ok: true } };
     },
     { params: t.Object({ id: t.String() }), response: { 200: okDto } }

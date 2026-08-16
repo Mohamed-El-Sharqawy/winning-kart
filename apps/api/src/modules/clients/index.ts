@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { resolveSessionUser } from "../../lib/session";
 import { problem } from "../../lib/problem";
+import { clientIp, recordAudit } from "../../lib/audit";
 import { ClientsModel } from "./model";
 import { ClientsService } from "./service";
 import type { SafeUser } from "../auth/model";
@@ -36,8 +37,16 @@ export const clientsModule = new Elysia({ prefix: "/clients" })
   .post(
     "/",
     async ({ body, headers, set }) => {
-      await requireAdmin(headers);
+      const admin = await requireAdmin(headers);
       const client = await service.create(body);
+      void recordAudit({
+        actorUserId: admin.id,
+        action: "client.create",
+        targetEntityType: "client",
+        targetEntityId: client.id,
+        newValue: { slug: client.slug },
+        request: { ip: clientIp(headers), userAgent: headers["user-agent"] },
+      });
       set.status = 201;
       return { data: client };
     },

@@ -1,7 +1,15 @@
 import { createHash, randomUUID } from "node:crypto";
 import { hashSync } from "bcryptjs";
-import { sql } from "drizzle-orm";
-import { adAccounts, apiTokens, clients, db, users } from "./index";
+import { inArray, sql } from "drizzle-orm";
+import {
+  adAccounts,
+  apiTokens,
+  clientUserAssignments,
+  clients,
+  db,
+  retentionSettings,
+  users,
+} from "./index";
 import "./env";
 
 const DEMO_PASSWORD = "demo-pass-123";
@@ -181,6 +189,32 @@ async function main(): Promise<void> {
       tokenHash: sha256Hex(HERMES_PAT_PLAINTEXT),
     },
   ]);
+
+  const clientRoleUsers = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(
+      inArray(users.email, ["client@maisonnour.test", "viewer@maisonnour.test"])
+    );
+
+  await db
+    .insert(clientUserAssignments)
+    .values(
+      clientRoleUsers.map((clientRoleUser) => ({
+        id: randomUUID(),
+        userId: clientRoleUser.id,
+        clientId: maisonNourId,
+      }))
+    )
+    .onConflictDoUpdate({
+      target: clientUserAssignments.userId,
+      set: { clientId: maisonNourId },
+    });
+
+  await db
+    .insert(retentionSettings)
+    .values({ id: "default", rawInsightsDays: 90 })
+    .onConflictDoNothing();
 
   console.log("Winning Kart dev seed complete");
   console.log("");
