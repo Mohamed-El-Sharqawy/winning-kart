@@ -30,4 +30,6 @@ export const userDto = t.Object({
   updatedAt: t.Optional(t.Date()),
 });
 
-export const userListDto = t.Array(userDto);
+export const userListDto = t.Object({
+  data: t.Array(userDto),
+});

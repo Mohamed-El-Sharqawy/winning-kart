@@ -1,3 +1,4 @@
+import { Link, useNavigate } from "@tanstack/react-router";
 import { formatDate } from "@/lib/format";
 import { Badge } from "@/shared/components/Badge";
 import type { BadgeVariant } from "@/shared/components/Badge";
@@ -12,11 +13,22 @@ const STATUS_VARIANTS: Record<ClientStatus, BadgeVariant> = {
 };
 
 export function ClientsTable({ clients }: { clients: Client[] }) {
+  const navigate = useNavigate();
+
   const columns: Array<DataTableColumn<Client>> = [
     {
       key: "name",
       header: "Name",
-      render: (row) => <span className="font-medium text-volt-text">{row.name}</span>,
+      render: (row) => (
+        <Link
+          to="/clients/$slug"
+          params={{ slug: row.slug }}
+          search={{ tab: "overview" }}
+          className="font-medium text-volt-primary-strong hover:underline"
+        >
+          {row.name}
+        </Link>
+      ),
     },
     {
       key: "slug",
@@ -37,5 +49,18 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
     },
   ];
 
-  return <DataTable columns={columns} rows={clients} rowKey={(row) => row.id} />;
+  return (
+    <DataTable
+      columns={columns}
+      rows={clients}
+      rowKey={(row) => row.id}
+      onRowClick={(row) =>
+        void navigate({
+          to: "/clients/$slug",
+          params: { slug: row.slug },
+          search: { tab: "overview" },
+        })
+      }
+    />
+  );
 }

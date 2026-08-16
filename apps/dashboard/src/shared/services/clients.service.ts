@@ -10,9 +10,10 @@ export function clientsQueryOptions() {
   return queryOptions({
     queryKey: CLIENTS_QUERY_KEY,
     queryFn: async (): Promise<Client[]> => {
-      const { data, error } = await api.clients.get();
+      const { data: body, error } = await api.clients.get();
       if (error) throw new Error("Failed to load clients");
-      return toClients(data as unknown as ClientDto[]);
+      const payload = (body as unknown as { data: ClientDto[] }).data;
+      return toClients(payload);
     },
   });
 }

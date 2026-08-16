@@ -125,6 +125,18 @@ bun run dev                # api (:3000) + dashboard (:5173) concurrently
 bun run test:e2e           # cypress (dashboard)
 ```
 
+## M1 — connecting a real Meta ad account
+
+1. Create a Meta system user token with the scopes `ads_read`, `ads_management`,
+   `business_management`, `read_insights`, `pages_read_engagement`, `catalogs_read`, tied to
+   the `act_` account — via Meta Business Settings, per locked decision D1.
+2. Open a client workspace → Ad Accounts → **Add ad account**.
+3. Paste the name, the `act_` id, and the token.
+4. The staged sync runs and campaign data lands in the workspace Campaigns tab.
+5. The hourly cron keeps accounts fresh; `WK_SYNC_CRON=off` disables it.
+
+The wording for every connection error comes from the wizard's error catalog.
+
 ## 7. Deployment
 
 Production runs on a generic VPS (Hostinger / AWS EC2 / DigitalOcean) under **Coolify**:

@@ -1,0 +1,104 @@
+import { useState } from "react";
+import { Button } from "@/shared/components/Button";
+import { EmptyState } from "@/shared/components/EmptyState";
+import type { Client } from "@/shared/types/clients.types";
+import { errorCopy } from "../data/sync-copy.data";
+import { useAdAccounts, useCampaigns, useSyncAdAccount } from "../services/ad-accounts.service";
+import { CampaignsTable } from "./CampaignsTable";
+import { SkeletonRows } from "./SkeletonRows";
+
+const DAY_WINDOWS = [7, 14, 30, 90];
+
+const SELECT_CLASS =
+  "rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
+
+export function CampaignsTab({ client }: { client: Client }) {
+  const { data: accounts, isPending: accountsPending } = useAdAccounts(client.id);
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const [days, setDays] = useState(30);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const sync = useSyncAdAccount();
+  const list = accounts ?? [];
+  const selectedId = accountId ?? list[0]?.id ?? null;
+  const { data: campaigns, isPending } = useCampaigns(selectedId, days);
+
+  function handleSync() {
+    if (selectedId === null) return;
+    setSyncMessage(null);
+    sync.mutate(selectedId, {
+      onSuccess: (result) => {
+        if (!result.ok) {
+          setSyncMessage(
+            errorCopy(result.errorClass ?? result.stages.find((stage) => stage.status === "failed")?.errorClass),
+          );
+        }
+      },
+      onError: (error: Error) => setSyncMessage(error.message),
+    });
+  }
+
+  if (accountsPending) {
+    return <p className="text-sm text-volt-text-3">Loading ad accounts…</p>;
+  }
+  if (list.length === 0) {
+    return (
+      <EmptyState
+        title="No ad accounts yet"
+        hint="Add an ad account on the Ad Accounts tab, then sync it to pull campaigns."
+      />
+    );
+  }
+
+  const rows = campaigns ?? [];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
+          Ad account
+          <select
+            value={selectedId ?? ""}
+            onChange={(event) => setAccountId(event.target.value)}
+            className={SELECT_CLASS}
+          >
+            {list.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
+          Window
+          <select
+            value={days}
+            onChange={(event) => setDays(Number(event.target.value))}
+            className={SELECT_CLASS}
+          >
+            {DAY_WINDOWS.map((window) => (
+              <option key={window} value={window}>
+                Last {window} days
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {isPending ? (
+        <SkeletonRows rows={8} columns={9} />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          title="No campaigns yet"
+          hint="Sync the ad account to pull data."
+          action={
+            <Button variant="ghost" disabled={sync.isPending} onClick={handleSync}>
+              {sync.isPending ? "Syncing…" : "Sync now"}
+            </Button>
+          }
+        />
+      ) : (
+        <CampaignsTable campaigns={rows} />
+      )}
+      {syncMessage ? <p className="text-sm text-volt-down">{syncMessage}</p> : null}
+    </div>
+  );
+}

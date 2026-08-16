@@ -8,6 +8,20 @@
       "when": 1786776589730,
       "tag": "0000_daffy_timeslip",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786779448990,
+      "tag": "0001_stale_paladin",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786788166091,
+      "tag": "0002_sleepy_proteus",
+      "breakpoints": true
     }
   ]
 }

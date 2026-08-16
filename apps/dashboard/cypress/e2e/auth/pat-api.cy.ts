@@ -7,6 +7,7 @@ it("authenticates api requests with the demo pat", () => {
     },
   }).then((response) => {
     expect(response.status).to.eq(200);
-    expect(response.body.role).to.eq("admin");
+    expect(response.body).to.have.property("data");
+    expect(response.body.data.role).to.eq("admin");
   });
 });

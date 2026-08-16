@@ -5,5 +5,7 @@ describe("clients list", () => {
 
     cy.contains("Maison Nour").should("be.visible");
     cy.contains("Dune Coffee").should("be.visible");
+
+    cy.get('a[href*="/clients/"]').should("have.length.greaterThan", 0);
   });
 });
