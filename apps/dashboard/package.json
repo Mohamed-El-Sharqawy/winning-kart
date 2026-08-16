@@ -11,6 +11,7 @@
     "test:e2e:open": "cypress open"
   },
   "dependencies": {
+    "@tanstack/react-charts": "^0.14.0",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-router": "^1.87.0",
     "@wk/api-client": "workspace:*",

@@ -1,4 +1,3 @@
-import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import {
   campaignRowTone,
@@ -13,7 +12,7 @@ import { DataTable } from "@/shared/components/DataTable";
 import type { DataTableColumn } from "@/shared/components/DataTable";
 import { StatusDot } from "@/shared/components/StatusDot";
 import type { StatusDotVariant } from "@/shared/components/StatusDot";
-import type { Campaign } from "../types/ad-accounts.types";
+import type { AdSet } from "../types/ad-sets.types";
 
 const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
   active: "up",
@@ -28,51 +27,65 @@ function statusVariant(status: string): StatusDotVariant {
   return STATUS_VARIANTS[status.toLowerCase()] ?? "neutral";
 }
 
-export interface CampaignsTableProps {
-  campaigns: Campaign[];
-  accountId?: string | null;
-  accountName?: string | null;
-  days?: number;
+function humanize(value: string): string {
+  return value.toLowerCase().replace(/_/g, " ");
 }
 
-export function CampaignsTable({ campaigns, accountId, accountName, days }: CampaignsTableProps) {
-  const { slug } = useParams({ from: "/clients/$slug" });
-  const workspaceSearch = useSearch({ from: "/clients/$slug" });
-  const navigate = useNavigate();
-  const resolvedDays = days ?? workspaceSearch.days ?? 30;
-  const resolvedAccountId = accountId ?? workspaceSearch.account ?? null;
-  const resolvedAccountName = accountName ?? workspaceSearch.accountName ?? null;
-  const detailSearch = {
-    days: resolvedDays,
-    account: resolvedAccountId ?? undefined,
-    accountName: resolvedAccountName ?? undefined,
-  };
-  const columns: Array<DataTableColumn<Campaign>> = [
+export interface AdSetsTableProps {
+  adSets: AdSet[];
+  selectedIds: string[];
+  onToggle: (id: string) => void;
+}
+
+export function AdSetsTable({ adSets, selectedIds, onToggle }: AdSetsTableProps) {
+  const columns: Array<DataTableColumn<AdSet>> = [
+    {
+      key: "compare",
+      header: "",
+      render: (row) => {
+        const checked = selectedIds.includes(row.id);
+        return (
+          <input
+            type="checkbox"
+            checked={checked}
+            disabled={!checked && selectedIds.length >= 4}
+            onChange={() => onToggle(row.id)}
+            aria-label={`Compare ${row.name}`}
+            className="size-4 cursor-pointer accent-volt-primary disabled:cursor-not-allowed disabled:opacity-40"
+          />
+        );
+      },
+    },
     {
       key: "name",
-      header: "Campaign",
+      header: "Ad set",
       render: (row) => (
         <div className="flex flex-col items-start gap-1">
-          <Link
-            to="/clients/$slug/campaigns/$campaignId"
-            params={{ slug, campaignId: row.id }}
-            search={detailSearch}
-            className="font-medium text-volt-text hover:underline"
-          >
-            {row.name}
-          </Link>
-          <StatusDot variant={statusVariant(row.status)}>
-            {row.status.toLowerCase().replace(/_/g, " ")}
-          </StatusDot>
+          <span className="font-medium text-volt-text">{row.name}</span>
+          <span className="text-xs text-volt-text-3">{row.campaignName}</span>
         </div>
       ),
     },
     {
-      key: "objective",
-      header: "Objective",
-      render: (row) => (
-        <span className="capitalize text-volt-text-3">{row.objective.toLowerCase().replace(/_/g, " ")}</span>
-      ),
+      key: "status",
+      header: "Status",
+      render: (row) => <StatusDot variant={statusVariant(row.status)}>{humanize(row.status)}</StatusDot>,
+    },
+    {
+      key: "optimizationGoal",
+      header: "Optimization goal",
+      render: (row) => <span className="capitalize text-volt-text-3">{humanize(row.optimizationGoal)}</span>,
+    },
+    {
+      key: "bidStrategy",
+      header: "Bid strategy",
+      render: (row) => <span className="capitalize text-volt-text-3">{humanize(row.bidStrategy)}</span>,
+    },
+    {
+      key: "dailyBudget",
+      header: "Budget",
+      align: "right",
+      render: (row) => <span className="tabular">{formatMoney(row.dailyBudget, row.currency)}</span>,
     },
     {
       key: "spend",
@@ -121,16 +134,9 @@ export function CampaignsTable({ campaigns, accountId, accountName, days }: Camp
   return (
     <DataTable
       columns={columns}
-      rows={campaigns}
+      rows={adSets}
       rowKey={(row) => row.id}
       rowClassName={(row) => campaignRowTone(row.roas)}
-      onRowClick={(row) => {
-        void navigate({
-          to: "/clients/$slug/campaigns/$campaignId",
-          params: { slug, campaignId: row.id },
-          search: detailSearch,
-        });
-      }}
     />
   );
 }

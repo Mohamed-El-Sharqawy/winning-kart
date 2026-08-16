@@ -1,0 +1,13 @@
+{
+  "data": {
+    "topCreativeSpendShare": 0.55,
+    "top3SpendShare": 0.9,
+    "concentration": "top1",
+    "counts": {
+      "fatiguing": 1,
+      "bleeding": 1,
+      "scale": 1,
+      "status_anomaly": 0
+    }
+  }
+}

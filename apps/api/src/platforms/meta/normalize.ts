@@ -38,6 +38,7 @@ export interface AdRecord {
   name: string;
   status: EntityStatus;
   format: string | null;
+  creativeId: string | null;
 }
 
 export interface InsightRecord {
@@ -45,6 +46,9 @@ export interface InsightRecord {
   spend: number;
   revenue: number;
   purchases: number;
+  addToCart: number;
+  initiateCheckout: number;
+  landingPageViews: number;
   impressions: number;
   reach: number;
   clicks: number;
@@ -125,17 +129,39 @@ function isPurchaseType(actionType: string): boolean {
   return actionType.includes("purchase");
 }
 
-function sumPurchaseMetrics(metrics: MetaActionMetric[] | undefined): number {
+function isAddToCartType(actionType: string): boolean {
+  return (
+    actionType.includes("add_to_cart") ||
+    actionType === "offsite_conversion.fb_pixel_add_to_cart"
+  );
+}
+
+function isInitiateCheckoutType(actionType: string): boolean {
+  return actionType.includes("initiate_checkout");
+}
+
+function isLandingPageViewType(actionType: string): boolean {
+  return actionType.includes("landing_page_view");
+}
+
+function sumActionTypes(
+  metrics: MetaActionMetric[] | undefined,
+  matches: (actionType: string) => boolean
+): number {
   if (!Array.isArray(metrics)) {
     return 0;
   }
   let total = 0;
   for (const metric of metrics) {
-    if (typeof metric?.action_type === "string" && isPurchaseType(metric.action_type)) {
+    if (typeof metric?.action_type === "string" && matches(metric.action_type)) {
       total += toNumber(metric.value);
     }
   }
   return total;
+}
+
+function sumPurchaseMetrics(metrics: MetaActionMetric[] | undefined): number {
+  return sumActionTypes(metrics, isPurchaseType);
 }
 
 export function normalizeAccountInfo(info: MetaAccountInfo): AccountInfoSnapshot {
@@ -183,6 +209,7 @@ export function normalizeAd(row: MetaAdRow): AdRecord {
     name: row.name,
     status: mapEntityStatus(row.effective_status, row.status),
     format: null,
+    creativeId: row.creative?.id ?? null,
   };
 }
 
@@ -192,6 +219,9 @@ export function normalizeInsight(row: MetaInsightRow): InsightRecord {
     spend: round2(toNumber(row.spend)),
     revenue: round2(sumPurchaseMetrics(row.action_values)),
     purchases: Math.round(sumPurchaseMetrics(row.actions)),
+    addToCart: Math.round(sumActionTypes(row.actions, isAddToCartType)),
+    initiateCheckout: Math.round(sumActionTypes(row.actions, isInitiateCheckoutType)),
+    landingPageViews: Math.round(sumActionTypes(row.actions, isLandingPageViewType)),
     impressions: Math.round(toNumber(row.impressions)),
     reach: Math.round(toNumber(row.reach)),
     clicks: Math.round(toNumber(row.clicks)),
@@ -205,15 +235,38 @@ export function normalizeInsight(row: MetaInsightRow): InsightRecord {
 export function aggregateInsightsByDate(rows: InsightRecord[]): Map<string, InsightRecord> {
   const totalsByDate = new Map<
     string,
-    { spend: number; revenue: number; purchases: number; impressions: number; reach: number; clicks: number }
+    {
+      spend: number;
+      revenue: number;
+      purchases: number;
+      addToCart: number;
+      initiateCheckout: number;
+      landingPageViews: number;
+      impressions: number;
+      reach: number;
+      clicks: number;
+    }
   >();
   for (const row of rows) {
     const totals =
       totalsByDate.get(row.date) ??
-      { spend: 0, revenue: 0, purchases: 0, impressions: 0, reach: 0, clicks: 0 };
+      {
+        spend: 0,
+        revenue: 0,
+        purchases: 0,
+        addToCart: 0,
+        initiateCheckout: 0,
+        landingPageViews: 0,
+        impressions: 0,
+        reach: 0,
+        clicks: 0,
+      };
     totals.spend += row.spend;
     totals.revenue += row.revenue;
     totals.purchases += row.purchases;
+    totals.addToCart += row.addToCart;
+    totals.initiateCheckout += row.initiateCheckout;
+    totals.landingPageViews += row.landingPageViews;
     totals.impressions += row.impressions;
     totals.reach += row.reach;
     totals.clicks += row.clicks;
@@ -226,6 +279,9 @@ export function aggregateInsightsByDate(rows: InsightRecord[]): Map<string, Insi
       spend: round2(totals.spend),
       revenue: round2(totals.revenue),
       purchases: Math.round(totals.purchases),
+      addToCart: Math.round(totals.addToCart),
+      initiateCheckout: Math.round(totals.initiateCheckout),
+      landingPageViews: Math.round(totals.landingPageViews),
       impressions: Math.round(totals.impressions),
       reach: Math.round(totals.reach),
       clicks: Math.round(totals.clicks),

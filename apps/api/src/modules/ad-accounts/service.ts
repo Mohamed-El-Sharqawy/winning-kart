@@ -19,6 +19,7 @@ import {
   round2,
 } from "../../platforms/meta";
 import type {
+  AdRow,
   AdUpsertRow,
   AdSetUpsertRow,
   CampaignRow,
@@ -105,6 +106,15 @@ const RECENT_JOBS_LIMIT = 12;
 const DAY_MS = 86400000;
 const USER_TOKEN_TTL_DAYS = 60;
 const TOKEN_WARNING_DAYS = 7;
+const CREATIVE_THUMBNAIL_CHUNK = 50;
+
+function chunkIds(ids: string[], size: number): string[][] {
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += size) {
+    chunks.push(ids.slice(i, i + size));
+  }
+  return chunks;
+}
 
 export function utcWindow(days: number): { since: string; until: string } {
   const now = new Date();
@@ -505,6 +515,7 @@ export class AdAccountsService {
           name: record.name,
           status: record.status,
           format: record.format,
+          creativeId: record.creativeId,
         });
       }
       const upserted = await this.model.upsertAds(insertRows);
@@ -512,6 +523,7 @@ export class AdAccountsService {
       for (const row of upserted) {
         adIdByPlatform.set(row.platformAdId, row.id);
       }
+      await this.decorateAdThumbnails(meta, account.id, upserted);
       return { count: upserted.length };
     });
     if (!adsOk) {
@@ -573,6 +585,49 @@ export class AdAccountsService {
     }
 
     return finalize(true);
+  }
+
+  private async decorateAdThumbnails(
+    meta: AdPlatformAdapter,
+    accountId: string,
+    adRows: AdRow[]
+  ): Promise<void> {
+    const platformAdIdsByCreative = new Map<string, string[]>();
+    for (const row of adRows) {
+      if (row.creativeId === null || row.thumbnailUrl !== null) {
+        continue;
+      }
+      const platformAdIds = platformAdIdsByCreative.get(row.creativeId);
+      if (platformAdIds === undefined) {
+        platformAdIdsByCreative.set(row.creativeId, [row.platformAdId]);
+      } else {
+        platformAdIds.push(row.platformAdId);
+      }
+    }
+    if (platformAdIdsByCreative.size === 0) {
+      return;
+    }
+    const creativeIds = [...platformAdIdsByCreative.keys()];
+    for (const chunk of chunkIds(creativeIds, CREATIVE_THUMBNAIL_CHUNK)) {
+      try {
+        const thumbnails = await meta.getCreativeThumbnails(chunk);
+        for (const [creativeId, creative] of Object.entries(thumbnails)) {
+          const thumbnailUrl = creative?.thumbnail_url;
+          if (typeof thumbnailUrl !== "string" || thumbnailUrl.length === 0) {
+            continue;
+          }
+          const platformAdIds = platformAdIdsByCreative.get(creativeId);
+          if (platformAdIds === undefined) {
+            continue;
+          }
+          for (const platformAdId of platformAdIds) {
+            await this.model.updateAdCreative(accountId, platformAdId, { thumbnailUrl });
+          }
+        }
+      } catch {
+        continue;
+      }
+    }
   }
 
   async reconnect(id: string, accessToken: string, tokenType?: TokenType): Promise<void> {
