@@ -1,0 +1,69 @@
+{
+  "data": {
+    "spend": 48250.5,
+    "revenue": 168900.25,
+    "roas": 3.5,
+    "cpa": 42.1,
+    "purchases": 1146,
+    "accountsHealthy": 4,
+    "accountsTotal": 5,
+    "issues": [
+      {
+        "adAccountId": "act_dune_1",
+        "name": "Dune Coffee Primary",
+        "healthState": "stale",
+        "lastSyncAt": "2026-08-14T18:00:00.000Z",
+        "errorHint": "Last sync finished over 2 days ago"
+      }
+    ],
+    "clients": [
+      {
+        "id": "cli_maison_nour",
+        "name": "Maison Nour",
+        "slug": "maison-nour",
+        "spend": 31200.75,
+        "revenue": 128100.5,
+        "roas": 4.1
+      },
+      {
+        "id": "cli_dune_coffee",
+        "name": "Dune Coffee",
+        "slug": "dune-coffee",
+        "spend": 12049.75,
+        "revenue": 30800.75,
+        "roas": 2.56
+      },
+      {
+        "id": "cli_zaytoun",
+        "name": "Zaytoun",
+        "slug": "zaytoun",
+        "spend": 5000,
+        "revenue": 9999,
+        "roas": 2.0
+      }
+    ],
+    "insights": [
+      {
+        "id": "ins_001",
+        "severity": "critical",
+        "headline": "Maison Nour ROAS fell 28% over 7 days",
+        "entityName": "Summer Editions",
+        "ctaTarget": "/clients/maison-nour?tab=campaigns"
+      },
+      {
+        "id": "ins_002",
+        "severity": "warning",
+        "headline": "Dune Coffee conversions rely on two creatives",
+        "entityName": "Dune Coffee",
+        "ctaTarget": "/clients/dune-coffee?tab=creatives"
+      },
+      {
+        "id": "ins_003",
+        "severity": "info",
+        "headline": "Zaytoun prospecting spent AED 620 with no conversions",
+        "entityName": "Ramadan Prospecting",
+        "ctaTarget": "/clients/zaytoun?tab=campaigns"
+      }
+    ]
+  }
+}

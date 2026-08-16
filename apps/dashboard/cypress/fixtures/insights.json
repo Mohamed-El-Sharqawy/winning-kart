@@ -1,0 +1,42 @@
+{
+  "data": [
+    {
+      "id": "ins_001",
+      "severity": "critical",
+      "type": "roas_drop",
+      "headline": "Maison Nour ROAS fell 28% over 7 days",
+      "attribution": "attributed",
+      "primaryCause": "Summer Editions campaign — 72% of the revenue loss",
+      "acceptedAsTaskId": null,
+      "entityName": "Summer Editions",
+      "clientName": "Maison Nour",
+      "ctaTarget": "/clients/maison-nour?tab=campaigns",
+      "detectedAt": "2026-08-15T09:12:00.000Z"
+    },
+    {
+      "id": "ins_002",
+      "severity": "warning",
+      "type": "conversion_concentration",
+      "headline": "Dune Coffee conversions rely on two creatives",
+      "attribution": "unattributed",
+      "primaryCause": null,
+      "decomposition": {
+        "contributors": [
+          {
+            "name": "Catalog Carousel",
+            "share": 0.74
+          },
+          {
+            "name": "Founder Story",
+            "share": 0.14
+          }
+        ]
+      },
+      "acceptedAsTaskId": null,
+      "entityName": "Dune Coffee",
+      "clientName": "Dune Coffee",
+      "ctaTarget": "/clients/dune-coffee?tab=creatives",
+      "detectedAt": "2026-08-14T16:40:00.000Z"
+    }
+  ]
+}

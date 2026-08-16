@@ -6,6 +6,7 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { queryClient } from "@/lib/query-client";
+import { AlertsTasksPage } from "@/pages/alerts-tasks";
 import { AuthPage } from "@/pages/auth";
 import { CampaignDetailPage } from "@/pages/campaign-detail";
 import { ClientWorkspacePage } from "@/pages/client-workspace";
@@ -46,6 +47,16 @@ export interface CampaignDetailSearch {
   days: number;
   account?: string;
   accountName?: string;
+}
+
+export type AlertsTab = "alerts" | "tasks" | "recommendations";
+
+export interface AlertsSearch {
+  tab: AlertsTab;
+}
+
+function isAlertsTab(value: unknown): value is AlertsTab {
+  return value === "alerts" || value === "tasks" || value === "recommendations";
 }
 
 function isWorkspaceTab(value: unknown): value is WorkspaceTab {
@@ -107,6 +118,16 @@ const clientsRoute = createRoute({
   component: ClientsPage,
 });
 
+const alertsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/alerts",
+  beforeLoad: requireAdmin,
+  validateSearch: (search: Record<string, unknown>): AlertsSearch => ({
+    tab: isAlertsTab(search.tab) ? search.tab : "alerts",
+  }),
+  component: AlertsTasksPage,
+});
+
 const clientWorkspaceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/clients/$slug",
@@ -151,6 +172,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   overviewRoute,
   clientsRoute,
+  alertsRoute,
   clientWorkspaceRoute,
   campaignDetailRoute,
   tokensRoute,

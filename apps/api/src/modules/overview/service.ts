@@ -1,6 +1,6 @@
 import { round2 } from "../../platforms/meta";
 import { utcWindow } from "../ad-accounts/service";
-import type { UnhealthyAccount } from "./model";
+import type { TopInsightRow, UnhealthyAccount } from "./model";
 import type { OverviewModel } from "./model";
 
 export interface OverviewIssue {
@@ -30,6 +30,7 @@ export interface OverviewPayload {
   accountsTotal: number;
   issues: OverviewIssue[];
   clients: OverviewClientSpend[];
+  insights: TopInsightRow[];
 }
 
 const OVERVIEW_WINDOW_DAYS = 30;
@@ -56,7 +57,7 @@ export class OverviewService {
 
   async overview(): Promise<OverviewPayload> {
     const since = utcWindow(OVERVIEW_WINDOW_DAYS).since;
-    const [totals, counts, unhealthy, allClients, clientIdsWithAccounts, clientSpendRows] =
+    const [totals, counts, unhealthy, allClients, clientIdsWithAccounts, clientSpendRows, topInsights] =
       await Promise.all([
         this.model.accountTotalsSince(since),
         this.model.healthCounts(),
@@ -64,6 +65,7 @@ export class OverviewService {
         this.model.listClients(),
         this.model.clientIdsWithAccounts(),
         this.model.clientSpendSince(since),
+        this.model.topInsights(),
       ]);
     const jobs = await this.model.latestJobsFor(unhealthy.map((account) => account.id));
     const latestJobByAccount = new Map<string, (typeof jobs)[number]>();
@@ -116,6 +118,7 @@ export class OverviewService {
       accountsTotal: counts.total,
       issues,
       clients: clientRows,
+      insights: topInsights,
     };
   }
 }

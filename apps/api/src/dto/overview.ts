@@ -28,5 +28,14 @@ export const overviewDto = t.Object({
         roas: t.Union([t.Number(), t.Null()]),
       })
     ),
+    insights: t.Array(
+      t.Object({
+        id: t.String(),
+        severity: t.String(),
+        headline: t.String(),
+        entityName: t.String(),
+        ctaTarget: t.Union([t.String(), t.Null()]),
+      })
+    ),
   }),
 });

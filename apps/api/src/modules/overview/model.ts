@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, inArray, ne, sql } from "drizzle-orm";
-import { adAccounts, clients, dailyInsights, db, syncJobs } from "@wk/db";
+import { adAccounts, clients, dailyInsights, db, insights, syncJobs } from "@wk/db";
 
 export interface AccountLevelTotals {
   spend: number;
@@ -32,6 +32,14 @@ export interface LatestJobRow {
   stage: string;
   status: string;
   errorClass: string | null;
+}
+
+export interface TopInsightRow {
+  id: string;
+  severity: string;
+  headline: string;
+  entityName: string;
+  ctaTarget: string | null;
 }
 
 function parseSum(value: string | null): number {
@@ -104,6 +112,20 @@ export class OverviewModel {
 
   listClients(): Promise<{ id: string; name: string; slug: string }[]> {
     return db.select({ id: clients.id, name: clients.name, slug: clients.slug }).from(clients);
+  }
+
+  topInsights(): Promise<TopInsightRow[]> {
+    return db
+      .select({
+        id: insights.id,
+        severity: insights.severity,
+        headline: insights.headline,
+        entityName: insights.entityName,
+        ctaTarget: insights.ctaTarget,
+      })
+      .from(insights)
+      .orderBy(desc(insights.priorityScore), desc(insights.lastSeenAt))
+      .limit(3);
   }
 
   async clientIdsWithAccounts(): Promise<Set<string>> {

@@ -2,6 +2,7 @@ import type { AdAccount } from "@wk/db";
 import { decrypt, encrypt } from "../../lib/crypto";
 import { problem } from "../../lib/problem";
 import type { ProblemError, ProblemErrorClass } from "../../lib/problem";
+import { runDetectionForAccount } from "../../detection/engine";
 import { getMetaAdapter, MetaError } from "../../platforms/meta";
 import type {
   AdPlatformAdapter,
@@ -365,6 +366,12 @@ export class AdAccountsService {
         healthState: ok ? successHealthState(account) : "error",
         lastSyncAt: new Date(),
       });
+      if (ok) {
+        try {
+          await runDetectionForAccount(account.id);
+        } catch {
+        }
+      }
       if (ok) {
         return { ok: true, stages, summary };
       }
