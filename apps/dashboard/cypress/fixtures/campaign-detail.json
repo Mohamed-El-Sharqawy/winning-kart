@@ -1,0 +1,113 @@
+{
+  "data": {
+    "campaign": {
+      "id": "fixture-campaign-1",
+      "accountId": "fixture-account",
+      "name": "Nour Eid Push",
+      "status": "ACTIVE",
+      "objective": "OUTCOME_SALES",
+      "currency": "AED",
+      "spend": 41260,
+      "revenue": 132032,
+      "roas": 3.2,
+      "purchases": 522,
+      "impressions": 2140000,
+      "clicks": 61200,
+      "ctr": 0.0286,
+      "cpc": 0.67,
+      "cpm": 19.28,
+      "frequency": 2.8,
+      "startDate": "2026-07-17",
+      "endDate": "2026-08-15"
+    },
+    "series": [
+      { "date": "2026-08-07", "spend": 9800, "revenue": 23520, "roas": 2.4 },
+      { "date": "2026-08-08", "spend": 8260, "revenue": 41300, "roas": 5.0 },
+      { "date": "2026-08-09", "spend": 7240, "revenue": null, "roas": null },
+      { "date": "2026-08-10", "spend": 8100, "revenue": 21060, "roas": 2.6 },
+      { "date": "2026-08-11", "spend": 7860, "revenue": 34584, "roas": 4.4 }
+    ],
+    "funnel": [
+      { "stage": "Impressions", "count": 1240000 },
+      { "stage": "Link Clicks", "count": 38200 },
+      { "stage": "Landing Page Views", "count": 31500 },
+      { "stage": "Add to Cart", "count": 4100 },
+      { "stage": "Checkouts Initiated", "count": 1980 },
+      { "stage": "Purchases", "count": 812 }
+    ],
+    "adSets": [
+      {
+        "id": "as_c1_retention",
+        "name": "Eid Retargeting - Purchases",
+        "status": "ACTIVE",
+        "optimizationGoal": "Purchases",
+        "spend": 24860,
+        "revenue": 94468,
+        "roas": 3.8,
+        "purchases": 331,
+        "impressions": 892000,
+        "clicks": 27400,
+        "ctr": 0.0307,
+        "cpc": 0.91,
+        "cpm": 27.87,
+        "frequency": 3.2
+      },
+      {
+        "id": "as_c1_prospecting",
+        "name": "Eid Prospecting - Link Clicks",
+        "status": "ACTIVE",
+        "optimizationGoal": "Link Clicks",
+        "spend": 16400,
+        "revenue": 41000,
+        "roas": 2.5,
+        "purchases": 191,
+        "impressions": 1248000,
+        "clicks": 33800,
+        "ctr": 0.0271,
+        "cpc": 0.49,
+        "cpm": 13.14,
+        "frequency": 2.4
+      }
+    ],
+    "ads": [
+      {
+        "id": "ad_c1_hero_video",
+        "name": "Eid Hero Video",
+        "format": "VIDEO",
+        "status": "ACTIVE",
+        "flag": null,
+        "reason": null,
+        "thumbnailUrl": null,
+        "spend": 18240,
+        "revenue": 72960,
+        "roas": 4.0,
+        "purchases": 264,
+        "impressions": 640000,
+        "clicks": 19200,
+        "ctr": 0.03,
+        "cpc": 0.95,
+        "cpm": 28.5,
+        "frequency": 2.6
+      },
+      {
+        "id": "ad_c1_carousel",
+        "name": "Eid Offers Carousel",
+        "format": "CAROUSEL",
+        "status": "ACTIVE",
+        "flag": "fatiguing",
+        "reason": "Frequency 4.9 with CTR down 19% w/w",
+        "thumbnailUrl": null,
+        "spend": 23020,
+        "revenue": 59072,
+        "roas": 2.6,
+        "purchases": 258,
+        "impressions": 1500000,
+        "clicks": 42000,
+        "ctr": 0.028,
+        "cpc": 0.55,
+        "cpm": 15.35,
+        "frequency": 4.9
+      }
+    ]
+  }
+}

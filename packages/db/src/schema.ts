@@ -181,6 +181,9 @@ export const ads = pgTable(
       enum: ["ACTIVE", "PAUSED", "ARCHIVED", "DELETED"],
     }).notNull(),
     format: text("format"),
+    creativeId: text("creative_id"),
+    thumbnailUrl: text("thumbnail_url"),
+    bodyCopy: text("body_copy"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -208,6 +211,9 @@ export const dailyInsights = pgTable(
     cpm: numeric("cpm", { precision: 10, scale: 4 }),
     frequency: numeric("frequency", { precision: 8, scale: 4 }),
     purchases: integer("purchases").notNull().default(0),
+    addToCart: integer("add_to_cart").notNull().default(0),
+    initiateCheckout: integer("initiate_checkout").notNull().default(0),
+    landingPageViews: integer("landing_page_views").notNull().default(0),
     revenue: numeric("revenue", { precision: 14, scale: 2 }).notNull().default("0"),
     currency: text("currency").notNull().default("AED"),
   },
@@ -219,6 +225,7 @@ export const dailyInsights = pgTable(
       t.date
     ),
     index("daily_insights_entity_idx").on(t.entityLevel, t.entityId),
+    index("daily_insights_account_date_idx").on(t.adAccountId, t.date),
   ]
 );
 

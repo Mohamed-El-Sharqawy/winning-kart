@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { queryClient } from "@/lib/query-client";
 import { AuthPage } from "@/pages/auth";
+import { CampaignDetailPage } from "@/pages/campaign-detail";
 import { ClientWorkspacePage } from "@/pages/client-workspace";
 import { ClientsPage } from "@/pages/clients";
 import { OverviewPage } from "@/pages/overview";
@@ -32,10 +33,48 @@ async function requireClient() {
   if (session.role !== "client") throw redirect({ to: "/overview" });
 }
 
-export type WorkspaceTab = "overview" | "ad-accounts" | "campaigns";
+export type WorkspaceTab = "overview" | "ad-accounts" | "campaigns" | "ad-sets" | "creatives";
+
+export interface ClientWorkspaceSearch {
+  tab: WorkspaceTab;
+  days?: number;
+  account?: string;
+  accountName?: string;
+}
+
+export interface CampaignDetailSearch {
+  days: number;
+  account?: string;
+  accountName?: string;
+}
+
+function isWorkspaceTab(value: unknown): value is WorkspaceTab {
+  return (
+    value === "overview" ||
+    value === "ad-accounts" ||
+    value === "campaigns" ||
+    value === "ad-sets" ||
+    value === "creatives"
+  );
+}
 
 function readTab(value: unknown): WorkspaceTab {
-  return value === "ad-accounts" || value === "campaigns" ? value : "overview";
+  return isWorkspaceTab(value) ? value : "overview";
+}
+
+function readDays(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 30;
+}
+
+function readOptionalNumber(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : undefined;
+}
+
+function readOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 const authRoute = createRoute({
@@ -72,10 +111,25 @@ const clientWorkspaceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/clients/$slug",
   beforeLoad: requireAdmin,
-  validateSearch: (search: Record<string, unknown>): { tab: WorkspaceTab } => ({
+  validateSearch: (search: Record<string, unknown>): ClientWorkspaceSearch => ({
     tab: readTab(search.tab),
+    days: readOptionalNumber(search.days),
+    account: readOptionalString(search.account),
+    accountName: readOptionalString(search.accountName),
   }),
   component: ClientWorkspacePage,
+});
+
+const campaignDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/clients/$slug/campaigns/$campaignId",
+  beforeLoad: requireAdmin,
+  validateSearch: (search: Record<string, unknown>): CampaignDetailSearch => ({
+    days: readDays(search.days),
+    account: readOptionalString(search.account),
+    accountName: readOptionalString(search.accountName),
+  }),
+  component: CampaignDetailPage,
 });
 
 const tokensRoute = createRoute({
@@ -98,6 +152,7 @@ const routeTree = rootRoute.addChildren([
   overviewRoute,
   clientsRoute,
   clientWorkspaceRoute,
+  campaignDetailRoute,
   tokensRoute,
   portalRoute,
 ]);

@@ -29,6 +29,7 @@ export interface AdUpsertRow {
   name: string;
   status: EntityStatus;
   format: string | null;
+  creativeId: string | null;
 }
 
 export interface InsightUpsertRow {
@@ -217,6 +218,7 @@ export class AdAccountsModel {
           name: row.name,
           status: row.status,
           format: row.format,
+          creativeId: row.creativeId,
           updatedAt: new Date(),
         }))
       )
@@ -226,10 +228,27 @@ export class AdAccountsModel {
           name: sql`excluded.name`,
           status: sql`excluded.status`,
           format: sql`excluded.format`,
+          creativeId: sql`excluded.creative_id`,
           updatedAt: sql`excluded.updated_at`,
         },
       })
       .returning();
+  }
+
+  async updateAdCreative(
+    accountId: string,
+    platformAdId: string,
+    patch: { thumbnailUrl: string }
+  ): Promise<void> {
+    const accountAdSetIds = db
+      .select({ id: adSets.id })
+      .from(adSets)
+      .innerJoin(campaigns, eq(campaigns.id, adSets.campaignId))
+      .where(eq(campaigns.adAccountId, accountId));
+    await db
+      .update(ads)
+      .set({ thumbnailUrl: patch.thumbnailUrl, updatedAt: new Date() })
+      .where(and(eq(ads.platformAdId, platformAdId), inArray(ads.adSetId, accountAdSetIds)));
   }
 
   async upsertInsights(
@@ -258,6 +277,9 @@ export class AdAccountsModel {
           cpm: record.cpm.toFixed(2),
           frequency: record.frequency.toFixed(2),
           purchases: record.purchases,
+          addToCart: record.addToCart,
+          initiateCheckout: record.initiateCheckout,
+          landingPageViews: record.landingPageViews,
           revenue: record.revenue.toFixed(2),
           currency,
         }))
@@ -279,6 +301,9 @@ export class AdAccountsModel {
           cpm: sql`excluded.cpm`,
           frequency: sql`excluded.frequency`,
           purchases: sql`excluded.purchases`,
+          addToCart: sql`excluded.add_to_cart`,
+          initiateCheckout: sql`excluded.initiate_checkout`,
+          landingPageViews: sql`excluded.landing_page_views`,
           revenue: sql`excluded.revenue`,
           currency: sql`excluded.currency`,
         },

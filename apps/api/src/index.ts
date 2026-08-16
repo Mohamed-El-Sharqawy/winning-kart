@@ -4,6 +4,7 @@ import { userModule } from "./modules/user";
 import { clientsModule } from "./modules/clients";
 import { adAccountsModule } from "./modules/ad-accounts";
 import { overviewModule } from "./modules/overview";
+import { performanceModule } from "./modules/performance";
 import { startSyncCron } from "./lib/sync-cron";
 import { ProblemError, problemResponse, reasonPhrase } from "./lib/problem";
 
@@ -12,7 +13,8 @@ const api = new Elysia({ prefix: "/api" })
   .use(userModule)
   .use(clientsModule)
   .use(adAccountsModule)
-  .use(overviewModule);
+  .use(overviewModule)
+  .use(performanceModule);
 
 const app = new Elysia()
   .onError(({ code, error, path, set }) => {
