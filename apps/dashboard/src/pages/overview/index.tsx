@@ -4,6 +4,7 @@ import { usePermissions } from "@/shared/hooks/usePermissions";
 import { useOverview } from "@/shared/services/overview.service";
 import { ClientsSummaryTable } from "./components/ClientsSummaryTable";
 import { HealthStrip } from "./components/HealthStrip";
+import { InsightsRegion } from "./components/InsightsRegion";
 import { KpiCard } from "@/shared/components/KpiCard";
 
 export function OverviewPage() {
@@ -33,6 +34,7 @@ export function OverviewPage() {
                 value={`${overview.accountsHealthy}/${overview.accountsTotal}`}
               />
             </div>
+            <InsightsRegion />
             <HealthStrip issues={overview.issues} accountsTotal={overview.accountsTotal} />
             <ClientsSummaryTable clients={overview.clients} />
           </>

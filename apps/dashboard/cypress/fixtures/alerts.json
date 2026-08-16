@@ -1,0 +1,54 @@
+{
+  "data": [
+    {
+      "id": "alt_001",
+      "type": "roas_drop",
+      "severity": "critical",
+      "priorityScore": 3400,
+      "status": "open",
+      "clientName": "Maison Nour",
+      "entityName": "Summer Editions",
+      "whatHappened": "ROAS fell 28% (4.1x → 3.0x) over 7 days; AED 3,400 at risk",
+      "supportingMetrics": {
+        "spend": 12200,
+        "roasPrior": 4.1,
+        "roasRecent": 3.0
+      },
+      "detectedAt": "2026-08-15T09:12:00.000Z",
+      "ctaTarget": "/clients/maison-nour?tab=campaigns"
+    },
+    {
+      "id": "alt_002",
+      "type": "creative_fatigue",
+      "severity": "warning",
+      "priorityScore": 800,
+      "status": "open",
+      "clientName": "Dune Coffee",
+      "entityName": "Iftar Carousel",
+      "whatHappened": "Creative fatigue detected — frequency 4.8 with declining CTR",
+      "supportingMetrics": {
+        "frequency": 4.8,
+        "ctrPrior": 1.9,
+        "ctrRecent": 0.9
+      },
+      "detectedAt": "2026-08-14T16:40:00.000Z",
+      "ctaTarget": "/clients/dune-coffee?tab=creatives"
+    },
+    {
+      "id": "alt_003",
+      "type": "spend_no_conversions",
+      "severity": "info",
+      "priorityScore": 200,
+      "status": "open",
+      "clientName": "Zaytoun",
+      "entityName": "Ramadan Prospecting",
+      "whatHappened": "AED 620 spend over 3 days with no conversions recorded",
+      "supportingMetrics": {
+        "spend": 620,
+        "conversions": 0
+      },
+      "detectedAt": "2026-08-13T11:05:00.000Z",
+      "ctaTarget": "/clients/zaytoun?tab=campaigns"
+    }
+  ]
+}

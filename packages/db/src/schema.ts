@@ -250,6 +250,154 @@ export const syncJobs = pgTable(
   ]
 );
 
+export const alerts = pgTable(
+  "alerts",
+  {
+    id: text("id").primaryKey(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => clients.id),
+    adAccountId: text("ad_account_id").references(() => adAccounts.id, {
+      onDelete: "cascade",
+    }),
+    dedupeKey: text("dedupe_key").notNull(),
+    triggerType: text("trigger_type", {
+      enum: [
+        "roas_drop",
+        "cpa_spike",
+        "spend_no_conversions",
+        "creative_fatigue",
+        "conversion_concentration",
+        "token_expiring",
+        "token_expired",
+        "account_restricted",
+      ],
+    }).notNull(),
+    severity: text("severity", { enum: ["critical", "warning", "info"] }).notNull(),
+    entityLevel: text("entity_level", {
+      enum: ["account", "campaign", "adset", "ad"],
+    }).notNull(),
+    entityId: text("entity_id").notNull(),
+    entityName: text("entity_name").notNull().default(""),
+    whatHappened: text("what_happened").notNull(),
+    whyItMatters: text("why_it_matters").notNull(),
+    supportingMetrics: jsonb("supporting_metrics"),
+    recommendedAction: text("recommended_action").notNull(),
+    ctaTarget: text("cta_target"),
+    status: text("status", {
+      enum: ["open", "snoozed", "acknowledged", "suppressed", "dismissed"],
+    })
+      .notNull()
+      .default("open"),
+    snoozedUntil: timestamp("snoozed_until", { withTimezone: true }),
+    dismissedReason: text("dismissed_reason"),
+    suppressedByTaskId: text("suppressed_by_task_id"),
+    priorityScore: numeric("priority_score", { precision: 14, scale: 2 })
+      .notNull()
+      .default("0"),
+    detectedAt: timestamp("detected_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("alerts_dedupe_key_uq").on(t.dedupeKey),
+    index("alerts_client_status_idx").on(t.clientId, t.status),
+    index("alerts_ad_account_idx").on(t.adAccountId),
+  ]
+);
+
+export const insights = pgTable(
+  "insights",
+  {
+    id: text("id").primaryKey(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => clients.id),
+    adAccountId: text("ad_account_id").references(() => adAccounts.id, {
+      onDelete: "cascade",
+    }),
+    dedupeKey: text("dedupe_key").notNull(),
+    insightType: text("insight_type", {
+      enum: [
+        "roas_drop",
+        "cpa_spike",
+        "spend_no_conversions",
+        "creative_fatigue",
+        "conversion_concentration",
+      ],
+    }).notNull(),
+    severity: text("severity", { enum: ["critical", "warning", "info"] }).notNull(),
+    entityLevel: text("entity_level", {
+      enum: ["account", "campaign", "adset", "ad"],
+    }).notNull(),
+    entityId: text("entity_id").notNull(),
+    entityName: text("entity_name").notNull().default(""),
+    headline: text("headline").notNull(),
+    deltaPct: numeric("delta_pct", { precision: 8, scale: 4 }),
+    primaryCause: text("primary_cause"),
+    attributionStatus: text("attribution_status", {
+      enum: ["attributed", "unattributed"],
+    })
+      .notNull()
+      .default("unattributed"),
+    decomposition: jsonb("decomposition"),
+    recommendedAction: text("recommended_action").notNull(),
+    ctaTarget: text("cta_target"),
+    acceptedAsTaskId: text("accepted_as_task_id"),
+    notUsefulCount: integer("not_useful_count").notNull().default(0),
+    priorityScore: numeric("priority_score", { precision: 14, scale: 2 })
+      .notNull()
+      .default("0"),
+    detectedAt: timestamp("detected_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("insights_dedupe_key_uq").on(t.dedupeKey),
+    index("insights_client_idx").on(t.clientId),
+  ]
+);
+
+export const tasks = pgTable(
+  "tasks",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description"),
+    clientId: text("client_id").references(() => clients.id),
+    adAccountId: text("ad_account_id").references(() => adAccounts.id, {
+      onDelete: "set null",
+    }),
+    entityLevel: text("entity_level", {
+      enum: ["account", "campaign", "adset", "ad", "client"],
+    }),
+    entityId: text("entity_id"),
+    entityName: text("entity_name"),
+    priority: text("priority", { enum: ["low", "medium", "high", "urgent"] })
+      .notNull()
+      .default("medium"),
+    assigneeUserId: text("assignee_user_id").references(() => users.id),
+    dueDate: timestamp("due_date", { withTimezone: true }),
+    status: text("status", { enum: ["todo", "in_progress", "done", "skipped"] })
+      .notNull()
+      .default("todo"),
+    source: text("source", { enum: ["manual", "alert", "recommendation"] })
+      .notNull()
+      .default("manual"),
+    linkedAlertId: text("linked_alert_id"),
+    linkedInsightId: text("linked_insight_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("tasks_status_idx").on(t.status), index("tasks_assignee_idx").on(t.assigneeUserId)]
+);
+
 export type User = typeof users.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type AdAccount = typeof adAccounts.$inferSelect;
@@ -260,3 +408,6 @@ export type AdSet = typeof adSets.$inferSelect;
 export type Ad = typeof ads.$inferSelect;
 export type DailyInsight = typeof dailyInsights.$inferSelect;
 export type SyncJob = typeof syncJobs.$inferSelect;
+export type Alert = typeof alerts.$inferSelect;
+export type Insight = typeof insights.$inferSelect;
+export type Task = typeof tasks.$inferSelect;

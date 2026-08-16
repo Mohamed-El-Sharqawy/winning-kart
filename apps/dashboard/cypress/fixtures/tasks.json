@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "id": "tsk_001",
+      "title": "Investigate Summer Editions ROAS drop",
+      "status": "todo",
+      "priority": "urgent",
+      "source": "alert",
+      "sourceAlertId": "alt_001",
+      "assigneeName": "Amina Admin",
+      "clientName": "Maison Nour",
+      "dueAt": "2026-08-20T00:00:00.000Z",
+      "createdAt": "2026-08-15T09:20:00.000Z"
+    },
+    {
+      "id": "tsk_002",
+      "title": "Collect UGC assets for Dune launch",
+      "status": "in_progress",
+      "priority": "medium",
+      "source": "manual",
+      "sourceAlertId": null,
+      "assigneeName": "Amina Admin",
+      "clientName": "Dune Coffee",
+      "dueAt": "2026-08-25T00:00:00.000Z",
+      "createdAt": "2026-08-12T13:45:00.000Z"
+    }
+  ]
+}
