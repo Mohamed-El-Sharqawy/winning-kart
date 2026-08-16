@@ -1,0 +1,41 @@
+{
+  "data": {
+    "events": [
+      {
+        "id": "rev_5001",
+        "sourceOrderId": "ord_2041",
+        "timestamp": "2026-08-15T11:20:00.000Z",
+        "value": 9999,
+        "currency": "AED",
+        "tier": "A",
+        "matchQuality": "A",
+        "status": "resolved",
+        "campaignId": "camp_mn_01",
+        "campaignName": "Ramadan Retargeting",
+        "sourceName": "cypress-source"
+      },
+      {
+        "id": "rev_5002",
+        "sourceOrderId": "ord_2088",
+        "timestamp": "2026-08-15T13:45:00.000Z",
+        "value": 2346.5,
+        "currency": "AED",
+        "tier": "C",
+        "matchQuality": "C",
+        "status": "unmatched",
+        "campaignId": null,
+        "campaignName": null,
+        "sourceName": "utm-no-match"
+      }
+    ],
+    "summary": {
+      "totalValue": 12345.5,
+      "currency": "AED",
+      "count": 2,
+      "tierA": { "count": 1, "value": 9999 },
+      "tierB": { "count": 0, "value": 0 },
+      "tierC": { "count": 1, "value": 2346.5 },
+      "matchedPct": 0.5
+    }
+  }
+}

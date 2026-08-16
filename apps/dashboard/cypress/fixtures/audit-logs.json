@@ -1,0 +1,31 @@
+{
+  "data": [
+    {
+      "id": "aud_1001",
+      "action": "auth.login",
+      "outcome": "success",
+      "actor": { "name": "Hermes Admin", "email": "admin@wk.test" },
+      "target": "session",
+      "ip": "10.0.0.12",
+      "createdAt": "2026-08-14T09:12:00.000Z"
+    },
+    {
+      "id": "aud_1002",
+      "action": "pat.create",
+      "outcome": "success",
+      "actor": { "name": "Hermes Admin", "email": "admin@wk.test" },
+      "target": "wkpat_ci_row",
+      "ip": "10.0.0.12",
+      "createdAt": "2026-08-14T10:03:00.000Z"
+    },
+    {
+      "id": "aud_1003",
+      "action": "ad_account.delete",
+      "outcome": "success",
+      "actor": { "name": "Odysseus Owner", "email": "owner@wk.test" },
+      "target": "act_nour_2",
+      "ip": "10.0.0.9",
+      "createdAt": "2026-08-15T16:40:00.000Z"
+    }
+  ]
+}

@@ -8,6 +8,10 @@ import { performanceModule } from "./modules/performance";
 import { alertsModule } from "./modules/alerts";
 import { tasksModule } from "./modules/tasks";
 import { insightsModule } from "./modules/insights";
+import { revenueModule } from "./modules/revenue";
+import { auditModule } from "./modules/audit";
+import { settingsModule } from "./modules/settings-module";
+import { portalModule } from "./modules/portal";
 import { startSyncCron } from "./lib/sync-cron";
 import { ProblemError, problemResponse, reasonPhrase } from "./lib/problem";
 
@@ -20,7 +24,11 @@ const api = new Elysia({ prefix: "/api" })
   .use(performanceModule)
   .use(alertsModule)
   .use(tasksModule)
-  .use(insightsModule);
+  .use(insightsModule)
+  .use(revenueModule)
+  .use(auditModule)
+  .use(settingsModule)
+  .use(portalModule);
 
 const app = new Elysia()
   .onError(({ code, error, path, set }) => {

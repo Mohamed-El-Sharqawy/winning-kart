@@ -398,6 +398,116 @@ export const tasks = pgTable(
   (t) => [index("tasks_status_idx").on(t.status), index("tasks_assignee_idx").on(t.assigneeUserId)]
 );
 
+export const revenueSources = pgTable(
+  "revenue_sources",
+  {
+    id: text("id").primaryKey(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    sourceType: text("source_type", { enum: ["custom_api"] })
+      .notNull()
+      .default("custom_api"),
+    ingestKeyHash: text("ingest_key_hash").notNull(),
+    status: text("status", { enum: ["active", "revoked"] })
+      .notNull()
+      .default("active"),
+    lastEventAt: timestamp("last_event_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("revenue_sources_ingest_key_hash_uq").on(t.ingestKeyHash),
+    index("revenue_sources_client_idx").on(t.clientId),
+  ]
+);
+
+export const revenueEvents = pgTable(
+  "revenue_events",
+  {
+    id: text("id").primaryKey(),
+    revenueSourceId: text("revenue_source_id")
+      .notNull()
+      .references(() => revenueSources.id, { onDelete: "cascade" }),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    sourceOrderId: text("source_order_id").notNull(),
+    dedupeKey: text("dedupe_key").notNull(),
+    tsUtc: timestamp("ts_utc", { withTimezone: true }).notNull(),
+    value: numeric("value", { precision: 14, scale: 2 }).notNull(),
+    currency: text("currency").notNull().default("AED"),
+    customerRef: text("customer_ref"),
+    clickIds: jsonb("click_ids"),
+    utm: jsonb("utm"),
+    matchTier: text("match_tier", { enum: ["A", "B", "C"] }).notNull(),
+    resolvedEntityLevel: text("resolved_entity_level", {
+      enum: ["campaign", "adset", "ad"],
+    }),
+    resolvedEntityId: text("resolved_entity_id"),
+    replacesEventId: text("replaces_event_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("revenue_events_dedupe_key_uq").on(t.dedupeKey),
+    index("revenue_events_client_ts_idx").on(t.clientId, t.tsUtc),
+    index("revenue_events_match_tier_idx").on(t.matchTier),
+  ]
+);
+
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: text("id").primaryKey(),
+    actorUserId: text("actor_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    actorType: text("actor_type", { enum: ["user", "api_token", "system"] })
+      .notNull()
+      .default("user"),
+    action: text("action").notNull(),
+    targetEntityType: text("target_entity_type"),
+    targetEntityId: text("target_entity_id"),
+    outcome: text("outcome", { enum: ["success", "failure"] })
+      .notNull()
+      .default("success"),
+    oldValue: jsonb("old_value"),
+    newValue: jsonb("new_value"),
+    ip: text("ip"),
+    userAgent: text("user_agent"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("audit_logs_occurred_at_idx").on(t.occurredAt),
+    index("audit_logs_actor_user_idx").on(t.actorUserId),
+    index("audit_logs_action_idx").on(t.action),
+  ]
+);
+
+export const clientUserAssignments = pgTable(
+  "client_user_assignments",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("client_user_assignments_user_uq").on(t.userId)]
+);
+
+export const retentionSettings = pgTable("retention_settings", {
+  id: text("id").primaryKey(),
+  rawInsightsDays: integer("raw_insights_days").notNull().default(90),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type User = typeof users.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type AdAccount = typeof adAccounts.$inferSelect;
@@ -411,3 +521,8 @@ export type SyncJob = typeof syncJobs.$inferSelect;
 export type Alert = typeof alerts.$inferSelect;
 export type Insight = typeof insights.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
+export type RevenueSource = typeof revenueSources.$inferSelect;
+export type RevenueEvent = typeof revenueEvents.$inferSelect;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type ClientUserAssignment = typeof clientUserAssignments.$inferSelect;
+export type RetentionSetting = typeof retentionSettings.$inferSelect;

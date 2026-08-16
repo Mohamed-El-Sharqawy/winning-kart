@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { resolveSessionUser } from "../../lib/session";
 import { problem } from "../../lib/problem";
+import { clientIp, recordAudit } from "../../lib/audit";
 import {
   adAccountCampaignsQueryDto,
   createAdAccountDto,
@@ -52,8 +53,16 @@ export const adAccountsModule = new Elysia()
   .post(
     "/clients/:clientId/ad-accounts",
     async ({ params, body, headers, set }) => {
-      await requireAdmin(headers);
+      const admin = await requireAdmin(headers);
       const account = await service.create(params.clientId, body);
+      void recordAudit({
+        actorUserId: admin.id,
+        action: "ad_account.create",
+        targetEntityType: "ad_account",
+        targetEntityId: account.id,
+        newValue: { adAccountId: account.adAccountId },
+        request: { ip: clientIp(headers), userAgent: headers["user-agent"] },
+      });
       set.status = 201;
       return { data: account };
     },
@@ -78,8 +87,15 @@ export const adAccountsModule = new Elysia()
   .post(
     "/ad-accounts/:id/reconnect",
     async ({ params, body, headers }) => {
-      await requireAdmin(headers);
+      const admin = await requireAdmin(headers);
       await service.reconnect(params.id, body.accessToken, body.tokenType);
+      void recordAudit({
+        actorUserId: admin.id,
+        action: "ad_account.reconnect",
+        targetEntityType: "ad_account",
+        targetEntityId: params.id,
+        request: { ip: clientIp(headers), userAgent: headers["user-agent"] },
+      });
       return { data: { ok: true } };
     },
     { params: idParamsDto, body: reconnectAdAccountDto }
@@ -87,7 +103,16 @@ export const adAccountsModule = new Elysia()
   .delete(
     "/ad-accounts/:id",
     async ({ params, body, headers }) => {
-      await requireAdmin(headers);
+      const admin = await requireAdmin(headers);
+      const account = await service.detail(params.id);
+      void recordAudit({
+        actorUserId: admin.id,
+        action: "ad_account.delete",
+        targetEntityType: "ad_account",
+        targetEntityId: account.id,
+        oldValue: { slug: account.slug },
+        request: { ip: clientIp(headers), userAgent: headers["user-agent"] },
+      });
       await service.remove(params.id, body.confirmSlug);
       return { data: { ok: true } };
     },
