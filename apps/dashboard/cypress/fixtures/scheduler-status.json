@@ -1,0 +1,34 @@
+{
+  "data": {
+    "enabled": true,
+    "interval": "hourly",
+    "accounts": [
+      {
+        "adAccountId": "a1",
+        "name": "Maison Nour - Main",
+        "healthState": "healthy",
+        "lastSyncAt": "2026-08-17T08:00:00.000Z",
+        "lastJob": {
+          "stage": "insights",
+          "status": "succeeded",
+          "errorClass": null,
+          "endedAt": "2026-08-17T08:04:12.000Z"
+        },
+        "recentFailures": 0
+      },
+      {
+        "adAccountId": "a2",
+        "name": "GCC",
+        "healthState": "error",
+        "lastSyncAt": "2026-08-17T07:00:00.000Z",
+        "lastJob": {
+          "stage": "account_info",
+          "status": "failed",
+          "errorClass": "invalid_token",
+          "endedAt": "2026-08-17T07:02:31.000Z"
+        },
+        "recentFailures": 3
+      }
+    ]
+  }
+}

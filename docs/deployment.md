@@ -1,0 +1,119 @@
+# Deployment guide (Coolify + Traefik on a VPS)
+
+This guide deploys Winning Kart on a generic VPS (Hostinger / AWS EC2 / DigitalOcean) with
+Coolify managing Traefik, automatic Let's Encrypt SSL, and Docker-label routing. Postgres runs
+on the VPS host itself, not as a compose service.
+
+## Architecture
+
+One domain serves everything:
+
+- `Host(<domain>) && PathPrefix(/api)` routes to the api container (Bun, port 3000).
+- `Host(<domain>)` routes to the dashboard container (nginx, port 80) serving the built SPA.
+- The dashboard's `nginx.conf` also proxies `/api` and `/health` to `api:3000`, so the stack
+  works even when only the dashboard router is exposed.
+- The labels in `docker-compose.yml` carry the routing; Coolify's proxy (Traefik) already
+  exposes the `websecure` entrypoint and the `letsencrypt` resolver.
+- The api service has a compose healthcheck hitting `/health`; the dashboard waits for it.
+
+## Prerequisites
+
+1. A VPS with at least 2 vCPU / 4 GB RAM and Docker installed.
+2. Coolify installed on the VPS (docs at coolify.io) with its Traefik proxy running.
+3. A DNS A record pointing your domain (for example `wk.example.com`) at the VPS IP.
+4. Bun available on your operator machine (for migrations and key generation).
+
+## Postgres on the host
+
+Install and prepare Postgres on the VPS:
+
+```bash
+sudo apt update && sudo apt install -y postgresql
+sudo -u postgres psql -c "CREATE ROLE winningkart WITH LOGIN PASSWORD 'STRONG_PASSWORD';"
+sudo -u postgres psql -c "CREATE DATABASE winningkart OWNER winningkart;"
+```
+
+Allow connections from Docker containers while keeping the port off the public internet
+(firewall port 5432 externally):
+
+```text
+postgresql.conf:  listen_addresses = 'localhost,172.17.0.1'
+pg_hba.conf:      host  winningkart  winningkart  172.17.0.0/16  scram-sha-256
+```
+
+Then `sudo systemctl restart postgresql`. The app connects as
+`postgresql://winningkart:STRONG_PASSWORD@172.17.0.1:5432/winningkart` from inside containers.
+`172.17.0.1` is the default Docker bridge gateway; adjust if your setup differs.
+
+## Configure Coolify
+
+1. In Coolify: New Resource -> App -> Docker Compose, import this Git repository.
+   Coolify builds from the root `docker-compose.yml`.
+2. Set the environment variables (see `.env.production.example`) in the Coolify environment
+   editor. Generate the secrets on your operator machine:
+
+   ```bash
+   bun -e "console.log(crypto.randomBytes(32).toString('hex'))"
+   ```
+
+   Use one output for `ENCRYPTION_KEY` and a second for `JWT_SECRET`.
+
+3. Set `WK_HOST` to your domain (for example `wk.example.com`). The Traefik labels in the
+   compose file use it for routing; Coolify's proxy issues the Let's Encrypt certificate
+   automatically on first deploy. No certificate action is needed beyond correct DNS.
+4. Deploy. Coolify builds both images and starts the stack.
+
+## First run: migrate, then decide about seed
+
+Apply Drizzle migrations from a checkout of this repository on your operator machine, pointing
+at the VPS Postgres (drizzle reads `DIRECT_DATABASE_URL`, falling back to `DATABASE_URL`):
+
+```bash
+DIRECT_DATABASE_URL='postgresql://winningkart:STRONG_PASSWORD@<VPS_IP>:5432/winningkart' bun run db:migrate
+```
+
+If port 5432 is not exposed publicly, tunnel first: `ssh -L 5433:localhost:5432 root@<VPS_IP>`
+and use `...@localhost:5433/...`.
+
+Seed decision:
+
+- **WARN: `bun run db:seed` inserts demo clients, ad accounts, insights, and demo users.
+  Production should SKIP db:seed.**
+- The first admin user is created either by running the seed (which also brings demo data) or
+  by inserting the user row manually with a bcrypt password hash.
+- TODO: a bootstrap admin CLI (`wk:create-admin`) lands post-MVP; until then the seed path is
+  the documented way to get a first login.
+
+## Verify
+
+1. `curl https://<domain>/health` returns `{"data":{"ok":true}}`.
+2. Log in to the dashboard at `https://<domain>` with the admin credentials.
+3. Trigger or wait for one ad account sync (hourly by default) and check the Scheduler page
+   under Settings.
+
+## Backups
+
+Nightly dump to an off-host location (example cron at 02:00):
+
+```cron
+0 2 * * * postgres pg_dump -Fc winningkart -f /var/backups/winningkart-$(date +\%F).dump
+```
+
+Copy the dumps off the VPS daily (rclone, restic, or rsync to object storage or another
+machine). Dumps that live only on the same disk as the database are not backups.
+
+Recommended: add WAL archiving with pgBackRest or wal-g to an off-host target so you get
+point-in-time recovery on top of the nightly dumps.
+
+Restore test: at least once per quarter, restore the newest dump into a scratch database,
+point a checkout of this repo at it, and verify login plus a synced ad account. A backup that
+has never been restored is unverified.
+
+## Updating
+
+1. Push to the repository branch Coolify tracks.
+2. Redeploy from Coolify; both images rebuild and restart.
+3. Run `bun run db:migrate` (as above) when the release includes migrations, before or
+   immediately after the redeploy. Single-operator downtime of a few seconds is expected.
+
+For moving existing data from Neon to this VPS, follow `docs/migration-runbook.md`.
