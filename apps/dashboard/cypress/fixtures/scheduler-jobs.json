@@ -1,0 +1,37 @@
+{
+  "data": [
+    {
+      "id": "job_001",
+      "adAccountId": "a1",
+      "accountName": "Maison Nour - Main",
+      "stage": "insights",
+      "status": "succeeded",
+      "errorClass": null,
+      "startedAt": "2026-08-17T08:00:00.000Z",
+      "endedAt": "2026-08-17T08:04:12.000Z",
+      "durationMs": 252000
+    },
+    {
+      "id": "job_002",
+      "adAccountId": "a2",
+      "accountName": "GCC",
+      "stage": "account_info",
+      "status": "failed",
+      "errorClass": "invalid_token",
+      "startedAt": "2026-08-17T07:00:00.000Z",
+      "endedAt": "2026-08-17T07:02:31.000Z",
+      "durationMs": 151000
+    },
+    {
+      "id": "job_003",
+      "adAccountId": "a1",
+      "accountName": "Maison Nour - Main",
+      "stage": "campaigns",
+      "status": "succeeded",
+      "errorClass": null,
+      "startedAt": "2026-08-16T14:00:00.000Z",
+      "endedAt": "2026-08-16T14:01:47.000Z",
+      "durationMs": 107000
+    }
+  ]
+}

@@ -104,6 +104,7 @@ export const apiTokens = pgTable(
     name: text("name").notNull(),
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
     tokenHash: text("token_hash").notNull(),
+    scopes: jsonb("scopes").$type<string[]>(),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

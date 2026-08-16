@@ -139,10 +139,13 @@ The wording for every connection error comes from the wizard's error catalog.
 
 ## 7. Deployment
 
-Production runs on a generic VPS (Hostinger / AWS EC2 / DigitalOcean) under **Coolify**:
-Traefik proxy with automatic Let's Encrypt SSL and Docker-label routing; the api runs as a
-container, the dashboard ships as static assets, Postgres runs on the VPS with nightly dumps
-and WAL archiving off-host. Neon is dev-only. See M5 runbook (to land with the first deploy).
+Production runs on a generic VPS (Hostinger / AWS EC2 / DigitalOcean) under **Coolify**: the
+Traefik proxy terminates automatic Let's Encrypt SSL and routes by Docker labels — `/api` to
+the Bun api container, everything else to the nginx-served dashboard SPA. Postgres runs on the
+VPS host with nightly dumps and WAL archiving off-host; Neon is dev-only.
+
+- Full setup guide: [`docs/deployment.md`](docs/deployment.md)
+- Neon → self-hosted cutover runbook: [`docs/migration-runbook.md`](docs/migration-runbook.md)
 
 ## 8. Source documents
 

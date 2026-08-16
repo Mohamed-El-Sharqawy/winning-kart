@@ -3,12 +3,19 @@ import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession } from "../../lib/auth
 import { resolveSessionUser } from "../../lib/session";
 import { problem } from "../../lib/problem";
 import { clientIp, recordAudit } from "../../lib/audit";
-import { createPatDto, loginDto, loginResponseDto, meDto, okDto } from "../../dto/auth";
+import { loginDto, loginResponseDto, meDto, okDto } from "../../dto/auth";
 import { AuthModel } from "./model";
 import { AuthService } from "./service";
 import type { SafeUser } from "./model";
 
 const service = new AuthService(new AuthModel());
+
+const patScopeDto = t.Union([t.Literal("read"), t.Literal("sync"), t.Literal("tasks")]);
+
+const createPatBodyDto = t.Object({
+  name: t.String({ minLength: 1, maxLength: 100 }),
+  scopes: t.Optional(t.Union([t.Array(patScopeDto, { minItems: 1 }), t.Null()])),
+});
 
 async function requireAdmin(headers: Record<string, string | undefined>): Promise<SafeUser> {
   const user = await resolveSessionUser({ cookie: headers.cookie, headers });
@@ -85,19 +92,20 @@ export const authModule = new Elysia({ prefix: "/auth" })
     "/pats",
     async ({ body, headers, set }) => {
       const admin = await requireAdmin(headers);
-      const pat = await service.createPat(admin.id, body.name);
+      const scopes = body.scopes ?? null;
+      const pat = await service.createPat(admin.id, body.name, scopes);
       void recordAudit({
         actorUserId: admin.id,
         action: "pat.create",
         targetEntityType: "api_token",
         targetEntityId: pat.id,
-        newValue: { name: body.name },
+        newValue: { name: body.name, scopes },
         request: { ip: clientIp(headers), userAgent: headers["user-agent"] },
       });
       set.status = 201;
       return { data: pat };
     },
-    { body: createPatDto }
+    { body: createPatBodyDto }
   )
   .post(
     "/pats/:id/revoke",

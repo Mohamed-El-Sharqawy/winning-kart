@@ -6,6 +6,7 @@ import { DataTable } from "@/shared/components/DataTable";
 import type { DataTableColumn } from "@/shared/components/DataTable";
 import { useRevokePat } from "../services/tokens.service";
 import type { Pat, PatStatus } from "../types/tokens.types";
+import { ScopesChips } from "./ScopesChips";
 
 const STATUS_VARIANTS: Record<PatStatus, BadgeVariant> = {
   active: "up",
@@ -20,6 +21,11 @@ export function TokensTable({ pats }: { pats: Pat[] }) {
       key: "name",
       header: "Name",
       render: (row) => <span className="font-medium text-volt-text">{row.name}</span>,
+    },
+    {
+      key: "scopes",
+      header: "Scopes",
+      render: (row) => <ScopesChips scopes={row.scopes} />,
     },
     {
       key: "createdAt",

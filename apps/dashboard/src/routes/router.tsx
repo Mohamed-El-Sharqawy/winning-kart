@@ -15,6 +15,7 @@ import { OverviewPage } from "@/pages/overview";
 import { PortalPage } from "@/pages/portal";
 import { SettingsAuditPage } from "@/pages/settings-audit";
 import { SettingsDataPage } from "@/pages/settings-data";
+import { SettingsSchedulerPage } from "@/pages/settings-scheduler";
 import { TokensPage } from "@/pages/tokens";
 import { sessionQueryOptions } from "@/shared/services/session.service";
 
@@ -183,6 +184,13 @@ const settingsDataRoute = createRoute({
   component: SettingsDataPage,
 });
 
+const settingsSchedulerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings/scheduler",
+  beforeLoad: requireAdmin,
+  component: SettingsSchedulerPage,
+});
+
 const portalRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/portal",
@@ -201,6 +209,7 @@ const routeTree = rootRoute.addChildren([
   tokensRoute,
   settingsAuditRoute,
   settingsDataRoute,
+  settingsSchedulerRoute,
   portalRoute,
 ]);
 

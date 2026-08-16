@@ -12,6 +12,8 @@ import { revenueModule } from "./modules/revenue";
 import { auditModule } from "./modules/audit";
 import { settingsModule } from "./modules/settings-module";
 import { portalModule } from "./modules/portal";
+import { mcpModule } from "./modules/mcp";
+import { schedulerModule } from "./modules/scheduler";
 import { startSyncCron } from "./lib/sync-cron";
 import { ProblemError, problemResponse, reasonPhrase } from "./lib/problem";
 
@@ -28,7 +30,9 @@ const api = new Elysia({ prefix: "/api" })
   .use(revenueModule)
   .use(auditModule)
   .use(settingsModule)
-  .use(portalModule);
+  .use(portalModule)
+  .use(mcpModule)
+  .use(schedulerModule);
 
 const app = new Elysia()
   .onError(({ code, error, path, set }) => {

@@ -7,7 +7,7 @@ import {
 import { api } from "@/lib/api-client";
 import type { CreatePatResponseDto, PatDto, RevokePatResponseDto } from "../dto/tokens.dto";
 import { toCreatedPat, toPats } from "../transformers/tokens.transformer";
-import type { CreatedPat, Pat } from "../types/tokens.types";
+import type { CreatedPat, Pat, PatScope } from "../types/tokens.types";
 
 export const PATS_QUERY_KEY = ["auth", "pats"] as const;
 
@@ -30,7 +30,7 @@ export function usePats() {
 export function useCreatePat() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string }): Promise<CreatedPat> => {
+    mutationFn: async (input: { name: string; scopes?: PatScope[] }): Promise<CreatedPat> => {
       const { data: body, error } = await api.auth.pats.post(input);
       if (error) throw new Error("Failed to create token");
       const payload = (body as unknown as { data: CreatePatResponseDto }).data;

@@ -1,6 +1,7 @@
 export interface PatDto {
   id: string;
   name: string;
+  scopes: string[] | null;
   createdAt: string;
   lastUsedAt: string | null;
   revokedAt: string | null;
