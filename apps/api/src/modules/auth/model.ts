@@ -33,6 +33,10 @@ export class AuthModel {
     return rows[0] ?? null;
   }
 
+  async touchLastActive(id: string): Promise<void> {
+    await db.update(users).set({ lastActiveAt: new Date() }).where(eq(users.id, id));
+  }
+
   async findUserById(id: string): Promise<SafeUser | null> {
     const rows = await db.select(safeUserColumns).from(users).where(eq(users.id, id)).limit(1);
     return rows[0] ?? null;
