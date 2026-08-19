@@ -1,3 +1,4 @@
+import "./env";
 import { Elysia } from "elysia";
 import { authModule } from "./modules/auth";
 import { userModule } from "./modules/user";

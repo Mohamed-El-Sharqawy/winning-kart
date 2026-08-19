@@ -1,15 +1,19 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
-const key = Buffer.from(process.env.ENCRYPTION_KEY ?? "", "hex");
+let cachedKey: Buffer | null = null;
 
-function assertKey() {
-  if (key.length !== 32) {
-    throw new Error("ENCRYPTION_KEY must be 64 hex chars (32 bytes)");
+function getKey(): Buffer {
+  if (cachedKey === null || cachedKey.length !== 32) {
+    cachedKey = Buffer.from(process.env.ENCRYPTION_KEY ?? "", "hex");
+    if (cachedKey.length !== 32) {
+      throw new Error("ENCRYPTION_KEY must be 64 hex chars (32 bytes)");
+    }
   }
+  return cachedKey;
 }
 
 export function encrypt(plaintext: string): string {
-  assertKey();
+  const key = getKey();
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const data = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
@@ -18,7 +22,7 @@ export function encrypt(plaintext: string): string {
 }
 
 export function decrypt(envelope: string): string {
-  assertKey();
+  const key = getKey();
   const [ivB64, tagB64, dataB64] = envelope.split(":");
   if (!ivB64 || !tagB64 || !dataB64) {
     throw new Error("malformed ciphertext envelope");
