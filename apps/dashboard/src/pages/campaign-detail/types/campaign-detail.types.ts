@@ -67,6 +67,9 @@ export interface CampaignAd {
 }
 
 export interface CampaignDetail {
+  adAccountId: string | null;
+  adAccountPlatformId: string | null;
+  accountName: string | null;
   campaign: CampaignSummary;
   series: CampaignDayPoint[];
   funnel: CampaignFunnel;

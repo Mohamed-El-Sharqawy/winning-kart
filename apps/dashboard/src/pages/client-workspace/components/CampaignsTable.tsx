@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import {
@@ -14,16 +15,14 @@ import type { DataTableColumn } from "@/shared/components/DataTable";
 import { StatusDot } from "@/shared/components/StatusDot";
 import type { StatusDotVariant } from "@/shared/components/StatusDot";
 import type { Campaign } from "../types/ad-accounts.types";
+import { nextSortState, sortHeaderCell, sortRows } from "./SortHeader";
+import type { SortDirection, SortState } from "./SortHeader";
+import { TablePager } from "./TablePager";
 
 const DASH = "—";
-
 const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
-  active: "up",
-  paused: "neutral",
-  archived: "neutral",
-  pending: "warning",
-  in_review: "warning",
-  with_issues: "down",
+  active: "up", paused: "neutral", archived: "neutral",
+  pending: "warning", in_review: "warning", with_issues: "down",
 };
 
 function statusVariant(status: string | null | undefined): StatusDotVariant {
@@ -36,6 +35,11 @@ function humanize(value: string | null | undefined): string {
   return value.toLowerCase().replace(/_/g, " ");
 }
 
+type CampaignMetricKey =
+  "dailyBudget" | "spend" | "revenue" | "roas" | "cpa" | "purchases" | "ctr" | "frequency";
+
+type CampaignSortKey = "name" | CampaignMetricKey;
+
 export interface CampaignsTableProps {
   campaigns: Campaign[];
   accountId?: string | null;
@@ -47,6 +51,9 @@ export function CampaignsTable({ campaigns, accountId, accountName, days }: Camp
   const { slug } = useParams({ from: "/clients/$slug" });
   const workspaceSearch = useSearch({ from: "/clients/$slug" });
   const navigate = useNavigate();
+  const [sort, setSort] = useState<SortState | null>(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const resolvedDays = days ?? workspaceSearch.days ?? 30;
   const resolvedAccountId = accountId ?? workspaceSearch.account ?? null;
   const resolvedAccountName = accountName ?? workspaceSearch.accountName ?? null;
@@ -55,10 +62,25 @@ export function CampaignsTable({ campaigns, accountId, accountName, days }: Camp
     account: resolvedAccountId ?? undefined,
     accountName: resolvedAccountName ?? undefined,
   };
+  const sorted = sortRows(campaigns, sort, (row, key) => row[key as CampaignSortKey]);
+  const pages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const safePage = Math.min(page, pages - 1);
+  const rows = sorted.slice(safePage * pageSize, safePage * pageSize + pageSize);
+  const header = (key: CampaignSortKey, label: string, fallback: SortDirection = "desc") =>
+    sortHeaderCell({
+      label,
+      active: sort !== null && sort.key === key,
+      direction: sort !== null && sort.key === key ? sort.direction : fallback,
+      onClick: () => setSort(nextSortState(sort, key, fallback)),
+    });
+  const metric = (key: CampaignMetricKey, label: string, format: (row: Campaign) => string): DataTableColumn<Campaign> => ({
+    key, header: header(key, label), align: "right",
+    render: (row) => <span className="tabular">{format(row)}</span>,
+  });
   const columns: Array<DataTableColumn<Campaign>> = [
     {
       key: "name",
-      header: "Campaign",
+      header: header("name", "Campaign", "asc"),
       render: (row) => (
         <div className="flex flex-col items-start gap-1">
           <Link
@@ -78,69 +100,46 @@ export function CampaignsTable({ campaigns, accountId, accountName, days }: Camp
       header: "Objective",
       render: (row) => <span className="capitalize text-volt-text-3">{humanize(row.objective)}</span>,
     },
-    {
-      key: "dailyBudget",
-      header: "Budget",
-      align: "right",
-      render: (row) => <span className="tabular">{formatMoney(row.dailyBudget, row.currency)}</span>,
-    },
-    {
-      key: "spend",
-      header: "Spend",
-      align: "right",
-      render: (row) => <span className="tabular">{formatMoney(row.spend, row.currency)}</span>,
-    },
-    {
-      key: "revenue",
-      header: "Revenue",
-      align: "right",
-      render: (row) => <span className="tabular">{formatMoney(row.revenue, row.currency)}</span>,
-    },
+    metric("dailyBudget", "Budget", (row) => formatMoney(row.dailyBudget, row.currency)),
+    metric("spend", "Spend", (row) => formatMoney(row.spend, row.currency)),
+    metric("revenue", "Revenue", (row) => formatMoney(row.revenue, row.currency)),
     {
       key: "roas",
-      header: "ROAS",
+      header: header("roas", "ROAS"),
       align: "right",
       render: (row) => <span className={cn("tabular", roasTone(row.roas))}>{formatRoas(row.roas)}</span>,
     },
-    {
-      key: "cpa",
-      header: "CPA",
-      align: "right",
-      render: (row) => <span className="tabular">{formatMoney(row.cpa, row.currency)}</span>,
-    },
-    {
-      key: "purchases",
-      header: "Purchases",
-      align: "right",
-      render: (row) => <span className="tabular">{formatNumber(row.purchases)}</span>,
-    },
-    {
-      key: "ctr",
-      header: "CTR",
-      align: "right",
-      render: (row) => <span className="tabular">{formatPct(row.ctr)}</span>,
-    },
-    {
-      key: "frequency",
-      header: "Freq",
-      align: "right",
-      render: (row) => <span className="tabular">{formatDecimal(row.frequency)}</span>,
-    },
+    metric("cpa", "CPA", (row) => formatMoney(row.cpa, row.currency)),
+    metric("purchases", "Purchases", (row) => formatNumber(row.purchases)),
+    metric("ctr", "CTR", (row) => formatPct(row.ctr)),
+    metric("frequency", "Freq", (row) => formatDecimal(row.frequency)),
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      rows={campaigns}
-      rowKey={(row) => row.id}
-      rowClassName={(row) => campaignRowTone(row.roas)}
-      onRowClick={(row) => {
-        void navigate({
-          to: "/clients/$slug/campaigns/$campaignId",
-          params: { slug, campaignId: row.id },
-          search: detailSearch,
-        });
-      }}
-    />
+    <>
+      <DataTable
+        columns={columns}
+        rows={rows}
+        rowKey={(row) => row.id}
+        rowClassName={(row) => campaignRowTone(row.roas)}
+        onRowClick={(row) => {
+          void navigate({
+            to: "/clients/$slug/campaigns/$campaignId",
+            params: { slug, campaignId: row.id },
+            search: detailSearch,
+          });
+        }}
+      />
+      <TablePager
+        total={sorted.length}
+        page={safePage}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(0);
+        }}
+      />
+    </>
   );
 }

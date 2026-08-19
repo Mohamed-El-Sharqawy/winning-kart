@@ -9,19 +9,24 @@ import { FunnelSection } from "./components/FunnelSection";
 import { RoasChartCard } from "./components/RoasChartCard";
 import { SpendRevenueChartCard } from "./components/SpendRevenueChartCard";
 import { TopCreatives } from "./components/TopCreatives";
-import { useCampaignDetail } from "./services/campaign-detail.service";
+import { useCampaignAccountResolution, useCampaignDetail } from "./services/campaign-detail.service";
 
 export function CampaignDetailPage() {
   const { slug, campaignId } = useParams({ from: "/clients/$slug/campaigns/$campaignId" });
   const { days, account, accountName } = useSearch({ from: "/clients/$slug/campaigns/$campaignId" });
   const { data: clients } = useClients();
   const clientName = clients?.find((client) => client.slug === slug)?.name ?? slug;
-  const detail = useCampaignDetail(account ?? null, campaignId, days);
+  const resolution = useCampaignAccountResolution(slug, campaignId, account === undefined);
+  const accountId = account ?? resolution.accountId;
+  const detail = useCampaignDetail(accountId, campaignId, days);
+  const resolvedAccountName = accountName ?? detail.data?.accountName ?? resolution.accountName ?? null;
 
   return (
     <AppShell>
       <div className="flex flex-col gap-6">
-        {!account ? (
+        {accountId === null && !resolution.resolved ? (
+          <p className="text-sm text-volt-text-3">Resolving ad account…</p>
+        ) : accountId === null ? (
           <EmptyState
             title="Ad account missing"
             hint="Open this campaign from the client's campaigns tab to load its details."
@@ -31,7 +36,7 @@ export function CampaignDetailPage() {
             <CampaignDetailHeader
               slug={slug}
               clientName={clientName}
-              accountName={accountName}
+              accountName={resolvedAccountName ?? undefined}
               campaign={detail.data?.campaign ?? null}
               days={days}
             />

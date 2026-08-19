@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/shared/components/Badge";
 import { EmptyState } from "@/shared/components/EmptyState";
@@ -9,21 +10,15 @@ import { useCreatives, useFatigueSummary } from "../services/creatives.service";
 import type { Creative, FatigueFlag } from "../types/creatives.types";
 import { CreativeCard } from "./CreativeCard";
 import { CreativeDetailModal } from "./CreativeDetailModal";
+import { FilterChip } from "./FilterChip";
 import { SkeletonRows } from "./SkeletonRows";
+import { TablePager } from "./TablePager";
 
 const SELECT_CLASS =
   "rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
-
 const COUNTED_FLAGS: FatigueFlag[] = ["fatiguing", "bleeding", "scale"];
-
-const SORT_OPTIONS = [
-  { id: "spend", label: "Spend" },
-  { id: "roas", label: "ROAS" },
-  { id: "ctr", label: "CTR" },
-  { id: "frequency", label: "Frequency" },
-] as const;
-
-type SortKey = (typeof SORT_OPTIONS)[number]["id"];
+const SORT_LABELS: Record<SortKey, string> = { spend: "Spend", roas: "ROAS", ctr: "CTR", frequency: "Frequency" };
+type SortKey = "spend" | "roas" | "ctr" | "frequency";
 type FlagFilter = FatigueFlag | "all";
 
 export interface CreativesTabProps {
@@ -35,35 +30,43 @@ export interface CreativesTabProps {
 function pct(value: number | null): number | null {
   return value === null ? null : Math.round(value * 100);
 }
-
 export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps) {
   const [flagFilter, setFlagFilter] = useState<FlagFilter>("all");
   const [formatFilter, setFormatFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("spend");
   const [selected, setSelected] = useState<Creative | null>(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+  const { adSet, adSetName } = useSearch({ from: "/clients/$slug" });
+  const navigate = useNavigate();
   const { data: creatives, isPending } = useCreatives(accountId, days);
   const { data: summary } = useFatigueSummary(accountId, days);
   const { data: clients } = useClients();
   const client = clients?.find((candidate) => candidate.slug === clientSlug) ?? null;
-  const { data: accounts } = useQuery({
-    ...adAccountsQueryOptions(client?.id ?? ""),
-    enabled: client !== null,
-  });
+  const { data: accounts } = useQuery({ ...adAccountsQueryOptions(client?.id ?? ""), enabled: client !== null });
   const actId = accounts?.find((account) => account.id === accountId)?.adAccountId ?? null;
 
   const rows = creatives ?? [];
-  const formats = Array.from(new Set(rows.map((row) => row.format)));
-  const visible = rows
+  const scoped = adSet === undefined ? rows : rows.filter((row) => row.adSetId === adSet);
+  const visible = scoped
     .filter((row) => flagFilter === "all" || row.fatigue?.flag === flagFilter)
     .filter((row) => formatFilter === "all" || row.format === formatFilter)
     .sort((a, b) => (b[sortKey] ?? -Infinity) - (a[sortKey] ?? -Infinity));
-
+  const pages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const safePage = Math.min(page, pages - 1);
+  const paged = visible.slice(safePage * pageSize, safePage * pageSize + pageSize);
   const concentrationPct =
-    summary?.concentration === "top1"
-      ? pct(summary.topCreativeSpendShare)
-      : summary?.concentration === "top3"
-        ? pct(summary.top3SpendShare)
-        : null;
+    summary === undefined || summary.concentration === null
+      ? null
+      : pct(summary.concentration === "top1" ? summary.topCreativeSpendShare : summary.top3SpendShare);
+
+  function clearAdSetFilter() {
+    void navigate({
+      to: "/clients/$slug",
+      params: { slug: clientSlug },
+      search: (prev) => ({ ...prev, tab: "creatives", adSet: undefined, adSetName: undefined }),
+    });
+  }
 
   if (isPending) {
     return <SkeletonRows rows={6} columns={4} />;
@@ -77,8 +80,7 @@ export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps)
       {summary && summary.concentration !== null && concentrationPct !== null ? (
         <p className="rounded-[10px] border border-volt-border bg-volt-surface px-4 py-3 text-[13px] text-volt-text-2">
           Concentration risk:{" "}
-          {summary.concentration === "top1" ? "top creative is" : "top 3 creatives are"} {concentrationPct}% of
-          spend
+          {summary.concentration === "top1" ? "top creative is" : "top 3 creatives are"} {concentrationPct}% of spend
         </p>
       ) : null}
       {summary ? (
@@ -91,6 +93,7 @@ export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps)
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-4">
+        {adSet !== undefined ? <FilterChip label={`Ad set: ${adSetName ?? adSet}`} onClear={clearAdSetFilter} /> : null}
         <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
           Fatigue
           <select
@@ -100,9 +103,7 @@ export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps)
           >
             <option value="all">All</option>
             {FATIGUE_FLAG_ORDER.map((flag) => (
-              <option key={flag} value={flag}>
-                {FATIGUE_FLAG_COPY[flag].label}
-              </option>
+              <option key={flag} value={flag}>{FATIGUE_FLAG_COPY[flag].label}</option>
             ))}
           </select>
         </label>
@@ -110,20 +111,16 @@ export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps)
           Format
           <select value={formatFilter} onChange={(event) => setFormatFilter(event.target.value)} className={SELECT_CLASS}>
             <option value="all">All</option>
-            {formats.map((format) => (
-              <option key={format} value={format}>
-                {format}
-              </option>
+            {Array.from(new Set(rows.map((row) => row.format))).map((format) => (
+              <option key={format} value={format}>{format}</option>
             ))}
           </select>
         </label>
         <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
           Sort
           <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)} className={SELECT_CLASS}>
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
+            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+              <option key={key} value={key}>{SORT_LABELS[key]}</option>
             ))}
           </select>
         </label>
@@ -131,15 +128,22 @@ export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps)
       {visible.length === 0 ? (
         <EmptyState title="No creatives match these filters" hint="Adjust the filters to see more creatives." />
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-          {visible.map((creative) => (
-            <CreativeCard key={creative.id} creative={creative} onSelect={() => setSelected(creative)} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+            {paged.map((creative) => (
+              <CreativeCard key={creative.id} creative={creative} onSelect={() => setSelected(creative)} />
+            ))}
+          </div>
+          <TablePager
+            total={visible.length}
+            page={safePage}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(0); }}
+          />
+        </>
       )}
-      {selected !== null ? (
-        <CreativeDetailModal creative={selected} actId={actId} onClose={() => setSelected(null)} />
-      ) : null}
+      {selected !== null ? <CreativeDetailModal creative={selected} actId={actId} onClose={() => setSelected(null)} /> : null}
     </div>
   );
 }

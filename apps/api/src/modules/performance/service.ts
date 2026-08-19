@@ -93,6 +93,9 @@ export interface CampaignFunnel {
 }
 
 export interface CampaignDetailPayload {
+  adAccountId: string;
+  adAccountPlatformId: string;
+  accountName: string;
   campaign: CampaignPerformance;
   series: SeriesPoint[];
   funnel: CampaignFunnel;
@@ -214,21 +217,22 @@ export class PerformanceService {
       .sort((a, b) => (b.spend ?? 0) - (a.spend ?? 0));
   }
 
-  async listAds(id: string, days: number): Promise<AdPerformance[]> {
+  async listAds(id: string, days: number, adSetId?: string): Promise<AdPerformance[]> {
     await this.requireAccount(id);
-    return this.buildAdItems(id, days);
+    return this.buildAdItems(id, days, undefined, adSetId);
   }
 
   private async buildAdItems(
     id: string,
     days: number,
-    campaignId?: string
+    campaignId?: string,
+    adSetId?: string
   ): Promise<AdPerformance[]> {
     const { since, until } = utcWindow(days);
     const recentSince = laterDate(since, shiftDate(until, -6));
     const priorSince = laterDate(since, shiftDate(recentSince, -7));
     const [allRows, adSumsRows, adSetSumsRows, trendRows] = await Promise.all([
-      this.model.listAds(id),
+      this.model.listAds(id, adSetId),
       this.model.windowMetrics(id, "ad", since, until),
       this.model.windowMetrics(id, "adset", since, until),
       this.model.adTrendMetrics(id, priorSince, recentSince, until),
@@ -313,6 +317,9 @@ export class PerformanceService {
     const sums = sumsRows.find((row) => row.entityId === campaignId);
     const metrics = deriveMetrics(sums);
     return {
+      adAccountId: campaign.adAccountId,
+      adAccountPlatformId: campaign.adAccountPlatformId,
+      accountName: campaign.accountName,
       campaign: {
         id: campaign.id,
         name: campaign.name,
@@ -348,15 +355,16 @@ export class PerformanceService {
   async fatigueSummary(id: string, days: number): Promise<FatigueSummaryPayload> {
     await this.requireAccount(id);
     const items = await this.buildAdItems(id, days);
-    const shares = items
-      .map((item) => item.spendShare)
-      .filter((share): share is number => share !== null)
+    const spends = items
+      .map((item) => item.spend)
+      .filter((spend): spend is number => spend !== null && spend > 0)
       .sort((a, b) => b - a);
-    const top1 = shares.length > 0 ? shares[0] : null;
+    const accountSpend = spends.reduce((sum, spend) => sum + spend, 0);
+    const top1 = accountSpend > 0 && spends.length > 0 ? round2(spends[0] / accountSpend) : null;
     const top3 =
-      shares.length === 0
-        ? null
-        : round2(shares.slice(0, 3).reduce((sum, share) => sum + share, 0));
+      accountSpend > 0 && spends.length > 0
+        ? round2(spends.slice(0, 3).reduce((sum, spend) => sum + spend, 0) / accountSpend)
+        : null;
     const counts = { fatiguing: 0, bleeding: 0, scale: 0, status_anomaly: 0 };
     for (const item of items) {
       if (item.fatigue !== null) {
@@ -364,7 +372,7 @@ export class PerformanceService {
       }
     }
     return {
-      topCreativeSpendShare: top1 === null ? null : round2(top1),
+      topCreativeSpendShare: top1,
       top3SpendShare: top3,
       concentration:
         top1 !== null && top1 >= 0.5 ? "top1" : top3 !== null && top3 >= 0.8 ? "top3" : null,

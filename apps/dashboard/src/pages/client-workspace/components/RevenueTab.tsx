@@ -6,6 +6,7 @@ import type { Client } from "@/shared/types/clients.types";
 import { useRevenueSnapshot } from "../services/revenue.service";
 import type { RevenueSummary } from "../types/revenue.types";
 import { RevenueEventsTable } from "./RevenueEventsTable";
+import { RevenueInfoCard } from "./RevenueInfoCard";
 import { RevenueSourcesCard } from "./RevenueSourcesCard";
 
 const MATCHED_UP_THRESHOLD = 0.6;
@@ -30,6 +31,7 @@ export function RevenueTab({ client }: { client: Client }) {
         />
         <TierChips summary={summary} />
       </div>
+      <RevenueInfoCard />
       <RevenueSourcesCard clientId={client.id} />
       {isPending ? (
         <p className="text-sm text-volt-text-3">Loading revenue events…</p>
