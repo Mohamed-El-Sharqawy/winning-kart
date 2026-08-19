@@ -5,6 +5,7 @@ export interface Client {
   name: string;
   slug: string;
   status: ClientStatus;
+  industry: string | null;
   displayCurrency: string;
   shareCostAndMarginWithClient: boolean;
   createdAt: Date;

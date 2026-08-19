@@ -7,6 +7,7 @@ export function toClient(dto: ClientDto): Client {
     name: dto.name,
     slug: dto.slug,
     status: dto.status,
+    industry: dto.industry ?? null,
     displayCurrency: dto.displayCurrency,
     shareCostAndMarginWithClient: dto.shareCostAndMarginWithClient ?? false,
     createdAt: new Date(dto.createdAt),
