@@ -1,0 +1,37 @@
+{
+  "data": [
+    {
+      "id": "u1",
+      "email": "owner@wk.test",
+      "displayName": "Captain Owner",
+      "role": "admin",
+      "agencyRole": "owner",
+      "clientRoleTier": null,
+      "status": "active",
+      "lastActiveAt": "2026-02-10T08:45:00.000Z",
+      "createdAt": "2026-01-02T09:00:00.000Z"
+    },
+    {
+      "id": "u2",
+      "email": "admin@wk.test",
+      "displayName": "Amina Admin",
+      "role": "admin",
+      "agencyRole": "admin",
+      "clientRoleTier": null,
+      "status": "active",
+      "lastActiveAt": "2026-02-10T09:15:00.000Z",
+      "createdAt": "2026-01-03T11:30:00.000Z"
+    },
+    {
+      "id": "u3",
+      "email": "client@maisonnour.test",
+      "displayName": "Nour Client-Admin",
+      "role": "client",
+      "agencyRole": null,
+      "clientRoleTier": "admin",
+      "status": "active",
+      "lastActiveAt": "2026-02-09T16:20:00.000Z",
+      "createdAt": "2026-01-05T10:00:00.000Z"
+    }
+  ]
+}

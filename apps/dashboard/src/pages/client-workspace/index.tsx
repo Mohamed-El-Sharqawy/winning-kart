@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useSearch } from "@tanstack/react-router";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { AppShell } from "@/shared/layout/AppShell";
+import {
+  clearWorkspaceClient,
+  writeWorkspaceClient,
+} from "@/shared/lib/workspace-client";
 import { useClients } from "@/shared/services/clients.service";
 import type { Client } from "@/shared/types/clients.types";
 import type { WorkspaceTab } from "@/routes/router";
@@ -25,6 +29,12 @@ export function ClientWorkspacePage() {
   const { tab } = useSearch({ from: "/clients/$slug" });
   const { data: clients, isPending, isError } = useClients();
   const client = clients?.find((candidate) => candidate.slug === slug) ?? null;
+
+  useEffect(() => {
+    if (isPending || isError) return;
+    if (client) writeWorkspaceClient({ slug: client.slug, name: client.name });
+    else clearWorkspaceClient();
+  }, [client, isPending, isError]);
 
   return (
     <AppShell>
