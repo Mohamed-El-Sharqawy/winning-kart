@@ -1,6 +1,6 @@
 import { MetaClient } from "./client";
 import type {
-  CreativeThumbnailMap,
+  CreativeDetailMap,
   InsightLevel,
   MetaAccountInfo,
   MetaAdRow,
@@ -12,7 +12,7 @@ import type {
 
 export { MetaClient, MetaError } from "./client";
 export type {
-  CreativeThumbnailMap,
+  CreativeDetailMap,
   InsightLevel,
   MetaAccountInfo,
   MetaActionMetric,
@@ -20,7 +20,7 @@ export type {
   MetaAdRow,
   MetaAdSetRow,
   MetaCampaignRow,
-  MetaCreativeThumbnailRow,
+  MetaCreativeDetailRow,
   MetaErrorClass,
   MetaInsightRow,
   TimeRange,
@@ -32,6 +32,7 @@ export {
   normalizeAd,
   normalizeAdSet,
   normalizeCampaign,
+  normalizeCreativeDetail,
   normalizeInsight,
   round2,
 } from "./normalize";
@@ -40,6 +41,7 @@ export type {
   AdRecord,
   AdSetRecord,
   CampaignRecord,
+  CreativeDetailRecord,
   EntityStatus,
   InsightRecord,
 } from "./normalize";
@@ -49,7 +51,7 @@ export interface AdPlatformAdapter {
   getCampaigns(actId: string): Promise<MetaCampaignRow[]>;
   getAdSets(actId: string): Promise<MetaAdSetRow[]>;
   getAds(actId: string): Promise<MetaAdRow[]>;
-  getCreativeThumbnails(ids: string[]): Promise<CreativeThumbnailMap>;
+  getCreativeDetails(actId: string): Promise<CreativeDetailMap>;
   getInsights(actId: string, level: InsightLevel, timeRange: TimeRange): Promise<MetaInsightRow[]>;
 }
 

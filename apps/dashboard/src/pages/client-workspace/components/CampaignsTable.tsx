@@ -15,6 +15,8 @@ import { StatusDot } from "@/shared/components/StatusDot";
 import type { StatusDotVariant } from "@/shared/components/StatusDot";
 import type { Campaign } from "../types/ad-accounts.types";
 
+const DASH = "—";
+
 const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
   active: "up",
   paused: "neutral",
@@ -24,8 +26,14 @@ const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
   with_issues: "down",
 };
 
-function statusVariant(status: string): StatusDotVariant {
+function statusVariant(status: string | null | undefined): StatusDotVariant {
+  if (status === null || status === undefined) return "neutral";
   return STATUS_VARIANTS[status.toLowerCase()] ?? "neutral";
+}
+
+function humanize(value: string | null | undefined): string {
+  if (value === null || value === undefined) return DASH;
+  return value.toLowerCase().replace(/_/g, " ");
 }
 
 export interface CampaignsTableProps {
@@ -61,18 +69,20 @@ export function CampaignsTable({ campaigns, accountId, accountName, days }: Camp
           >
             {row.name}
           </Link>
-          <StatusDot variant={statusVariant(row.status)}>
-            {row.status.toLowerCase().replace(/_/g, " ")}
-          </StatusDot>
+          <StatusDot variant={statusVariant(row.status)}>{humanize(row.status)}</StatusDot>
         </div>
       ),
     },
     {
       key: "objective",
       header: "Objective",
-      render: (row) => (
-        <span className="capitalize text-volt-text-3">{row.objective.toLowerCase().replace(/_/g, " ")}</span>
-      ),
+      render: (row) => <span className="capitalize text-volt-text-3">{humanize(row.objective)}</span>,
+    },
+    {
+      key: "dailyBudget",
+      header: "Budget",
+      align: "right",
+      render: (row) => <span className="tabular">{formatMoney(row.dailyBudget, row.currency)}</span>,
     },
     {
       key: "spend",

@@ -16,6 +16,7 @@ import {
   normalizeAd,
   normalizeAdSet,
   normalizeCampaign,
+  normalizeCreativeDetail,
   normalizeInsight,
   round2,
 } from "../../platforms/meta";
@@ -107,15 +108,6 @@ const RECENT_JOBS_LIMIT = 12;
 const DAY_MS = 86400000;
 const USER_TOKEN_TTL_DAYS = 60;
 const TOKEN_WARNING_DAYS = 7;
-const CREATIVE_THUMBNAIL_CHUNK = 50;
-
-function chunkIds(ids: string[], size: number): string[][] {
-  const chunks: string[][] = [];
-  for (let i = 0; i < ids.length; i += size) {
-    chunks.push(ids.slice(i, i + size));
-  }
-  return chunks;
-}
 
 export function utcWindow(days: number): { since: string; until: string } {
   const now = new Date();
@@ -530,7 +522,7 @@ export class AdAccountsService {
       for (const row of upserted) {
         adIdByPlatform.set(row.platformAdId, row.id);
       }
-      await this.decorateAdThumbnails(meta, account.id, upserted);
+      await this.decorateAdCreatives(meta, account, upserted);
       return { count: upserted.length };
     });
     if (!adsOk) {
@@ -594,46 +586,56 @@ export class AdAccountsService {
     return finalize(true);
   }
 
-  private async decorateAdThumbnails(
+  private async decorateAdCreatives(
     meta: AdPlatformAdapter,
-    accountId: string,
+    account: { id: string; adAccountId: string },
     adRows: AdRow[]
   ): Promise<void> {
-    const platformAdIdsByCreative = new Map<string, string[]>();
+    const rowsByCreative = new Map<string, AdRow[]>();
     for (const row of adRows) {
-      if (row.creativeId === null || row.thumbnailUrl !== null) {
+      if (row.creativeId === null) {
         continue;
       }
-      const platformAdIds = platformAdIdsByCreative.get(row.creativeId);
-      if (platformAdIds === undefined) {
-        platformAdIdsByCreative.set(row.creativeId, [row.platformAdId]);
+      if (row.thumbnailUrl !== null && row.bodyCopy !== null && row.format !== null) {
+        continue;
+      }
+      const rows = rowsByCreative.get(row.creativeId);
+      if (rows === undefined) {
+        rowsByCreative.set(row.creativeId, [row]);
       } else {
-        platformAdIds.push(row.platformAdId);
+        rows.push(row);
       }
     }
-    if (platformAdIdsByCreative.size === 0) {
+    if (rowsByCreative.size === 0) {
       return;
     }
-    const creativeIds = [...platformAdIdsByCreative.keys()];
-    for (const chunk of chunkIds(creativeIds, CREATIVE_THUMBNAIL_CHUNK)) {
-      try {
-        const thumbnails = await meta.getCreativeThumbnails(chunk);
-        for (const [creativeId, creative] of Object.entries(thumbnails)) {
-          const thumbnailUrl = creative?.thumbnail_url;
-          if (typeof thumbnailUrl !== "string" || thumbnailUrl.length === 0) {
-            continue;
-          }
-          const platformAdIds = platformAdIdsByCreative.get(creativeId);
-          if (platformAdIds === undefined) {
-            continue;
-          }
-          for (const platformAdId of platformAdIds) {
-            await this.model.updateAdCreative(accountId, platformAdId, { thumbnailUrl });
-          }
+    try {
+      const details = await meta.getCreativeDetails(account.adAccountId);      for (const [creativeId, detail] of Object.entries(details)) {
+        const rows = rowsByCreative.get(creativeId);
+        if (rows === undefined) {
+          continue;
         }
-      } catch {
-        continue;
+        const record = normalizeCreativeDetail(detail);
+        for (const row of rows) {
+          const patch: { thumbnailUrl?: string; bodyCopy?: string; format?: string } = {};
+          if (row.thumbnailUrl === null && record.thumbnailUrl !== null) {
+            patch.thumbnailUrl = record.thumbnailUrl;
+          }
+          if (row.bodyCopy === null && record.bodyCopy !== null) {
+            patch.bodyCopy = record.bodyCopy;
+          }
+          if (row.format === null && record.format !== null) {
+            patch.format = record.format;
+          }
+          if (patch.thumbnailUrl === undefined && patch.bodyCopy === undefined && patch.format === undefined) {
+            continue;
+          }
+          await this.model.updateAdCreative(account.id, row.platformAdId, patch);
+        }
       }
+    } catch (error) {
+      const metaError = toMetaError(error);
+      console.warn(`creative details fetch failed: ${metaError.errorClass}`);
     }
   }
 

@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/shared/components/Badge";
 import { EmptyState } from "@/shared/components/EmptyState";
+import { useClients } from "@/shared/services/clients.service";
 import { FATIGUE_FLAG_COPY, FATIGUE_FLAG_ORDER } from "../data/gallery-copy.data";
+import { adAccountsQueryOptions } from "../services/ad-accounts.service";
 import { useCreatives, useFatigueSummary } from "../services/creatives.service";
-import type { FatigueFlag } from "../types/creatives.types";
-import { CreativesGallery } from "./CreativesGallery";
+import type { Creative, FatigueFlag } from "../types/creatives.types";
+import { CreativeCard } from "./CreativeCard";
+import { CreativeDetailModal } from "./CreativeDetailModal";
 import { SkeletonRows } from "./SkeletonRows";
 
 const SELECT_CLASS =
@@ -32,12 +36,20 @@ function pct(value: number | null): number | null {
   return value === null ? null : Math.round(value * 100);
 }
 
-export function CreativesTab({ accountId, days }: CreativesTabProps) {
+export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps) {
   const [flagFilter, setFlagFilter] = useState<FlagFilter>("all");
   const [formatFilter, setFormatFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("spend");
+  const [selected, setSelected] = useState<Creative | null>(null);
   const { data: creatives, isPending } = useCreatives(accountId, days);
   const { data: summary } = useFatigueSummary(accountId, days);
+  const { data: clients } = useClients();
+  const client = clients?.find((candidate) => candidate.slug === clientSlug) ?? null;
+  const { data: accounts } = useQuery({
+    ...adAccountsQueryOptions(client?.id ?? ""),
+    enabled: client !== null,
+  });
+  const actId = accounts?.find((account) => account.id === accountId)?.adAccountId ?? null;
 
   const rows = creatives ?? [];
   const formats = Array.from(new Set(rows.map((row) => row.format)));
@@ -119,8 +131,15 @@ export function CreativesTab({ accountId, days }: CreativesTabProps) {
       {visible.length === 0 ? (
         <EmptyState title="No creatives match these filters" hint="Adjust the filters to see more creatives." />
       ) : (
-        <CreativesGallery creatives={visible} />
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+          {visible.map((creative) => (
+            <CreativeCard key={creative.id} creative={creative} onSelect={() => setSelected(creative)} />
+          ))}
+        </div>
       )}
+      {selected !== null ? (
+        <CreativeDetailModal creative={selected} actId={actId} onClose={() => setSelected(null)} />
+      ) : null}
     </div>
   );
 }

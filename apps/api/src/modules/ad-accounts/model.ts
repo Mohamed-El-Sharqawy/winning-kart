@@ -238,8 +238,11 @@ export class AdAccountsModel {
   async updateAdCreative(
     accountId: string,
     platformAdId: string,
-    patch: { thumbnailUrl: string }
+    patch: { thumbnailUrl?: string; bodyCopy?: string; format?: string }
   ): Promise<void> {
+    if (patch.thumbnailUrl === undefined && patch.bodyCopy === undefined && patch.format === undefined) {
+      return;
+    }
     const accountAdSetIds = db
       .select({ id: adSets.id })
       .from(adSets)
@@ -247,7 +250,12 @@ export class AdAccountsModel {
       .where(eq(campaigns.adAccountId, accountId));
     await db
       .update(ads)
-      .set({ thumbnailUrl: patch.thumbnailUrl, updatedAt: new Date() })
+      .set({
+        ...(patch.thumbnailUrl !== undefined ? { thumbnailUrl: patch.thumbnailUrl } : {}),
+        ...(patch.bodyCopy !== undefined ? { bodyCopy: patch.bodyCopy } : {}),
+        ...(patch.format !== undefined ? { format: patch.format } : {}),
+        updatedAt: new Date(),
+      })
       .where(and(eq(ads.platformAdId, platformAdId), inArray(ads.adSetId, accountAdSetIds)));
   }
 

@@ -14,6 +14,7 @@ export interface CreativeDto {
   name: string;
   status: string;
   format: string;
+  bodyCopy: string | null;
   creativeId: string;
   thumbnailUrl: string | null;
   spend: number | null;

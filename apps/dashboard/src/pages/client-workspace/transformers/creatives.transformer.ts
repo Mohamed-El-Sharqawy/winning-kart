@@ -16,6 +16,7 @@ export function toCreative(dto: CreativeDto): Creative {
     name: dto.name,
     status: dto.status,
     format: dto.format,
+    bodyCopy: dto.bodyCopy ?? null,
     creativeId: dto.creativeId,
     thumbnailUrl: dto.thumbnailUrl ?? null,
     spend: dto.spend ?? null,

@@ -28,6 +28,7 @@ export interface AdEntityRow {
   format: string | null;
   creativeId: string | null;
   thumbnailUrl: string | null;
+  bodyCopy: string | null;
   parentAdSetStatus: string;
 }
 
@@ -145,6 +146,7 @@ export class PerformanceModel {
         format: ads.format,
         creativeId: ads.creativeId,
         thumbnailUrl: ads.thumbnailUrl,
+        bodyCopy: ads.bodyCopy,
         parentAdSetStatus: adSets.status,
       })
       .from(ads)
