@@ -131,6 +131,16 @@ const REQUEST_TIMEOUT_MS = 30000;
 const RETRY_DELAY_MS = 500;
 const PAGE_LIMIT = 100;
 
+const BASE_INSIGHT_FIELDS =
+  "spend,impressions,reach,clicks,ctr,cpc,cpm,frequency,actions,action_values";
+
+const INSIGHT_LEVEL_ID_FIELDS: Record<InsightLevel, string | null> = {
+  account: null,
+  campaign: "campaign_id",
+  adset: "adset_id",
+  ad: "ad_id",
+};
+
 function classifyGraphError(status: number, body: unknown): MetaError {
   const graphError = (body as GraphErrorBody | null)?.error;
   const code = typeof graphError?.code === "number" ? graphError.code : null;
@@ -208,9 +218,12 @@ export class MetaClient {
   }
 
   getInsights(actId: string, level: InsightLevel, timeRange: TimeRange): Promise<MetaInsightRow[]> {
+    const levelIdField = INSIGHT_LEVEL_ID_FIELDS[level];
+    const fields =
+      levelIdField === null ? BASE_INSIGHT_FIELDS : `${levelIdField},${BASE_INSIGHT_FIELDS}`;
     return this.requestAll(`${actId}/insights`, {
       level,
-      fields: "spend,impressions,reach,clicks,ctr,cpc,cpm,frequency,actions,action_values",
+      fields,
       time_range: JSON.stringify({ since: timeRange.since, until: timeRange.until }),
       time_increment: "1",
     });

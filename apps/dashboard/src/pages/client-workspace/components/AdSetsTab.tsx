@@ -29,7 +29,7 @@ function metricValues(rows: AdSet[], key: keyof AdSet): number[] {
   return rows.map((row) => row[key]).filter((value): value is number => typeof value === "number");
 }
 
-export function AdSetsTab({ accountId, days }: AdSetsTabProps) {
+export function AdSetsTab({ accountId, days, clientSlug }: AdSetsTabProps) {
   const { data: adSets, isPending } = useAdSets(accountId, days);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -98,7 +98,7 @@ export function AdSetsTab({ accountId, days }: AdSetsTabProps) {
           <Button onClick={() => setCompareOpen(true)}>Compare ({selected.length})</Button>
         ) : null}
       </div>
-      <AdSetsTable adSets={rows} selectedIds={selectedIds} onToggle={toggleSelected} />
+      <AdSetsTable adSets={rows} selectedIds={selectedIds} onToggle={toggleSelected} clientSlug={clientSlug} />
       <CompareDrawer adSets={selected} open={compareOpen} onClose={() => setCompareOpen(false)} />
     </div>
   );

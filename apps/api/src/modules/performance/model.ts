@@ -35,6 +35,8 @@ export interface AdEntityRow {
 export interface CampaignEntityRow {
   id: string;
   adAccountId: string;
+  adAccountPlatformId: string;
+  accountName: string;
   name: string;
   status: string;
   objective: string | null;
@@ -99,6 +101,8 @@ export class PerformanceModel {
       .select({
         id: campaigns.id,
         adAccountId: campaigns.adAccountId,
+        adAccountPlatformId: adAccounts.adAccountId,
+        accountName: adAccounts.name,
         name: campaigns.name,
         status: campaigns.status,
         objective: campaigns.objective,
@@ -107,6 +111,7 @@ export class PerformanceModel {
         currency: campaigns.currency,
       })
       .from(campaigns)
+      .innerJoin(adAccounts, eq(campaigns.adAccountId, adAccounts.id))
       .where(eq(campaigns.id, id))
       .limit(1);
     return rows[0];
@@ -132,7 +137,7 @@ export class PerformanceModel {
       .orderBy(adSets.name);
   }
 
-  listAds(adAccountId: string): Promise<AdEntityRow[]> {
+  listAds(adAccountId: string, adSetId?: string): Promise<AdEntityRow[]> {
     return db
       .select({
         id: ads.id,
@@ -152,7 +157,12 @@ export class PerformanceModel {
       .from(ads)
       .innerJoin(adSets, eq(ads.adSetId, adSets.id))
       .innerJoin(campaigns, eq(adSets.campaignId, campaigns.id))
-      .where(eq(campaigns.adAccountId, adAccountId))
+      .where(
+        and(
+          eq(campaigns.adAccountId, adAccountId),
+          adSetId === undefined ? undefined : eq(ads.adSetId, adSetId)
+        )
+      )
       .orderBy(ads.name);
   }
 

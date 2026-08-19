@@ -103,6 +103,9 @@ function toAd(dto: AdDto): CampaignAd {
 
 export function toCampaignDetail(dto: CampaignDetailResponseDto): CampaignDetail {
   return {
+    adAccountId: dto.adAccountId ?? null,
+    adAccountPlatformId: dto.adAccountPlatformId ?? null,
+    accountName: dto.accountName ?? null,
     campaign: toCampaign(dto.campaign),
     series: dto.series.map(toSeriesPoint),
     funnel: toFunnel(dto.funnel),

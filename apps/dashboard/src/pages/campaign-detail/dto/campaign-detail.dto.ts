@@ -72,6 +72,9 @@ export interface AdDto {
 }
 
 export interface CampaignDetailResponseDto {
+  adAccountId?: string | null;
+  adAccountPlatformId?: string | null;
+  accountName?: string | null;
   campaign: CampaignDetailDto;
   series: CampaignSeriesPointDto[];
   funnel: CampaignFunnelDto;

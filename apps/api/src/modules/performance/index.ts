@@ -5,6 +5,7 @@ import {
   fatigueSummaryDto,
   performanceAdSetsDto,
   performanceAdsDto,
+  performanceAdsQueryDto,
   performanceCampaignDto,
 } from "../../dto/performance";
 import { PerformanceModel } from "./model";
@@ -46,9 +47,9 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
     "/:id/ads",
     async ({ params, query, headers }) => {
       await requireUser(headers);
-      return { data: await service.listAds(params.id, parseDays(query.days)) };
+      return { data: await service.listAds(params.id, parseDays(query.days), query.adSetId) };
     },
-    { params: idParamsDto, query: daysQueryDto, response: { 200: performanceAdsDto } }
+    { params: idParamsDto, query: performanceAdsQueryDto, response: { 200: performanceAdsDto } }
   )
   .get(
     "/:id/campaigns/:campaignId",

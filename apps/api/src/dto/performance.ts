@@ -63,8 +63,16 @@ export const performanceAdSetsDto = t.Object({ data: t.Array(adSetItemDto) });
 
 export const performanceAdsDto = t.Object({ data: t.Array(adItemDto) });
 
+export const performanceAdsQueryDto = t.Object({
+  days: t.Optional(t.String({ pattern: "^[0-9]+$" })),
+  adSetId: t.Optional(t.String()),
+});
+
 export const performanceCampaignDto = t.Object({
   data: t.Object({
+    adAccountId: t.String(),
+    adAccountPlatformId: t.String(),
+    accountName: t.String(),
     campaign: t.Object({
       id: t.String(),
       name: t.String(),
