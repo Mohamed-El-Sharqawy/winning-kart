@@ -1,8 +1,8 @@
+import { SettingsSubNav } from "@/shared/components/SettingsSubNav";
 import { AppShell } from "@/shared/layout/AppShell";
 import { SchedulerAccountsTable } from "./components/SchedulerAccountsTable";
 import { SchedulerJobsSection } from "./components/SchedulerJobsSection";
 import { SchedulerStatusHeader } from "./components/SchedulerStatusHeader";
-import { SettingsSubNav } from "./components/SettingsSubNav";
 import { useSchedulerStatus } from "./services/scheduler.service";
 
 export function SettingsSchedulerPage() {
@@ -17,7 +17,7 @@ export function SettingsSchedulerPage() {
             Hourly ad account sync health, per-account job history, and recent failures.
           </p>
         </div>
-        <SettingsSubNav current="/settings/scheduler" />
+        <SettingsSubNav />
         {isPending ? (
           <p className="text-sm text-volt-text-3">Loading scheduler status…</p>
         ) : isError || !status ? (

@@ -1,3 +1,4 @@
+import { SettingsSubNav } from "@/shared/components/SettingsSubNav";
 import { AppShell } from "@/shared/layout/AppShell";
 import { DataOwnershipCard } from "./components/DataOwnershipCard";
 import { RetentionCard } from "./components/RetentionCard";
@@ -12,6 +13,7 @@ export function SettingsDataPage() {
             Control how long raw insights are kept and export everything Winning Kart stores.
           </p>
         </div>
+        <SettingsSubNav />
         <RetentionCard />
         <DataOwnershipCard />
       </div>

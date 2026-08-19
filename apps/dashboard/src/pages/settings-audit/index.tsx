@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { Input } from "@/shared/components/Input";
+import { SettingsSubNav } from "@/shared/components/SettingsSubNav";
 import { AppShell } from "@/shared/layout/AppShell";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { AuditLogsTable } from "./components/AuditLogsTable";
@@ -31,6 +32,7 @@ export function SettingsAuditPage() {
             Every privileged action taken in Winning Kart, newest first.
           </p>
         </div>
+        <SettingsSubNav />
         <div className="flex flex-wrap items-end gap-3">
           <div className="w-64">
             <Input

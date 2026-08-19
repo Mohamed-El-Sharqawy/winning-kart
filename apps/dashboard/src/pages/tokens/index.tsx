@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { EmptyState } from "@/shared/components/EmptyState";
+import { SettingsSubNav } from "@/shared/components/SettingsSubNav";
 import { AppShell } from "@/shared/layout/AppShell";
 import { NewTokenForm } from "./components/NewTokenForm";
 import { TokenRevealCard } from "./components/TokenRevealCard";
@@ -20,6 +21,7 @@ export function TokensPage() {
             Personal access tokens authenticate scripts and CI runners against the API.
           </p>
         </div>
+        <SettingsSubNav />
         <NewTokenForm onCreated={setCreated} />
         {created ? <TokenRevealCard pat={created} onDismiss={() => setCreated(null)} /> : null}
         {isPending ? (
