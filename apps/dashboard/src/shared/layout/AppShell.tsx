@@ -1,17 +1,32 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState, useSearch } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import { useLogout } from "@/shared/services/session.service";
 import { useBellCount } from "@/shared/services/bell.service";
 import { Button } from "@/shared/components/Button";
 import { NAV_GROUPS } from "@/shared/data/roles.data";
 import { usePermissions } from "@/shared/hooks/usePermissions";
+import { useWorkspaceClient } from "@/shared/lib/workspace-client";
+import type { WorkspaceTab } from "@/routes/router";
 
 const ITEM_PATHS = {
   Overview: "/overview",
   "Alerts & Tasks": "/alerts",
   Clients: "/clients",
+  "Team & Permissions": "/team",
   Settings: "/settings/tokens",
 } as const;
+
+const WORKSPACE_TABS: Record<string, WorkspaceTab> = {
+  "Ad Accounts": "ad-accounts",
+  Campaigns: "campaigns",
+  "Ad Sets": "ad-sets",
+  "Ads & Creatives": "creatives",
+  "Attribution & Revenue": "revenue",
+};
+
+const NAV_BASE_CLASS = "rounded-[10px] px-3 py-1.5 text-sm transition-colors";
+const NAV_ACTIVE_CLASS = "bg-volt-primary/15 font-medium text-volt-primary-strong";
+const NAV_IDLE_CLASS = "text-volt-text-2 hover:bg-volt-surface-2 hover:text-volt-text";
 
 function TopbarBell() {
   const bell = useBellCount();
@@ -88,33 +103,56 @@ function Sidebar({ pathname }: { pathname: string }) {
   );
 }
 
-function NavItem({ item, pathname }: { item: string; pathname: string }) {
-  const path = (ITEM_PATHS as Record<string, string | undefined>)[item];
-  const active = path !== undefined && (pathname === path || pathname.startsWith(`${path}/`));
+function navLinkClass(active: boolean): string {
+  return cn(NAV_BASE_CLASS, active ? NAV_ACTIVE_CLASS : NAV_IDLE_CLASS);
+}
 
-  if (path === undefined) {
+function NavItem({ item, pathname }: { item: string; pathname: string }) {
+  const workspaceClient = useWorkspaceClient();
+  const search = useSearch({ strict: false }) as { tab?: string };
+  const path = (ITEM_PATHS as Record<string, string | undefined>)[item];
+  const tab = WORKSPACE_TABS[item];
+
+  if (path !== undefined) {
+    const active = pathname === path || pathname.startsWith(`${path}/`);
     return (
-      <span
-        title="Ships in a later milestone"
-        className="cursor-default rounded-[10px] px-3 py-1.5 text-sm text-volt-text-3/60"
+      <Link
+        to={path as "/overview"}
+        search={path === "/alerts" ? { tab: "alerts" } : undefined}
+        className={navLinkClass(active)}
       >
         {item}
-      </span>
+      </Link>
+    );
+  }
+
+  if (tab !== undefined) {
+    if (workspaceClient === null) {
+      return (
+        <Link to="/clients" title="Pick a client first" className={navLinkClass(false)}>
+          {item}
+        </Link>
+      );
+    }
+    const active = pathname.startsWith("/clients/") && search.tab === tab;
+    return (
+      <Link
+        to="/clients/$slug"
+        params={{ slug: workspaceClient.slug }}
+        search={{ tab }}
+        className={navLinkClass(active)}
+      >
+        {item}
+      </Link>
     );
   }
 
   return (
-    <Link
-      to={path as "/overview"}
-      search={path === "/alerts" ? { tab: "alerts" } : undefined}
-      className={cn(
-        "rounded-[10px] px-3 py-1.5 text-sm transition-colors",
-        active
-          ? "bg-volt-primary/15 font-medium text-volt-primary-strong"
-          : "text-volt-text-2 hover:bg-volt-surface-2 hover:text-volt-text",
-      )}
+    <span
+      title="Ships in V1"
+      className={cn(NAV_BASE_CLASS, "cursor-default text-volt-text-3/60")}
     >
       {item}
-    </Link>
+    </span>
   );
 }
