@@ -15,7 +15,7 @@ export function toMember(dto: UserDto): Member {
     clientRoleTier: dto.clientRoleTier,
     status: dto.status,
     lastActiveAt: toDate(dto.lastActiveAt),
-    createdAt: new Date(dto.createdAt),
+    createdAt: toDate(dto.createdAt ?? null),
   };
 }
 

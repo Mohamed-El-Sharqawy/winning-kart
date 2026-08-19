@@ -19,7 +19,8 @@ export function formatAed(value: number | null): string {
   return formatMoney(value, "AED");
 }
 
-export function formatDate(value: Date): string {
+export function formatDate(value: Date | null): string {
+  if (value === null) return DASH;
   return value.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 

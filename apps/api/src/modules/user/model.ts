@@ -11,6 +11,8 @@ const listUserColumns = {
   agencyRole: users.agencyRole,
   clientRoleTier: users.clientRoleTier,
   status: users.status,
+  lastActiveAt: users.lastActiveAt,
+  createdAt: users.createdAt,
 };
 
 export interface NewUser {

@@ -22,5 +22,5 @@ export interface Member {
   clientRoleTier: ClientTier | null;
   status: MemberStatus;
   lastActiveAt: Date | null;
-  createdAt: Date;
+  createdAt: Date | null;
 }

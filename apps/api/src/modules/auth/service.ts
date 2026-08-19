@@ -14,6 +14,7 @@ export class AuthService {
     if (!valid) {
       return null;
     }
+    void this.model.touchLastActive(user.id);
     return user;
   }
 
