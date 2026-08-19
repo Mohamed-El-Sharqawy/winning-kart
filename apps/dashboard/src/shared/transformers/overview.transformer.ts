@@ -1,5 +1,15 @@
-import type { OverviewClientRowDto, OverviewDto, OverviewIssueDto } from "../dto/overview.dto";
-import type { Overview, OverviewClientRow, OverviewIssue } from "../types/overview.types";
+import type {
+  OverviewClientRowDto,
+  OverviewDto,
+  OverviewInsightDto,
+  OverviewIssueDto,
+} from "../dto/overview.dto";
+import type {
+  Overview,
+  OverviewClientRow,
+  OverviewInsight,
+  OverviewIssue,
+} from "../types/overview.types";
 
 function toDate(value: string | null | undefined): Date | null {
   return value ? new Date(value) : null;
@@ -26,6 +36,16 @@ function toClientRow(dto: OverviewClientRowDto): OverviewClientRow {
   };
 }
 
+function toInsight(dto: OverviewInsightDto): OverviewInsight {
+  return {
+    id: dto.id,
+    severity: dto.severity,
+    headline: dto.headline,
+    entityName: dto.entityName,
+    ctaTarget: dto.ctaTarget ?? null,
+  };
+}
+
 export function toOverview(dto: OverviewDto): Overview {
   return {
     spend: dto.spend ?? null,
@@ -37,5 +57,6 @@ export function toOverview(dto: OverviewDto): Overview {
     accountsTotal: dto.accountsTotal ?? 0,
     issues: (dto.issues ?? []).map(toIssue),
     clients: (dto.clients ?? []).map(toClientRow),
+    insights: (dto.insights ?? []).map(toInsight),
   };
 }

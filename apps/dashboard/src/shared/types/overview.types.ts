@@ -15,6 +15,14 @@ export interface OverviewClientRow {
   roas: number | null;
 }
 
+export interface OverviewInsight {
+  id: string;
+  severity: "critical" | "warning" | "info";
+  headline: string;
+  entityName: string;
+  ctaTarget: string | null;
+}
+
 export interface Overview {
   spend: number | null;
   revenue: number | null;
@@ -25,4 +33,5 @@ export interface Overview {
   accountsTotal: number;
   issues: OverviewIssue[];
   clients: OverviewClientRow[];
+  insights: OverviewInsight[];
 }
