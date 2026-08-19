@@ -47,6 +47,7 @@ const adItemDto = t.Object({
   format: nullableString,
   creativeId: nullableString,
   thumbnailUrl: nullableString,
+  bodyCopy: nullableString,
   spend: nullableNumber,
   revenue: nullableNumber,
   purchases: nullableNumber,

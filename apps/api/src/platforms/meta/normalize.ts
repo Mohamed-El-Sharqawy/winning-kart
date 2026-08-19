@@ -4,6 +4,7 @@ import type {
   MetaAdRow,
   MetaAdSetRow,
   MetaCampaignRow,
+  MetaCreativeDetailRow,
   MetaInsightRow,
 } from "./client";
 
@@ -210,6 +211,27 @@ export function normalizeAd(row: MetaAdRow): AdRecord {
     status: mapEntityStatus(row.effective_status, row.status),
     format: null,
     creativeId: row.creative?.id ?? null,
+  };
+}
+
+export interface CreativeDetailRecord {
+  creativeId: string | null;
+  thumbnailUrl: string | null;
+  bodyCopy: string | null;
+  format: string | null;
+}
+
+export function normalizeCreativeDetail(
+  row: MetaCreativeDetailRow | null | undefined
+): CreativeDetailRecord {
+  if (row === null || row === undefined) {
+    return { creativeId: null, thumbnailUrl: null, bodyCopy: null, format: null };
+  }
+  return {
+    creativeId: row.id ?? null,
+    thumbnailUrl: row.thumbnail_url ?? row.image_url ?? null,
+    bodyCopy: row.body ?? row.title ?? null,
+    format: row.video_id ? "VIDEO" : "IMAGE",
   };
 }
 

@@ -45,6 +45,7 @@ export interface AdPerformance {
   format: string | null;
   creativeId: string | null;
   thumbnailUrl: string | null;
+  bodyCopy: string | null;
   spend: number | null;
   revenue: number | null;
   purchases: number | null;
@@ -264,6 +265,7 @@ export class PerformanceService {
           format: row.format,
           creativeId: row.creativeId,
           thumbnailUrl: row.thumbnailUrl,
+          bodyCopy: row.bodyCopy,
           spend: metrics.spend,
           revenue: metrics.revenue,
           purchases: metrics.purchases,

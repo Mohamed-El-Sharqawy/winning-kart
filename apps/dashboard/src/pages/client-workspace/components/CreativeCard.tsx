@@ -24,14 +24,28 @@ function MetricLabel({ children }: { children: string }) {
   return <dt className="text-[11px] uppercase tracking-wider text-volt-text-3">{children}</dt>;
 }
 
-export function CreativeCard({ creative }: { creative: Creative }) {
+export function CreativeCard({ creative, onSelect }: { creative: Creative; onSelect?: () => void }) {
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = creative.thumbnailUrl !== null && !imageFailed;
   const copy = creative.fatigue ? FATIGUE_FLAG_COPY[creative.fatigue.flag] : null;
   const share = creative.spendShare === null ? null : `${Math.round(creative.spendShare * 100)}%`;
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-[10px] border border-volt-border bg-volt-surface transition-colors hover:border-volt-border-2">
+    <article
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (!onSelect) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      tabIndex={onSelect ? 0 : undefined}
+      className={cn(
+        "flex flex-col overflow-hidden rounded-[10px] border border-volt-border bg-volt-surface transition-colors hover:border-volt-border-2",
+        onSelect && "cursor-pointer",
+      )}
+    >
       <div className="relative aspect-[4/5]">
         {showImage ? (
           <img

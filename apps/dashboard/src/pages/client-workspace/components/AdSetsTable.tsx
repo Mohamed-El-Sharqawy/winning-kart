@@ -14,6 +14,8 @@ import { StatusDot } from "@/shared/components/StatusDot";
 import type { StatusDotVariant } from "@/shared/components/StatusDot";
 import type { AdSet } from "../types/ad-sets.types";
 
+const DASH = "—";
+
 const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
   active: "up",
   paused: "neutral",
@@ -23,11 +25,13 @@ const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
   with_issues: "down",
 };
 
-function statusVariant(status: string): StatusDotVariant {
+function statusVariant(status: string | null | undefined): StatusDotVariant {
+  if (status === null || status === undefined) return "neutral";
   return STATUS_VARIANTS[status.toLowerCase()] ?? "neutral";
 }
 
-function humanize(value: string): string {
+function humanize(value: string | null | undefined): string {
+  if (value === null || value === undefined) return DASH;
   return value.toLowerCase().replace(/_/g, " ");
 }
 

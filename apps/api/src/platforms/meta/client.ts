@@ -75,13 +75,17 @@ export interface MetaAdRow {
   creative?: MetaAdCreativeRef;
 }
 
-export interface MetaCreativeThumbnailRow {
-  id?: string;
-  thumbnail_url?: string;
-  title?: string;
+export interface MetaCreativeDetailRow {
+  id?: string | null;
+  name?: string | null;
+  thumbnail_url?: string | null;
+  image_url?: string | null;
+  video_id?: string | null;
+  title?: string | null;
+  body?: string | null;
 }
 
-export type CreativeThumbnailMap = Record<string, MetaCreativeThumbnailRow>;
+export type CreativeDetailMap = Record<string, MetaCreativeDetailRow>;
 
 export interface MetaInsightRow {
   date_start: string;
@@ -126,7 +130,6 @@ interface PagedBody<T> {
 const REQUEST_TIMEOUT_MS = 30000;
 const RETRY_DELAY_MS = 500;
 const PAGE_LIMIT = 100;
-const CREATIVE_IDS_LIMIT = 50;
 
 function classifyGraphError(status: number, body: unknown): MetaError {
   const graphError = (body as GraphErrorBody | null)?.error;
@@ -192,16 +195,16 @@ export class MetaClient {
     });
   }
 
-  async getCreativeThumbnails(ids: string[]): Promise<CreativeThumbnailMap> {
-    if (ids.length === 0) {
-      return {};
+  async getCreativeDetails(actId: string): Promise<CreativeDetailMap> {
+    const map: CreativeDetailMap = {};    const rows = await this.requestAll(`${actId}/adcreatives`, {
+      fields: "id,name,thumbnail_url,image_url,video_id,title,body",
+    });
+    for (const row of rows as Array<MetaCreativeDetailRow>) {
+      if (row && typeof row.id === "string") {
+        map[row.id] = row;
+      }
     }
-    const capped = ids.slice(0, CREATIVE_IDS_LIMIT);
-    const body = (await this.request("adcreatives", {
-      ids: capped.join(","),
-      fields: "thumbnail_url,title",
-    })) as CreativeThumbnailMap | null;
-    return body ?? {};
+    return map;
   }
 
   getInsights(actId: string, level: InsightLevel, timeRange: TimeRange): Promise<MetaInsightRow[]> {
