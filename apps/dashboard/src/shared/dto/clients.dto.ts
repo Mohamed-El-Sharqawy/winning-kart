@@ -5,6 +5,7 @@ export interface ClientDto {
   name: string;
   slug: string;
   status: ClientStatusDto;
+  industry?: string | null;
   displayCurrency: string;
   shareCostAndMarginWithClient?: boolean;
   createdAt: string;

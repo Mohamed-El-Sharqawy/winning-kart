@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
+import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import { Badge } from "@/shared/components/Badge";
 import type { BadgeVariant } from "@/shared/components/Badge";
@@ -12,7 +13,36 @@ const STATUS_VARIANTS: Record<ClientStatus, BadgeVariant> = {
   archived: "neutral",
 };
 
-export function ClientsTable({ clients }: { clients: Client[] }) {
+type ActionTone = "ghost" | "ghost-danger";
+
+function ActionButton({
+  tone,
+  children,
+  ...props
+}: { tone: ActionTone } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "cursor-pointer rounded-[10px] border border-transparent px-2.5 py-1 text-xs font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50",
+        tone === "ghost"
+          ? "bg-transparent text-volt-text-2 hover:bg-volt-surface-2 hover:text-volt-text"
+          : "bg-transparent text-volt-down hover:bg-volt-down-tint",
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+export interface ClientsTableProps {
+  clients: Client[];
+  onEdit: (client: Client) => void;
+  onDelete: (client: Client) => void;
+}
+
+export function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
   const navigate = useNavigate();
 
   const columns: Array<DataTableColumn<Client>> = [
@@ -46,6 +76,24 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
       header: "Created",
       align: "right",
       render: (row) => <span className="tabular">{formatDate(row.createdAt)}</span>,
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      align: "right",
+      render: (row) => (
+        <div
+          className="flex justify-end gap-1"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <ActionButton tone="ghost" onClick={() => onEdit(row)}>
+            Edit
+          </ActionButton>
+          <ActionButton tone="ghost-danger" onClick={() => onDelete(row)}>
+            Delete
+          </ActionButton>
+        </div>
+      ),
     },
   ];
 
