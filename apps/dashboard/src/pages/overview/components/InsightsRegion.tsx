@@ -2,8 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { StatusDot } from "@/shared/components/StatusDot";
-import { useOverviewInsights } from "../services/overview-insights.service";
-import type { OverviewInsightSeverity } from "../types/overview-insights.types";
+import { useOverview } from "@/shared/services/overview.service";
+import type { OverviewInsight } from "@/shared/types/overview.types";
+
+type OverviewInsightSeverity = OverviewInsight["severity"];
 
 const DOT_CLASSES: Record<OverviewInsightSeverity, string> = {
   critical: "bg-volt-down shadow-[0_0_0_3px_var(--color-volt-down-tint)]",
@@ -44,8 +46,8 @@ function CtaLink({ target }: { target: string }) {
 }
 
 export function InsightsRegion() {
-  const { data: insights, isPending, isError } = useOverviewInsights();
-  const list = insights ?? [];
+  const { data: overview, isPending, isError } = useOverview();
+  const list = overview?.insights ?? [];
 
   return (
     <section className="flex flex-col gap-3">
