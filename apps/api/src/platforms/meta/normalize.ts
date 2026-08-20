@@ -1,11 +1,12 @@
-import type {
-  MetaAccountInfo,
-  MetaActionMetric,
-  MetaAdRow,
-  MetaAdSetRow,
-  MetaCampaignRow,
-  MetaCreativeDetailRow,
-  MetaInsightRow,
+import {
+  extractVideoId,
+  type MetaAccountInfo,
+  type MetaActionMetric,
+  type MetaAdRow,
+  type MetaAdSetRow,
+  type MetaCampaignRow,
+  type MetaCreativeDetailRow,
+  type MetaInsightRow,
 } from "./client";
 
 export type EntityStatus = "ACTIVE" | "PAUSED" | "ARCHIVED" | "DELETED";
@@ -223,6 +224,11 @@ export interface CreativeDetailRecord {
   format: string | null;
 }
 
+function playableUrl(url: string | null | undefined): string | null {
+  if (typeof url !== "string" || url.length === 0) return null;
+  return url.split("?")[0].toLowerCase().endsWith(".mp4") ? url : null;
+}
+
 export function normalizeCreativeDetail(
   row: MetaCreativeDetailRow | null | undefined
 ): CreativeDetailRecord {
@@ -236,14 +242,24 @@ export function normalizeCreativeDetail(
       format: null,
     };
   }
+  const storyImage = row.object_story_spec?.video_data?.image_url ?? null;
+  const feedThumb = row.asset_feed_spec?.videos?.find(
+    (video) => typeof video.thumbnail_url === "string" && video.thumbnail_url.length > 0,
+  )?.thumbnail_url ?? null;
+  const isVideo =
+    extractVideoId(row) !== null ||
+    row.video_source != null ||
+    row.attachment_video_url != null ||
+    playableUrl(row.effective_object_store_url) !== null;
   return {
     creativeId: row.id ?? null,
     thumbnailUrl: row.thumbnail_url ?? row.image_url ?? null,
     previewImageUrl:
-      row.image_url ?? row.effective_object_store_url ?? row.video_picture ?? null,
-    previewVideoUrl: row.video_source ?? null,
+      row.image_url ?? row.effective_object_store_url ?? storyImage ?? feedThumb ?? row.video_picture ?? null,
+    previewVideoUrl:
+      row.video_source ?? row.attachment_video_url ?? playableUrl(row.effective_object_store_url),
     bodyCopy: row.body ?? row.title ?? null,
-    format: row.video_id ? "VIDEO" : "IMAGE",
+    format: isVideo ? "VIDEO" : "IMAGE",
   };
 }
 

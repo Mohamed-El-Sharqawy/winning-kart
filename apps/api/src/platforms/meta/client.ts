@@ -86,6 +86,25 @@ export interface MetaCreativeDetailRow {
   video_picture?: string | null;
   title?: string | null;
   body?: string | null;
+  object_story_spec?: {
+    video_data?: { video_id?: string | null; image_url?: string | null } | null;
+  } | null;
+  asset_feed_spec?: {
+    videos?: Array<{ video_id?: string | null; thumbnail_url?: string | null }> | null;
+  } | null;
+  effective_object_story_id?: string | null;
+  attachment_video_url?: string | null;
+}
+
+export function extractVideoId(row: MetaCreativeDetailRow): string | null {
+  if (typeof row.video_id === "string" && row.video_id.length > 0) return row.video_id;
+  const storyVideoId = row.object_story_spec?.video_data?.video_id;
+  if (typeof storyVideoId === "string" && storyVideoId.length > 0) return storyVideoId;
+  const feedVideo = row.asset_feed_spec?.videos?.find(
+    (video) => typeof video.video_id === "string" && video.video_id.length > 0,
+  );
+  if (feedVideo !== undefined) return feedVideo.video_id as string;
+  return null;
 }
 
 export type CreativeDetailMap = Record<string, MetaCreativeDetailRow>;
@@ -96,6 +115,18 @@ export interface MetaVideoRow {
 }
 
 export type VideoDetailMap = Record<string, MetaVideoRow>;
+
+export interface MetaStoryPostRow {
+  attachments?: {
+    data?: Array<{
+      media_type?: string | null;
+      url?: string | null;
+      media?: { source?: string | null } | null;
+    }>;
+  } | null;
+}
+
+export type StoryPostMap = Record<string, MetaStoryPostRow>;
 
 export interface MetaInsightRow {
   date_start: string;
@@ -220,43 +251,59 @@ export class MetaClient {
     const map: CreativeDetailMap = {};
     const rows = await this.requestAll(`${actId}/adcreatives`, {
       fields:
-        "id,name,thumbnail_url,image_url,effective_object_store_url,video_id,title,body",
+        "id,name,thumbnail_url,image_url,effective_object_store_url,video_id,title,body,object_story_spec{video_data{video_id,image_url}},asset_feed_spec{videos{video_id,thumbnail_url}},effective_object_story_id",
     });
     const videoIds = new Set<string>();
+    const storyPostIds = new Set<string>();
     for (const row of rows as Array<MetaCreativeDetailRow>) {
       if (row && typeof row.id === "string") {
         map[row.id] = row;
-        if (typeof row.video_id === "string" && row.video_id.length > 0) {
-          videoIds.add(row.video_id);
+        const videoId = extractVideoId(row);
+        if (videoId !== null) {
+          videoIds.add(videoId);
+        } else if (typeof row.effective_object_story_id === "string" && row.effective_object_story_id.length > 0) {
+          storyPostIds.add(row.effective_object_story_id);
         }
       }
     }
     if (videoIds.size > 0) {
       const videos = await this.getVideosByIds([...videoIds]);
       for (const row of Object.values(map)) {
-        const videoId = row.video_id;
-        const video = videoId !== undefined && videoId !== null ? videos[videoId] : undefined;
+        const videoId = extractVideoId(row);
+        const video = videoId !== null ? videos[videoId] : undefined;
         if (video !== undefined) {
           row.video_source = video.source ?? null;
           row.video_picture = video.picture ?? null;
         }
       }
     }
+    if (storyPostIds.size > 0) {
+      const posts = await this.getStoryPostsByIds([...storyPostIds]);
+      for (const row of Object.values(map)) {
+        const postId = row.effective_object_story_id;
+        const post = postId !== undefined && postId !== null ? posts[postId] : undefined;
+        if (post === undefined) continue;
+        const attachment = post.attachments?.data?.[0];
+        if (attachment && attachment.media_type === "video") {
+          row.attachment_video_url = attachment.url ?? attachment.media?.source ?? null;
+        }
+      }
+    }
     return map;
   }
 
-  private async getVideosByIds(ids: string[]): Promise<VideoDetailMap> {
-    const map: VideoDetailMap = {};
+  private async getObjectsByIds<T>(ids: string[], fields: string): Promise<Record<string, T>> {
+    const map: Record<string, T> = {};
     for (let offset = 0; offset < ids.length; offset += VIDEO_IDS_BATCH_LIMIT) {
       const batch = ids.slice(offset, offset + VIDEO_IDS_BATCH_LIMIT);
       try {
         const body = (await this.request("", {
           ids: batch.join(","),
-          fields: "source,picture",
+          fields,
         })) as Record<string, unknown> | null;
-        for (const [videoId, value] of Object.entries(body ?? {})) {
+        for (const [id, value] of Object.entries(body ?? {})) {
           if (value && typeof value === "object") {
-            map[videoId] = value as MetaVideoRow;
+            map[id] = value as T;
           }
         }
       } catch (error) {
@@ -267,6 +314,14 @@ export class MetaClient {
       }
     }
     return map;
+  }
+
+  private getVideosByIds(ids: string[]): Promise<VideoDetailMap> {
+    return this.getObjectsByIds<MetaVideoRow>(ids, "source,picture");
+  }
+
+  private getStoryPostsByIds(ids: string[]): Promise<StoryPostMap> {
+    return this.getObjectsByIds<MetaStoryPostRow>(ids, "attachments{media_type,type,url,media}");
   }
 
   getInsights(actId: string, level: InsightLevel, timeRange: TimeRange): Promise<MetaInsightRow[]> {
