@@ -1,0 +1,109 @@
+{
+  "data": {
+    "adAccountId": "act_dia_1",
+    "adAccountPlatformId": "act_df_1234",
+    "accountName": "Dia Flower Main",
+    "campaign": {
+      "id": "4cc1b849-e256-4cd9-a632-bfe593bbf9a1",
+      "name": "Dia Flower Eid Push",
+      "status": "ACTIVE",
+      "objective": "OUTCOME_SALES",
+      "dailyBudget": 650,
+      "lifetimeBudget": null,
+      "currency": "AED",
+      "spend": 41260,
+      "revenue": 132032,
+      "purchases": 522,
+      "roas": 3.2,
+      "cpa": 79.04,
+      "ctr": 0.0286,
+      "frequency": 2.8
+    },
+    "series": [
+      { "date": "2026-08-15", "spend": 9800, "revenue": 23520, "roas": 2.4 },
+      { "date": "2026-08-16", "spend": 8260, "revenue": 41300, "roas": 5.0 },
+      { "date": "2026-08-17", "spend": 7240, "revenue": null, "roas": null },
+      { "date": "2026-08-18", "spend": 8100, "revenue": 21060, "roas": 2.6 },
+      { "date": "2026-08-19", "spend": 7860, "revenue": 34584, "roas": 4.4 }
+    ],
+    "funnel": {
+      "impressions": 1240000,
+      "reach": 440000,
+      "clicks": 38200,
+      "landingPageViews": 31500,
+      "addToCart": 4100,
+      "initiateCheckout": 1980,
+      "purchases": 812,
+      "revenue": 132032
+    },
+    "adSets": [
+      {
+        "id": "as_df_retention",
+        "name": "Eid Retargeting - Purchases",
+        "status": "ACTIVE",
+        "optimizationGoal": "Purchases",
+        "dailyBudget": 350,
+        "currency": "AED",
+        "spend": 24860,
+        "revenue": 94468,
+        "purchases": 331,
+        "roas": 3.8,
+        "cpa": 75.11,
+        "ctr": 0.0307,
+        "frequency": 3.2,
+        "reach": 278000
+      },
+      {
+        "id": "as_df_prospecting",
+        "name": "Eid Prospecting - Link Clicks",
+        "status": "ACTIVE",
+        "optimizationGoal": "Link Clicks",
+        "dailyBudget": 300,
+        "currency": "AED",
+        "spend": 16400,
+        "revenue": 41000,
+        "purchases": 191,
+        "roas": 2.5,
+        "cpa": 85.86,
+        "ctr": 0.0271,
+        "frequency": 2.4,
+        "reach": 520000
+      }
+    ],
+    "ads": [
+      {
+        "id": "ad_df_hero_video",
+        "name": "Eid Hero Video",
+        "status": "ACTIVE",
+        "format": "VIDEO",
+        "thumbnailUrl": null,
+        "spend": 18240,
+        "revenue": 72960,
+        "purchases": 264,
+        "roas": 4.0,
+        "ctr": 0.03,
+        "frequency": 2.6,
+        "spendShare": 0.44,
+        "fatigue": null
+      },
+      {
+        "id": "ad_df_carousel",
+        "name": "Eid Offers Carousel",
+        "status": "ACTIVE",
+        "format": "CAROUSEL",
+        "thumbnailUrl": null,
+        "spend": 23020,
+        "revenue": 59072,
+        "purchases": 258,
+        "roas": 2.6,
+        "ctr": 0.028,
+        "frequency": 4.9,
+        "spendShare": 0.56,
+        "fatigue": {
+          "flag": "fatiguing",
+          "reason": "Frequency 4.9 with CTR down 19% w/w"
+        }
+      }
+    ]
+  }
+}

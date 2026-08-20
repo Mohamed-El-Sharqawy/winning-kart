@@ -12,17 +12,17 @@ describe("ad sets sorting", () => {
   });
 
   it("flips row order when clicking the Spend header", () => {
-    const rows = (adSetsFixture as { data: Array<{ name: string; spend: number }> }).data;
+    const rows = (adSetsFixture as { data: Array<{ name: string }> }).data;
     const bySpendDesc = [...rows].sort((a, b) => b.spend - a.spend);
     const bySpendAsc = [...bySpendDesc].reverse();
+    const table = () => cy.contains("table", "Nour Broad - Purchases");
 
-    cy.contains("tr,li,[role='row']", bySpendAsc[0].name, { timeout: 15000 }).should("be.visible");
+    table().should("be.visible");
 
-    cy.contains("th,[role='columnheader']", "Spend", { timeout: 15000 }).click();
-    cy.contains("tr,li,[role='row']", bySpendDesc[0].name, { timeout: 15000 }).should("be.visible");
-    cy.contains("tr,li,[role='row']", bySpendAsc[0].name).should("not.be.visible");
+    table().contains("button", "Spend").click();
+    table().find("tbody tr").first().contains(bySpendDesc[0].name);
 
-    cy.contains("th,[role='columnheader']", "Spend").click();
-    cy.contains("tr,li,[role='row']", bySpendAsc[0].name, { timeout: 15000 }).should("be.visible");
+    table().contains("button", "Spend").click();
+    table().find("tbody tr").first().contains(bySpendAsc[0].name);
   });
 });

@@ -19,8 +19,12 @@ import { SettingsSchedulerPage } from "@/pages/settings-scheduler";
 import { TeamPage } from "@/pages/team";
 import { TokensPage } from "@/pages/tokens";
 import { sessionQueryOptions } from "@/shared/services/session.service";
+import { RouteError } from "@/shared/components/RouteError";
 
-const rootRoute = createRootRoute({ component: () => <Outlet /> });
+const rootRoute = createRootRoute({
+  component: () => <Outlet />,
+  errorComponent: RouteError,
+});
 
 async function loadSession() {
   return queryClient.fetchQuery(sessionQueryOptions());

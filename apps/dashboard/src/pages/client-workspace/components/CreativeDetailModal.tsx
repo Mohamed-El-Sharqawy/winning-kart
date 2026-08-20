@@ -47,33 +47,52 @@ export interface CreativeDetailModalProps {
 
 export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetailModalProps) {
   const [imageFailed, setImageFailed] = useState(false);
-  const showImage = creative.thumbnailUrl !== null && !imageFailed;
+  const posterUrl = creative.previewImageUrl ?? creative.thumbnailUrl;
+  const hasVideo = creative.previewVideoUrl !== null;
+  const showPreviewImage = creative.previewImageUrl !== null && !imageFailed;
+  const showLegacyImage =
+    creative.previewImageUrl === null && creative.thumbnailUrl !== null && !imageFailed;
   const isVideo = creative.format.toUpperCase() === "VIDEO";
   const formatLabel = creative.format === "" ? "CREATIVE" : creative.format;
   const share = creative.spendShare === null ? null : `${Math.round(creative.spendShare * 100)}%`;
   const fatigue = creative.fatigue ? FATIGUE_FLAG_COPY[creative.fatigue.flag] : null;
   const adsManagerUrl =
     actId !== null && actId !== "" && creative.platformAdId !== ""
-      ? `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${actId}&selected_ad_ids=${creative.platformAdId}`
+      ? `https://adsmanager.facebook.com/adsmanager/manage/ads?act=${actId.replace(/^act_/, "")}&selected_ad_ids=${creative.platformAdId}&nav_source=no_referrer`
       : null;
 
   return (
     <Modal title={creative.name} onClose={onClose} width="lg">
       <div className="flex flex-col gap-4">
-        <div className="relative flex items-center justify-center overflow-hidden rounded-[10px] bg-volt-surface-2">
-          {showImage ? (
+        <div className="relative flex items-center justify-center overflow-hidden rounded-[10px] border border-volt-border bg-volt-surface-2">
+          {hasVideo ? (
+            <video
+              controls
+              preload="metadata"
+              poster={posterUrl ?? undefined}
+              src={creative.previewVideoUrl ?? undefined}
+              className="max-h-[60vh] w-full object-contain"
+            />
+          ) : showPreviewImage ? (
+            <img
+              src={creative.previewImageUrl ?? undefined}
+              alt=""
+              onError={() => setImageFailed(true)}
+              className="max-h-[60vh] w-full object-contain"
+            />
+          ) : showLegacyImage ? (
             <img
               src={creative.thumbnailUrl ?? undefined}
               alt=""
               onError={() => setImageFailed(true)}
-              className="max-h-[360px] w-full object-contain"
+              className="max-h-[60vh] w-full object-contain"
             />
           ) : (
             <div className="flex aspect-video w-full items-center justify-center text-sm text-volt-text-3">
               {formatLabel}
             </div>
           )}
-          {isVideo && showImage ? (
+          {isVideo && !hasVideo && (showPreviewImage || showLegacyImage) ? (
             <span className="absolute inset-0 flex items-center justify-center">
               <Badge>VIDEO</Badge>
             </span>

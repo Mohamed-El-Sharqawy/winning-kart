@@ -17,6 +17,8 @@ export interface CreativeDto {
   bodyCopy: string | null;
   creativeId: string;
   thumbnailUrl: string | null;
+  previewImageUrl: string | null;
+  previewVideoUrl: string | null;
   spend: number | null;
   revenue: number | null;
   purchases: number | null;

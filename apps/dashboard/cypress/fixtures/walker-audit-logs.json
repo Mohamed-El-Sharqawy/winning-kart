@@ -1,0 +1,40 @@
+{
+  "data": [
+    {
+      "id": "aud_w01",
+      "actorUserId": null,
+      "actorType": "system",
+      "action": "sync.run",
+      "targetEntityType": "ad_account",
+      "targetEntityId": null,
+      "outcome": "success",
+      "ip": null,
+      "userAgent": null,
+      "occurredAt": "2026-08-19T02:10:00.000Z"
+    },
+    {
+      "id": "aud_w02",
+      "actorUserId": "usr_7f3a91c2d0b84e55a1c3",
+      "actorType": "user",
+      "action": "auth.login",
+      "targetEntityType": "session",
+      "targetEntityId": "ses_2201",
+      "outcome": "success",
+      "ip": "10.0.0.12",
+      "userAgent": "cypress",
+      "occurredAt": "2026-08-19T09:12:00.000Z"
+    },
+    {
+      "id": "aud_w03",
+      "actorUserId": "usr_2b8c40de97a14f0fb6e5",
+      "actorType": "user",
+      "action": "client.update",
+      "targetEntityType": "client",
+      "targetEntityId": "cli_dia_flower",
+      "outcome": "failure",
+      "ip": "10.0.0.14",
+      "userAgent": "cypress",
+      "occurredAt": "2026-08-18T16:45:00.000Z"
+    }
+  ]
+}

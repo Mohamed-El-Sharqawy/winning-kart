@@ -4,7 +4,8 @@ import type { DataTableColumn } from "@/shared/components/DataTable";
 import { StatusDot } from "@/shared/components/StatusDot";
 import type { AuditLog } from "../types/audit-logs.types";
 
-function shortId(value: string): string {
+function shortId(value: string | null): string {
+  if (value === null) return "—";
   return value.length > 8 ? `${value.slice(0, 8)}…` : value;
 }
 
