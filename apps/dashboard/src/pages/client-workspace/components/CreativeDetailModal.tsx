@@ -58,7 +58,7 @@ export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetail
   const fatigue = creative.fatigue ? FATIGUE_FLAG_COPY[creative.fatigue.flag] : null;
   const adsManagerUrl =
     actId !== null && actId !== "" && creative.platformAdId !== ""
-      ? `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${actId}&selected_ad_ids=${creative.platformAdId}`
+      ? `https://adsmanager.facebook.com/adsmanager/manage/ads?act=${actId.replace(/^act_/, "")}&selected_ad_ids=${creative.platformAdId}&nav_source=no_referrer`
       : null;
 
   return (
