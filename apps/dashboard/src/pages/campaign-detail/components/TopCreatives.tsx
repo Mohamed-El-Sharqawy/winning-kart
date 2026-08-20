@@ -67,7 +67,7 @@ export function TopCreatives({ ads, currency }: TopCreativesProps) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-volt-text">{ad.name}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <span className="text-xs capitalize text-volt-text-3">{ad.format.toLowerCase().replace(/_/g, " ")}</span>
+                  <span className="text-xs capitalize text-volt-text-3">{(ad.format ?? "").toLowerCase().replace(/_/g, " ")}</span>
                   {ad.fatigue ? (
                     <Badge variant={fatigueVariant(ad.fatigue.flag)}>
                       <span title={ad.fatigue.reason}>{ad.fatigue.flag.toLowerCase().replace(/_/g, " ")}</span>

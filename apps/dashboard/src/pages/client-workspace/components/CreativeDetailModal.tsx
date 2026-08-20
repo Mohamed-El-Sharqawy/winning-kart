@@ -52,8 +52,9 @@ export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetail
   const showPreviewImage = creative.previewImageUrl !== null && !imageFailed;
   const showLegacyImage =
     creative.previewImageUrl === null && creative.thumbnailUrl !== null && !imageFailed;
-  const isVideo = creative.format.toUpperCase() === "VIDEO";
-  const formatLabel = creative.format === "" ? "CREATIVE" : creative.format;
+  const format = creative.format ?? "";
+  const isVideo = format.toUpperCase() === "VIDEO";
+  const formatLabel = format === "" ? "CREATIVE" : format;
   const share = creative.spendShare === null ? null : `${Math.round(creative.spendShare * 100)}%`;
   const fatigue = creative.fatigue ? FATIGUE_FLAG_COPY[creative.fatigue.flag] : null;
   const adsManagerUrl =
