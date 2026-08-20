@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "id": "act_dia_1",
+      "name": "Dia Flower Main",
+      "slug": "dia-flower-main",
+      "adAccountId": "act_df_1234",
+      "platform": "meta",
+      "healthState": "healthy",
+      "currency": "AED",
+      "timezone": "UTC",
+      "lastSyncAt": "2026-08-19T06:00:00.000Z",
+      "campaignCount": 1,
+      "tokenType": "system_user",
+      "tokenExpiresAt": null
+    }
+  ]
+}

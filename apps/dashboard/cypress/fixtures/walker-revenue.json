@@ -1,0 +1,37 @@
+{
+  "data": {
+    "events": [
+      {
+        "id": "rev_w01",
+        "sourceOrderId": "ord_3101",
+        "tsUtc": "2026-08-18T11:20:00.000Z",
+        "value": 2450,
+        "currency": "AED",
+        "matchTier": "A",
+        "resolvedEntityLevel": "campaign",
+        "campaignName": "Dia Flower Eid Push",
+        "sourceName": "shopify"
+      },
+      {
+        "id": "rev_w02",
+        "sourceOrderId": "ord_3108",
+        "tsUtc": "2026-08-19T13:45:00.000Z",
+        "value": 610.25,
+        "currency": "AED",
+        "matchTier": "C",
+        "resolvedEntityLevel": "none",
+        "campaignName": null,
+        "sourceName": "utm-no-match"
+      }
+    ],
+    "summary": {
+      "totalValue": 3060.25,
+      "currency": "AED",
+      "count": 2,
+      "tierA": { "count": 1, "value": 2450 },
+      "tierB": { "count": 0, "value": 0 },
+      "tierC": { "count": 1, "value": 610.25 },
+      "matchedPct": 0.5
+    }
+  }
+}

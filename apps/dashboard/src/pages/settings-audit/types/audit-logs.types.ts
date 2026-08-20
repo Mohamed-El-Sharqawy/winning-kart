@@ -8,11 +8,11 @@ export interface AuditLogFilters {
 
 export interface AuditLog {
   id: string;
-  actorUserId: string;
+  actorUserId: string | null;
   actorType: string;
   action: string;
   targetEntityType: string;
-  targetEntityId: string;
+  targetEntityId: string | null;
   outcome: string;
   ip: string | null;
   userAgent: string | null;

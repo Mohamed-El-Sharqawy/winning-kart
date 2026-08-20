@@ -596,7 +596,9 @@ export class AdAccountsService {
       if (row.creativeId === null) {
         continue;
       }
-      if (row.thumbnailUrl !== null && row.bodyCopy !== null && row.format !== null) {
+      const previewsComplete =
+        row.previewImageUrl !== null && (row.previewVideoUrl !== null || row.format !== "VIDEO");
+      if (row.thumbnailUrl !== null && row.bodyCopy !== null && row.format !== null && previewsComplete) {
         continue;
       }
       const rows = rowsByCreative.get(row.creativeId);
@@ -617,9 +619,21 @@ export class AdAccountsService {
         }
         const record = normalizeCreativeDetail(detail);
         for (const row of rows) {
-          const patch: { thumbnailUrl?: string; bodyCopy?: string; format?: string } = {};
+          const patch: {
+            thumbnailUrl?: string;
+            previewImageUrl?: string;
+            previewVideoUrl?: string;
+            bodyCopy?: string;
+            format?: string;
+          } = {};
           if (row.thumbnailUrl === null && record.thumbnailUrl !== null) {
             patch.thumbnailUrl = record.thumbnailUrl;
+          }
+          if (row.previewImageUrl === null && record.previewImageUrl !== null) {
+            patch.previewImageUrl = record.previewImageUrl;
+          }
+          if (row.previewVideoUrl === null && record.previewVideoUrl !== null) {
+            patch.previewVideoUrl = record.previewVideoUrl;
           }
           if (row.bodyCopy === null && record.bodyCopy !== null) {
             patch.bodyCopy = record.bodyCopy;
@@ -627,7 +641,13 @@ export class AdAccountsService {
           if (row.format === null && record.format !== null) {
             patch.format = record.format;
           }
-          if (patch.thumbnailUrl === undefined && patch.bodyCopy === undefined && patch.format === undefined) {
+          if (
+            patch.thumbnailUrl === undefined &&
+            patch.previewImageUrl === undefined &&
+            patch.previewVideoUrl === undefined &&
+            patch.bodyCopy === undefined &&
+            patch.format === undefined
+          ) {
             continue;
           }
           await this.model.updateAdCreative(account.id, row.platformAdId, patch);

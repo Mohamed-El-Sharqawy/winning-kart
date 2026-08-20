@@ -80,12 +80,22 @@ export interface MetaCreativeDetailRow {
   name?: string | null;
   thumbnail_url?: string | null;
   image_url?: string | null;
+  effective_object_store_url?: string | null;
   video_id?: string | null;
+  video_source?: string | null;
+  video_picture?: string | null;
   title?: string | null;
   body?: string | null;
 }
 
 export type CreativeDetailMap = Record<string, MetaCreativeDetailRow>;
+
+export interface MetaVideoRow {
+  source?: string | null;
+  picture?: string | null;
+}
+
+export type VideoDetailMap = Record<string, MetaVideoRow>;
 
 export interface MetaInsightRow {
   date_start: string;
@@ -130,6 +140,7 @@ interface PagedBody<T> {
 const REQUEST_TIMEOUT_MS = 30000;
 const RETRY_DELAY_MS = 500;
 const PAGE_LIMIT = 100;
+const VIDEO_IDS_BATCH_LIMIT = 50;
 
 const BASE_INSIGHT_FIELDS =
   "spend,impressions,reach,clicks,ctr,cpc,cpm,frequency,actions,action_values";
@@ -206,12 +217,53 @@ export class MetaClient {
   }
 
   async getCreativeDetails(actId: string): Promise<CreativeDetailMap> {
-    const map: CreativeDetailMap = {};    const rows = await this.requestAll(`${actId}/adcreatives`, {
-      fields: "id,name,thumbnail_url,image_url,video_id,title,body",
+    const map: CreativeDetailMap = {};
+    const rows = await this.requestAll(`${actId}/adcreatives`, {
+      fields:
+        "id,name,thumbnail_url,image_url,effective_object_store_url,video_id,title,body",
     });
+    const videoIds = new Set<string>();
     for (const row of rows as Array<MetaCreativeDetailRow>) {
       if (row && typeof row.id === "string") {
         map[row.id] = row;
+        if (typeof row.video_id === "string" && row.video_id.length > 0) {
+          videoIds.add(row.video_id);
+        }
+      }
+    }
+    if (videoIds.size > 0) {
+      const videos = await this.getVideosByIds([...videoIds]);
+      for (const row of Object.values(map)) {
+        const videoId = row.video_id;
+        const video = videoId !== undefined && videoId !== null ? videos[videoId] : undefined;
+        if (video !== undefined) {
+          row.video_source = video.source ?? null;
+          row.video_picture = video.picture ?? null;
+        }
+      }
+    }
+    return map;
+  }
+
+  private async getVideosByIds(ids: string[]): Promise<VideoDetailMap> {
+    const map: VideoDetailMap = {};
+    for (let offset = 0; offset < ids.length; offset += VIDEO_IDS_BATCH_LIMIT) {
+      const batch = ids.slice(offset, offset + VIDEO_IDS_BATCH_LIMIT);
+      try {
+        const body = (await this.request("", {
+          ids: batch.join(","),
+          fields: "source,picture",
+        })) as Record<string, unknown> | null;
+        for (const [videoId, value] of Object.entries(body ?? {})) {
+          if (value && typeof value === "object") {
+            map[videoId] = value as MetaVideoRow;
+          }
+        }
+      } catch (error) {
+        if (!(error instanceof MetaError) || !error.retryable) {
+          continue;
+        }
+        throw error;
       }
     }
     return map;

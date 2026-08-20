@@ -184,6 +184,8 @@ export const ads = pgTable(
     format: text("format"),
     creativeId: text("creative_id"),
     thumbnailUrl: text("thumbnail_url"),
+    previewImageUrl: text("preview_image_url"),
+    previewVideoUrl: text("preview_video_url"),
     bodyCopy: text("body_copy"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

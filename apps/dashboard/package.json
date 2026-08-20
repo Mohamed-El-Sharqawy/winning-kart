@@ -8,7 +8,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test:e2e": "cypress run",
-    "test:e2e:open": "cypress open"
+    "test:e2e:open": "cypress open",
+    "test:e2e:smoke": "cypress run --spec \"cypress/e2e/smoke/*.cy.ts\""
   },
   "dependencies": {
     "@tanstack/react-charts": "^0.14.0",

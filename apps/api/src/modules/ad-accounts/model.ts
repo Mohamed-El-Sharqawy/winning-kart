@@ -238,9 +238,21 @@ export class AdAccountsModel {
   async updateAdCreative(
     accountId: string,
     platformAdId: string,
-    patch: { thumbnailUrl?: string; bodyCopy?: string; format?: string }
+    patch: {
+      thumbnailUrl?: string;
+      previewImageUrl?: string;
+      previewVideoUrl?: string;
+      bodyCopy?: string;
+      format?: string;
+    }
   ): Promise<void> {
-    if (patch.thumbnailUrl === undefined && patch.bodyCopy === undefined && patch.format === undefined) {
+    if (
+      patch.thumbnailUrl === undefined &&
+      patch.previewImageUrl === undefined &&
+      patch.previewVideoUrl === undefined &&
+      patch.bodyCopy === undefined &&
+      patch.format === undefined
+    ) {
       return;
     }
     const accountAdSetIds = db
@@ -252,6 +264,8 @@ export class AdAccountsModel {
       .update(ads)
       .set({
         ...(patch.thumbnailUrl !== undefined ? { thumbnailUrl: patch.thumbnailUrl } : {}),
+        ...(patch.previewImageUrl !== undefined ? { previewImageUrl: patch.previewImageUrl } : {}),
+        ...(patch.previewVideoUrl !== undefined ? { previewVideoUrl: patch.previewVideoUrl } : {}),
         ...(patch.bodyCopy !== undefined ? { bodyCopy: patch.bodyCopy } : {}),
         ...(patch.format !== undefined ? { format: patch.format } : {}),
         updatedAt: new Date(),

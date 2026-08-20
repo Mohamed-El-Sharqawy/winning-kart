@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "id": "4cc1b849-e256-4cd9-a632-bfe593bbf9a1",
+      "name": "Dia Flower Eid Push",
+      "status": "ACTIVE",
+      "objective": "OUTCOME_SALES",
+      "dailyBudget": 650,
+      "currency": "AED",
+      "spend": 41260,
+      "revenue": 132032,
+      "purchases": 522,
+      "roas": 3.2,
+      "cpa": 79.04,
+      "ctr": 0.0286,
+      "frequency": 2.8
+    }
+  ]
+}

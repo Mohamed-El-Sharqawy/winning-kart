@@ -217,6 +217,8 @@ export function normalizeAd(row: MetaAdRow): AdRecord {
 export interface CreativeDetailRecord {
   creativeId: string | null;
   thumbnailUrl: string | null;
+  previewImageUrl: string | null;
+  previewVideoUrl: string | null;
   bodyCopy: string | null;
   format: string | null;
 }
@@ -225,11 +227,21 @@ export function normalizeCreativeDetail(
   row: MetaCreativeDetailRow | null | undefined
 ): CreativeDetailRecord {
   if (row === null || row === undefined) {
-    return { creativeId: null, thumbnailUrl: null, bodyCopy: null, format: null };
+    return {
+      creativeId: null,
+      thumbnailUrl: null,
+      previewImageUrl: null,
+      previewVideoUrl: null,
+      bodyCopy: null,
+      format: null,
+    };
   }
   return {
     creativeId: row.id ?? null,
     thumbnailUrl: row.thumbnail_url ?? row.image_url ?? null,
+    previewImageUrl:
+      row.image_url ?? row.effective_object_store_url ?? row.video_picture ?? null,
+    previewVideoUrl: row.video_source ?? null,
     bodyCopy: row.body ?? row.title ?? null,
     format: row.video_id ? "VIDEO" : "IMAGE",
   };

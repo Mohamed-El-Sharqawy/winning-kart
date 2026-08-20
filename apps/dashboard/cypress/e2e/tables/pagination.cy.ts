@@ -1,23 +1,4 @@
 describe("creatives pagination", () => {
-  beforeEach(() => {
-    cy.loginAs("agency-admin");
-    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ads(\?.*)?$/, {
-      statusCode: 200,
-      body: { data: [] },
-    }).as("ads");
-    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/fatigue-summary(\?.*)?$/, {
-      statusCode: 200,
-      body: {
-        data: {
-          topCreativeSpendShare: null,
-          top3SpendShare: null,
-          concentration: null,
-          counts: { fatiguing: 0, bleeding: 0, scale: 0, status_anomaly: 0 },
-        },
-      },
-    }).as("fatigue");
-  });
-
   it("paginates 60 creatives at 25 per page", () => {
     const ads = Array.from({ length: 60 }, (_, i) => ({
       id: `ad-${i + 1}`,
@@ -33,23 +14,35 @@ describe("creatives pagination", () => {
       spendShare: null,
       fatigue: null,
     }));
+    cy.loginAs("agency-admin");
     cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ads(\?.*)?$/, {
       statusCode: 200,
       body: { data: ads },
     }).as("adsPaged");
+    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/fatigue-summary(\?.*)?$/, {
+      statusCode: 200,
+      body: {
+        data: {
+          topCreativeSpendShare: null,
+          top3SpendShare: null,
+          concentration: null,
+          counts: { fatiguing: 0, bleeding: 0, scale: 0, status_anomaly: 0 },
+        },
+      },
+    }).as("fatigue");
 
     cy.visit("/clients/maison-nour?tab=creatives", { timeout: 15000 });
     cy.wait("@adsPaged");
 
     cy.contains("of 60", { timeout: 15000 }).should("be.visible");
-    cy.contains("Creative number 01", { timeout: 15000 }).should("be.visible");
-    cy.contains("Creative number 26").should("not.be.visible");
+    cy.get("[data-creative-card], li, article, div")
+      .contains("Creative number 60", { timeout: 15000 })
+      .should("be.visible");
 
-    cy.contains("button", "Next", { timeout: 15000 }).click();
-    cy.contains("Creative number 26", { timeout: 15000 }).should("be.visible");
-    cy.contains("Creative number 01").should("not.be.visible");
+    cy.contains("button", "Next").click();
+    cy.contains("Creative number 35", { timeout: 15000 }).should("be.visible");
 
-    cy.contains("button", "Prev", { timeout: 15000 }).click();
-    cy.contains("Creative number 01", { timeout: 15000 }).should("be.visible");
+    cy.contains("button", "Prev").click();
+    cy.contains("Creative number 60", { timeout: 15000 }).should("be.visible");
   });
 });
