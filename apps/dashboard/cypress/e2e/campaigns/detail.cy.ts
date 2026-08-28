@@ -1,11 +1,18 @@
 describe("campaign detail", () => {
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
 
+    cy.intercept("GET", /\/api\/clients\/[^/]+\/ad-accounts(\?.*)?$/, {
+      fixture: "walker-ad-accounts.json",
+    });
+    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/campaigns(\?.*)?$/, {
+      fixture: "walker-campaigns.json",
+    });
     cy.intercept(
       "GET",
       /\/api\/ad-accounts\/[^/]+\/campaigns\/[^/?]+/,
-      { fixture: "campaign-detail.json" },
+      { fixture: "walker-campaign-detail.json" },
     ).as("campaignDetail");
 
     cy.visit(

@@ -1,7 +1,9 @@
 describe("tasks lifecycle", () => {
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
 
+    cy.intercept("GET", /\/api\/insights(\?.*)?$/, { body: { data: [] } });
     cy.intercept("GET", /\/api\/tasks(\?.*)?$/, {
       fixture: "tasks.json",
     }).as("tasksGet");
@@ -29,6 +31,8 @@ describe("tasks lifecycle", () => {
 
     cy.visit("/alerts?tab=tasks");
   });
+
+  const MODAL = "[role='dialog'], dialog, [class*='modal'], [class*='inset-0']";
 
   it("renders the two task rows on the tasks tab", () => {
     cy.wait("@tasksGet");
@@ -59,14 +63,14 @@ describe("tasks lifecycle", () => {
 
     cy.get("body", { timeout: 15000 }).should(($body) => {
       const $dialog = $body
-        .find("[role='dialog'], dialog, [class*='modal']")
+        .find(MODAL)
         .filter((_, el) => Cypress.$(el).is(":visible"));
       expect($dialog.length, "new task dialog opens").to.be.greaterThan(0);
     });
 
     cy.get("body").then(($body) => {
       const $dialog = $body
-        .find("[role='dialog'], dialog, [class*='modal']")
+        .find(MODAL)
         .filter((_, el) => Cypress.$(el).is(":visible"))
         .last();
       const $titled = $dialog
@@ -92,7 +96,7 @@ describe("tasks lifecycle", () => {
 
     cy.get("body").then(($body) => {
       const $dialog = $body
-        .find("[role='dialog'], dialog, [class*='modal']")
+        .find(MODAL)
         .filter((_, el) => Cypress.$(el).is(":visible"))
         .last();
       const $submit = $dialog
@@ -111,38 +115,16 @@ describe("tasks lifecycle", () => {
 
     cy.get("body", { timeout: 15000 }).should(($body) => {
       const openDialogs = $body
-        .find("[role='dialog'], dialog, [class*='modal']")
+        .find(MODAL)
         .filter((_, el) => Cypress.$(el).is(":visible")).length;
       expect(openDialogs, "dialog closed after submit").to.eq(0);
     });
 
-    cy.get("body", { timeout: 15000 }).then(($body) => {
-      const $row = $body
-        .find("tr, li, article, [role='row'], [role='listitem'], div")
-        .filter((_, el) =>
-          /Investigate Summer Editions ROAS drop/.test(el.textContent ?? ""),
-        )
-        .filter((_, el) => Cypress.$(el).find("button, select").length > 0)
-        .last();
-      const $advance = $row
-        .find("button")
-        .filter((_, el) =>
-          /start|advance|begin|next|mark|move|in.?progress/i.test(
-            el.textContent ?? "",
-          ),
-        )
-        .first();
-      if ($advance.length) {
-        cy.wrap($advance).click();
-      } else {
-        const $select = $row.find("select").first();
-        const $option = $select
-          .find("option")
-          .filter((_, el) => /in.?progress/i.test(el.textContent ?? ""))
-          .first();
-        cy.wrap($select).select(($option.val() as string) || "in_progress");
-      }
-    });
+    cy.contains("tr, [role='row']", "Investigate Summer Editions ROAS drop", {
+      timeout: 15000,
+    }).click();
+
+    cy.contains("button", /^start$/i, { timeout: 15000 }).click();
 
     cy.wait("@tasksPatch", { timeout: 15000 })
       .its("response.statusCode")

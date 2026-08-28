@@ -7,8 +7,10 @@
       "adSetId": "as_nour_broad_purchases",
       "format": "VIDEO",
       "status": "ACTIVE",
-      "flag": "fatiguing",
-      "reason": "Frequency 5.2 with CTR down 27% w/w",
+      "fatigue": {
+        "flag": "fatiguing",
+        "reason": "Frequency 5.2 with CTR down 27% w/w"
+      },
       "thumbnailUrl": null,
       "spend": 12040.6,
       "revenue": 25285.26,
@@ -28,8 +30,10 @@
       "adSetId": "as_nour_broad_purchases",
       "format": "CAROUSEL",
       "status": "ACTIVE",
-      "flag": "scale",
-      "reason": "4.8x ROAS at low saturation",
+      "fatigue": {
+        "flag": "scale",
+        "reason": "4.8x ROAS at low saturation"
+      },
       "thumbnailUrl": null,
       "spend": 3210.45,
       "revenue": 15410.16,
@@ -49,8 +53,10 @@
       "adSetId": "as_nour_lookalike_purchases",
       "format": "IMAGE",
       "status": "ACTIVE",
-      "flag": "bleeding",
-      "reason": "Spend AED 2,140 with 3 purchases over 7 days",
+      "fatigue": {
+        "flag": "bleeding",
+        "reason": "Spend AED 2,140 with 3 purchases over 7 days"
+      },
       "thumbnailUrl": null,
       "spend": 2140.0,
       "revenue": 856.0,
@@ -70,8 +76,7 @@
       "adSetId": "as_nour_retarget_links",
       "format": "IMAGE",
       "status": "ACTIVE",
-      "flag": null,
-      "reason": null,
+      "fatigue": null,
       "thumbnailUrl": null,
       "spend": 890.3,
       "revenue": 1691.57,

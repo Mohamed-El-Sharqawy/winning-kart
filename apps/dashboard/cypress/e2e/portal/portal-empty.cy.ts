@@ -1,6 +1,18 @@
 describe("client portal empty state", () => {
   beforeEach(() => {
     cy.loginAs("client");
+
+    cy.intercept("GET", /\/api\/portal\/overview(\?.*)?$/, {
+      body: {
+        data: {
+          client: { name: "Maison Nour", slug: "maison-nour", displayCurrency: "AED" },
+          kpis: { spend: 0, revenue: 0, roas: 0, purchases: 0 },
+          series: [{ date: "2026-08-11", spend: 0, revenue: 0, roas: 0 }],
+          campaigns: [],
+          creatives: [],
+        },
+      },
+    }).as("portalOverview");
   });
 
   it("renders /portal with a preparation state or zeroed KPIs instead of crashing", () => {

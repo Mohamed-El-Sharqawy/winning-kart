@@ -1,6 +1,7 @@
 describe("workspace revenue tab info card", () => {
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
 
     cy.intercept("GET", /\/api\/clients\/[^/]+\/revenue(\?.*)?$/, {
       fixture: "revenue-events.json",

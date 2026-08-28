@@ -1,6 +1,55 @@
 describe("add ad account error handling", () => {
   it("surfaces a Meta validation error or wizard progress, never a crash", () => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
+
+    cy.intercept("GET", /\/api\/clients\/[^/]+\/ad-accounts(\?.*)?$/, {
+      fixture: "walker-ad-accounts.json",
+    });
+    cy.intercept("POST", /\/api\/(clients\/[^/]+\/)?ad-accounts(\/[^/]*)?(\?.*)?$/, {
+      statusCode: 400,
+      headers: { "content-type": "application/problem+json" },
+      body: {
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "invalid token: Meta rejected these credentials",
+        code: "INVALID_TOKEN",
+      },
+    });
+    cy.intercept("POST", /\/api\/clients\/[^/]+\/ad-accounts(\?.*)?$/, {
+      statusCode: 201,
+      body: {
+        data: {
+          id: "act_new_1",
+          name: "Test",
+          adAccountId: "act_123",
+          platform: "meta",
+          healthState: "healthy",
+          currency: "AED",
+          timezone: "UTC",
+          lastSyncAt: null,
+          campaignCount: 0,
+          tokenType: "system_user",
+          tokenExpiresAt: null,
+        },
+      },
+    });
+    cy.intercept("POST", /\/api\/ad-accounts\/[^/]+\/sync(\?.*)?$/, {
+      statusCode: 200,
+      body: {
+        data: {
+          ok: false,
+          stages: [
+            { stage: "account_info", status: "succeeded" },
+            { stage: "campaigns", status: "failed", errorClass: "invalid_token" },
+          ],
+          failedStage: "campaigns",
+          errorClass: "invalid_token",
+        },
+      },
+    });
+
     cy.visit("/clients/maison-nour?tab=ad-accounts");
 
     cy.contains("button", "Add ad account").click();
@@ -8,7 +57,7 @@ describe("add ad account error handling", () => {
 
     cy.contains("label", /name/i).find("input").type("Test");
     cy.contains("label", /ad account id/i).find("input").type("act_123");
-    cy.contains("label", /access token/i).find("input").type("EAAtotallyinvalidtoken123456");
+    cy.contains("label", /access token/i).find("textarea").type("EAAtotallyinvalidtoken123456");
 
     cy.get("[role='dialog'], dialog")
       .contains("button", /^(add|connect|create|save|submit|next|continue)/i)

@@ -12,6 +12,34 @@ const rpc = (id: number, method: string, params?: Record<string, unknown>) =>
   });
 
 describe("mcp protocol", () => {
+  const slug = `cypress-mcp-${Date.now()}`;
+  let clientId: string;
+
+  before(() => {
+    cy.loginAs("agency-admin");
+    cy.request({
+      method: "POST",
+      url: "/api/clients",
+      body: { name: "Cypress MCP Probe", slug },
+      timeout: 20000,
+    }).then((res) => {
+      expect(res.status).to.be.oneOf([200, 201]);
+      clientId = res.body.data.id;
+    });
+  });
+
+  after(() => {
+    if (clientId) {
+      cy.loginAs("agency-admin");
+      cy.request({
+        method: "DELETE",
+        url: `/api/clients/${clientId}`,
+        body: { confirmSlug: slug },
+        timeout: 20000,
+      });
+    }
+  });
+
   it("initialize returns winning-kart server info inside the envelope", () => {
     rpc(1, "initialize").then((response) => {
       expect(response.status).to.eq(200);
@@ -34,7 +62,7 @@ describe("mcp protocol", () => {
     });
   });
 
-  it("tools/call list_clients returns maison-nour as text content", () => {
+  it("tools/call list_clients returns the created client as text content", () => {
     rpc(3, "tools/call", { name: "list_clients", arguments: {} }).then(
       (response) => {
         expect(response.status).to.eq(200);
@@ -44,7 +72,7 @@ describe("mcp protocol", () => {
         const parsed = JSON.parse(result.content[0].text);
         expect(parsed).to.be.an("array");
         const slugs = parsed.map((client: { slug: string }) => client.slug);
-        expect(slugs).to.include("maison-nour");
+        expect(slugs).to.include(slug);
       },
     );
   });

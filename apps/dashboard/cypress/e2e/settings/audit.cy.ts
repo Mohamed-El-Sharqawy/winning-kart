@@ -1,6 +1,7 @@
 describe("settings audit log", () => {
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
 
     cy.intercept("GET", /\/api\/audit-logs(\?.*)?$/, {
       fixture: "audit-logs.json",
