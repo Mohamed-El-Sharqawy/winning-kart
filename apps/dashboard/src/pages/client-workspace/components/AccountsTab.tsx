@@ -6,6 +6,7 @@ import { useAdAccounts, useSyncAdAccount } from "../services/ad-accounts.service
 import type { AdAccount } from "../types/ad-accounts.types";
 import { AccountsTable } from "./AccountsTable";
 import { AddAccountWizard } from "./AddAccountWizard";
+import { RateLimitBanner } from "./RateLimitBanner";
 import { ReconnectModal } from "./ReconnectModal";
 import { RemoveAccountModal } from "./RemoveAccountModal";
 import { SkeletonRows } from "./SkeletonRows";
@@ -47,13 +48,18 @@ export function AccountsTab({ client }: { client: Client }) {
           No ad accounts yet — add the first one to start syncing Meta data.
         </p>
       ) : (
-        <AccountsTable
-          accounts={accounts ?? []}
-          onSync={handleSync}
-          onReconnect={setReconnectTarget}
-          onRemove={setRemoveTarget}
-          syncPendingId={sync.isPending ? (sync.variables ?? null) : null}
-        />
+        <>
+          {(accounts ?? []).map((account) => (
+            <RateLimitBanner key={account.id} accountId={account.id} />
+          ))}
+          <AccountsTable
+            accounts={accounts ?? []}
+            onSync={handleSync}
+            onReconnect={setReconnectTarget}
+            onRemove={setRemoveTarget}
+            syncPendingId={sync.isPending ? (sync.variables ?? null) : null}
+          />
+        </>
       )}
       {syncMessage ? <p className="text-sm text-volt-down">{syncMessage}</p> : null}
       {wizardOpen ? <AddAccountWizard clientId={client.id} onClose={() => setWizardOpen(false)} /> : null}

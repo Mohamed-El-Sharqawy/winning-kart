@@ -14,7 +14,7 @@ import {
   toCampaigns,
   toSyncResult,
 } from "../transformers/ad-accounts.transformer";
-import type { AdAccount, Campaign, SyncResult, TokenType } from "../types/ad-accounts.types";
+import type { AdAccount, Campaign, SyncResult, TokenType, RateLimitState } from "../types/ad-accounts.types";
 import type { AdAccountDto, CampaignDto, OkResponseDto, SyncResponseDto } from "../dto/ad-accounts.dto";
 
 export class ApiCallError extends Error {
@@ -52,6 +52,20 @@ export function adAccountsQueryOptions(clientId: string) {
 
 export function useAdAccounts(clientId: string) {
   return useQuery(adAccountsQueryOptions(clientId));
+}
+
+export function rateLimitQueryOptions(accountId: string) {
+  return queryOptions({
+    queryKey: ["ad-accounts", accountId, "rate-limit"],
+    queryFn: async (): Promise<RateLimitState | null> => {
+      const { data: body } = await looseApi["ad-accounts"]({ id: accountId })["rate-limit"].get();
+      return ((body as { data: RateLimitState | null }).data) ?? null;
+    },
+  });
+}
+
+export function useRateLimit(accountId: string) {
+  return useQuery(rateLimitQueryOptions(accountId));
 }
 
 export function useCampaigns(accountId: string | null, days: number) {

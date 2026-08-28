@@ -4,6 +4,7 @@ import { problem } from "../../lib/problem";
 import type { ProblemError, ProblemErrorClass } from "../../lib/problem";
 import { runDetectionForAccount } from "../../detection/engine";
 import { getMetaAdapter, MetaError } from "../../platforms/meta";
+import { storedRateLimitBlocked } from "../../platforms/meta/rate-limit";
 import type {
   AdPlatformAdapter,
   InsightLevel,
@@ -257,12 +258,22 @@ export class AdAccountsService {
     return this.model.listByClient(clientId);
   }
 
-  async detail(id: string): Promise<AdAccountDetailView> {
+  async rateLimit(id: string): Promise<unknown> {
     const account = await this.model.findById(id);
     if (!account) {
       throw accountNotFound(id);
     }
-    const recentJobs = await this.model.listRecentJobs(id, RECENT_JOBS_LIMIT);
+    if (account.platformPayload === null || !isRecord(account.platformPayload)) {
+      return null;
+    }
+    return account.platformPayload.rateLimit ?? null;
+  }
+
+  async detail(id: string): Promise<AdAccountDetailView> {
+    const account = await this.model.findById(id);
+    if (!account) {
+      throw accountNotFound(id);
+    }    const recentJobs = await this.model.listRecentJobs(id, RECENT_JOBS_LIMIT);
     return {
       id: account.id,
       name: account.name,
@@ -352,11 +363,27 @@ export class AdAccountsService {
       : {};
     let failedStage: SyncStage | null = null;
     let failedErrorClass: string | null = null;
+    let meta: AdPlatformAdapter | null = null;
+
+    const storedBlock = storedRateLimitBlocked(account.platformPayload);
+    if (storedBlock.blocked) {
+      const estimate = storedBlock.estClearMin !== null ? ` ~${storedBlock.estClearMin} min` : "";
+      throw problem(
+        429,
+        "RATE_LIMITED",
+        `Meta rate limit active; do not retry until the window clears.${estimate}`,
+        "rate_limited"
+      );
+    }
 
     const finalize = async (ok: boolean): Promise<SyncOutcome> => {
+      if (meta !== null) {
+        platformPayload = { ...platformPayload, rateLimit: meta.rateGuard.snapshot() };
+      }
       await this.model.updateAdAccount(account.id, {
         healthState: ok ? successHealthState(account) : "error",
         lastSyncAt: new Date(),
+        platformPayload,
       });
       if (ok) {
         try {
@@ -427,10 +454,9 @@ export class AdAccountsService {
       return finalize(false);
     }
 
-    const meta = adapter;
+    meta = adapter;
 
-    const accountInfoOk = await runStage("account_info", async () => {
-      const info = await meta.getAccountInfo(account.adAccountId);
+    const accountInfoOk = await runStage("account_info", async () => {      const info = await meta.getAccountInfo(account.adAccountId);
       const snapshot = normalizeAccountInfo(info);
       currency = snapshot.currency ?? currency;
       platformPayload = {
