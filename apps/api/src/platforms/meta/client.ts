@@ -49,6 +49,13 @@ export interface MetaCampaignRow {
   lifetime_budget?: string;
   start_time?: string;
   stop_time?: string;
+  updated_time?: string;
+}
+
+export interface MetaCampaignLightRow {
+  id: string;
+  status?: string;
+  updated_time?: string;
 }
 
 export interface MetaAdSetRow {
@@ -61,6 +68,14 @@ export interface MetaAdSetRow {
   bid_strategy?: string;
   daily_budget?: string;
   lifetime_budget?: string;
+  updated_time?: string;
+}
+
+export interface MetaAdSetLightRow {
+  id: string;
+  campaign_id: string;
+  status?: string;
+  updated_time?: string;
 }
 
 export interface MetaAdCreativeRef {
@@ -74,6 +89,15 @@ export interface MetaAdRow {
   name: string;
   status?: string;
   effective_status?: string;
+  creative?: MetaAdCreativeRef;
+  updated_time?: string;
+}
+
+export interface MetaAdLightRow {
+  id: string;
+  adset_id: string;
+  status?: string;
+  updated_time?: string;
   creative?: MetaAdCreativeRef;
 }
 
@@ -132,6 +156,14 @@ interface PagedBody<T> {
 const REQUEST_TIMEOUT_MS = 30000;
 const RETRY_DELAY_MS = 500;
 const PAGE_LIMIT = 100;
+const IDS_BATCH_LIMIT = 50;
+
+export const CAMPAIGN_FIELDS =
+  "id,name,status,effective_status,objective,buying_type,daily_budget,lifetime_budget,start_time,stop_time,updated_time";
+export const AD_SET_FIELDS =
+  "id,campaign_id,name,status,effective_status,optimization_goal,bid_strategy,daily_budget,lifetime_budget,updated_time";
+export const AD_FIELDS =
+  "id,adset_id,name,status,effective_status,creative{id,name},updated_time";
 
 const BASE_INSIGHT_FIELDS =
   "spend,impressions,reach,clicks,ctr,cpc,cpm,frequency,actions,action_values";
@@ -175,11 +207,34 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function hasStringId(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { id?: unknown }).id === "string"
+  );
+}
+
+function flattenIdedBody<T>(body: unknown): T[] {
+  if (Array.isArray(body)) {
+    return body.filter(hasStringId) as T[];
+  }
+  if (typeof body !== "object" || body === null) {
+    return [];
+  }
+  return Object.values(body as Record<string, unknown>).filter(hasStringId) as T[];
+}
+
 export class MetaClient {
   readonly baseUrl = "https://graph.facebook.com/v21.0";
   readonly rateGuard = new RateGuard();
+  private graphCalls = 0;
 
   constructor(private readonly token: string) {}
+
+  graphCallCount(): number {
+    return this.graphCalls;
+  }
 
   async getAccountInfo(actId: string): Promise<MetaAccountInfo> {
     const body = await this.request(actId, {
@@ -189,23 +244,51 @@ export class MetaClient {
   }
 
   getCampaigns(actId: string): Promise<MetaCampaignRow[]> {
+    return this.requestAll(`${actId}/campaigns`, { fields: CAMPAIGN_FIELDS });
+  }
+
+  getCampaignIds(actId: string): Promise<MetaCampaignLightRow[]> {
     return this.requestAll(`${actId}/campaigns`, {
-      fields:
-        "id,name,status,effective_status,objective,buying_type,daily_budget,lifetime_budget,start_time,stop_time",
+      fields: "id,updated_time,status",
     });
   }
 
   getAdSets(actId: string): Promise<MetaAdSetRow[]> {
+    return this.requestAll(`${actId}/adsets`, { fields: AD_SET_FIELDS });
+  }
+
+  getAdSetIds(actId: string): Promise<MetaAdSetLightRow[]> {
     return this.requestAll(`${actId}/adsets`, {
-      fields:
-        "id,campaign_id,name,status,effective_status,optimization_goal,bid_strategy,daily_budget,lifetime_budget",
+      fields: "id,campaign_id,updated_time,status",
     });
   }
 
   getAds(actId: string): Promise<MetaAdRow[]> {
+    return this.requestAll(`${actId}/ads`, { fields: AD_FIELDS });
+  }
+
+  getAdIds(actId: string): Promise<MetaAdLightRow[]> {
     return this.requestAll(`${actId}/ads`, {
-      fields: "id,adset_id,name,status,effective_status,creative{id,name}",
+      fields: "id,adset_id,updated_time,status,creative{id}",
     });
+  }
+
+  async getEntitiesByIds<T>(actId: string, ids: string[], fields: string): Promise<T[]> {
+    const rows: T[] = [];
+    for (let index = 0; index < ids.length; index += IDS_BATCH_LIMIT) {
+      const batch = ids.slice(index, index + IDS_BATCH_LIMIT);
+      try {
+        const body = await this.request("", { ids: batch.join(","), fields });
+        rows.push(...flattenIdedBody<T>(body));
+      } catch (error) {
+        if (error instanceof MetaError && error.retryable) {
+          throw error;
+        }
+        const errorClass = error instanceof MetaError ? error.errorClass : "unknown";
+        console.warn(`entities-by-ids batch skipped: ${errorClass}`);
+      }
+    }
+    return rows;
   }
 
   async getCreativeDetails(actId: string): Promise<CreativeDetailMap> {
@@ -246,6 +329,7 @@ export class MetaClient {
   }
 
   private async rawRequest(path: string, params: Record<string, string>): Promise<unknown> {
+    this.graphCalls += 1;
     await this.rateGuard.pace();
     const url = new URL(`${this.baseUrl}/${path}`);
     for (const [key, value] of Object.entries(params)) {

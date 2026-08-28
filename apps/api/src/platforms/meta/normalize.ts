@@ -20,6 +20,7 @@ export interface CampaignRecord {
   lifetimeBudget: string | null;
   scheduleStart: Date | null;
   scheduleEnd: Date | null;
+  platformUpdatedAt: Date | null;
 }
 
 export interface AdSetRecord {
@@ -31,6 +32,7 @@ export interface AdSetRecord {
   bidStrategy: string | null;
   dailyBudget: string | null;
   lifetimeBudget: string | null;
+  platformUpdatedAt: Date | null;
 }
 
 export interface AdRecord {
@@ -40,6 +42,7 @@ export interface AdRecord {
   status: EntityStatus;
   format: string | null;
   creativeId: string | null;
+  platformUpdatedAt: Date | null;
 }
 
 export interface InsightRecord {
@@ -106,6 +109,10 @@ function parseMetaTime(value: string | undefined): Date | null {
   const normalized = value.replace(/([+-]\d{2})(\d{2})$/, "$1:$2");
   const date = new Date(normalized);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function parsePlatformTime(value: string | undefined): Date | null {
+  return parseMetaTime(value);
 }
 
 export function mapEntityStatus(
@@ -187,6 +194,7 @@ export function normalizeCampaign(row: MetaCampaignRow): CampaignRecord {
     lifetimeBudget: toMoneyFromCents(row.lifetime_budget),
     scheduleStart: parseMetaTime(row.start_time),
     scheduleEnd: parseMetaTime(row.stop_time),
+    platformUpdatedAt: parseMetaTime(row.updated_time),
   };
 }
 
@@ -200,6 +208,7 @@ export function normalizeAdSet(row: MetaAdSetRow): AdSetRecord {
     bidStrategy: row.bid_strategy ?? null,
     dailyBudget: toMoneyFromCents(row.daily_budget),
     lifetimeBudget: toMoneyFromCents(row.lifetime_budget),
+    platformUpdatedAt: parseMetaTime(row.updated_time),
   };
 }
 
@@ -211,6 +220,7 @@ export function normalizeAd(row: MetaAdRow): AdRecord {
     status: mapEntityStatus(row.effective_status, row.status),
     format: null,
     creativeId: row.creative?.id ?? null,
+    platformUpdatedAt: parseMetaTime(row.updated_time),
   };
 }
 

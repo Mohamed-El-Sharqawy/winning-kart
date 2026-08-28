@@ -64,6 +64,13 @@
       "when": 1787877440372,
       "tag": "0008_flowery_lifeguard",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787880212843,
+      "tag": "0009_wandering_invaders",
+      "breakpoints": true
     }
   ]
 }

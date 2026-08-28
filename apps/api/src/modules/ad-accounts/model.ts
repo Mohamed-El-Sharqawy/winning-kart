@@ -21,6 +21,7 @@ export interface AdSetUpsertRow {
   bidStrategy: string | null;
   dailyBudget: string | null;
   lifetimeBudget: string | null;
+  platformUpdatedAt: Date | null;
 }
 
 export interface AdUpsertRow {
@@ -30,6 +31,12 @@ export interface AdUpsertRow {
   status: EntityStatus;
   format: string | null;
   creativeId: string | null;
+  platformUpdatedAt: Date | null;
+}
+
+export interface PlatformEntityState {
+  id: string;
+  platformUpdatedAt: Date | null;
 }
 
 export interface InsightUpsertRow {
@@ -148,6 +155,7 @@ export class AdAccountsModel {
           currency,
           scheduleStart: record.scheduleStart,
           scheduleEnd: record.scheduleEnd,
+          platformUpdatedAt: record.platformUpdatedAt,
           updatedAt: new Date(),
         }))
       )
@@ -163,6 +171,7 @@ export class AdAccountsModel {
           currency: sql`excluded.currency`,
           scheduleStart: sql`excluded.schedule_start`,
           scheduleEnd: sql`excluded.schedule_end`,
+          platformUpdatedAt: sql`excluded.platform_updated_at`,
           updatedAt: sql`excluded.updated_at`,
         },
       })
@@ -186,6 +195,7 @@ export class AdAccountsModel {
           bidStrategy: row.bidStrategy,
           dailyBudget: row.dailyBudget,
           lifetimeBudget: row.lifetimeBudget,
+          platformUpdatedAt: row.platformUpdatedAt,
           updatedAt: new Date(),
         }))
       )
@@ -198,6 +208,7 @@ export class AdAccountsModel {
           bidStrategy: sql`excluded.bid_strategy`,
           dailyBudget: sql`excluded.daily_budget`,
           lifetimeBudget: sql`excluded.lifetime_budget`,
+          platformUpdatedAt: sql`excluded.platform_updated_at`,
           updatedAt: sql`excluded.updated_at`,
         },
       })
@@ -219,6 +230,7 @@ export class AdAccountsModel {
           status: row.status,
           format: row.format,
           creativeId: row.creativeId,
+          platformUpdatedAt: row.platformUpdatedAt,
           updatedAt: new Date(),
         }))
       )
@@ -229,6 +241,7 @@ export class AdAccountsModel {
           status: sql`excluded.status`,
           format: sql`excluded.format`,
           creativeId: sql`excluded.creative_id`,
+          platformUpdatedAt: sql`excluded.platform_updated_at`,
           updatedAt: sql`excluded.updated_at`,
         },
       })
@@ -425,4 +438,75 @@ export class AdAccountsModel {
       .where(eq(campaigns.adAccountId, adAccountId))
       .orderBy(campaigns.name);
   }
+
+  async campaignStates(adAccountId: string): Promise<Map<string, PlatformEntityState>> {
+    const rows = await db
+      .select({
+        id: campaigns.id,
+        platformId: campaigns.platformCampaignId,
+        platformUpdatedAt: campaigns.platformUpdatedAt,
+      })
+      .from(campaigns)
+      .where(eq(campaigns.adAccountId, adAccountId));
+    return new Map(rows.map((row) => [row.platformId, toState(row)]));
+  }
+
+  async adSetStates(adAccountId: string): Promise<Map<string, PlatformEntityState>> {
+    const rows = await db
+      .select({
+        id: adSets.id,
+        platformId: adSets.platformAdsetId,
+        platformUpdatedAt: adSets.platformUpdatedAt,
+      })
+      .from(adSets)
+      .innerJoin(campaigns, eq(adSets.campaignId, campaigns.id))
+      .where(eq(campaigns.adAccountId, adAccountId));
+    return new Map(rows.map((row) => [row.platformId, toState(row)]));
+  }
+
+  async adStates(adAccountId: string): Promise<Map<string, PlatformEntityState>> {
+    const rows = await db
+      .select({
+        id: ads.id,
+        platformId: ads.platformAdId,
+        platformUpdatedAt: ads.platformUpdatedAt,
+      })
+      .from(ads)
+      .innerJoin(adSets, eq(ads.adSetId, adSets.id))
+      .innerJoin(campaigns, eq(adSets.campaignId, campaigns.id))
+      .where(eq(campaigns.adAccountId, adAccountId));
+    return new Map(rows.map((row) => [row.platformId, toState(row)]));
+  }
+
+  async listAdsByAccount(adAccountId: string): Promise<AdRow[]> {
+    const rows = await db
+      .select({ ad: ads })
+      .from(ads)
+      .innerJoin(adSets, eq(ads.adSetId, adSets.id))
+      .innerJoin(campaigns, eq(adSets.campaignId, campaigns.id))
+      .where(eq(campaigns.adAccountId, adAccountId))
+      .orderBy(ads.updatedAt);
+    return rows.map((row) => row.ad);
+  }
+
+  async hasInsightRows(
+    adAccountId: string,
+    level: "account" | "campaign" | "adset" | "ad"
+  ): Promise<boolean> {
+    const rows = await db
+      .select({ id: dailyInsights.id })
+      .from(dailyInsights)
+      .where(
+        and(eq(dailyInsights.adAccountId, adAccountId), eq(dailyInsights.entityLevel, level))
+      )
+      .limit(1);
+    return rows.length > 0;
+  }
+}
+
+function toState(row: {
+  id: string;
+  platformUpdatedAt: Date | null;
+}): PlatformEntityState {
+  return { id: row.id, platformUpdatedAt: row.platformUpdatedAt };
 }
