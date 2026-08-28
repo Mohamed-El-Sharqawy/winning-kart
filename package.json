@@ -12,6 +12,7 @@
     "db:migrate": "bun run --filter '@wk/db' migrate",
     "db:seed": "bun run --filter '@wk/db' seed",
     "test:e2e": "bun run --filter 'dashboard' test:e2e",
-    "typecheck": "bun run --filter '*' typecheck"
+    "typecheck": "bun run --filter '*' typecheck",
+    "start": "bun run --filter 'dashboard' start"
   }
 }
