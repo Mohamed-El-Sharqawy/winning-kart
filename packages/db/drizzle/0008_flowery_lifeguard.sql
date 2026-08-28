@@ -1,0 +1,1 @@
+ALTER TABLE "ads" DROP COLUMN "preview_video_url";

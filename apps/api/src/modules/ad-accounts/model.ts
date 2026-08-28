@@ -241,7 +241,6 @@ export class AdAccountsModel {
     patch: {
       thumbnailUrl?: string;
       previewImageUrl?: string;
-      previewVideoUrl?: string;
       bodyCopy?: string;
       format?: string;
     }
@@ -249,7 +248,6 @@ export class AdAccountsModel {
     if (
       patch.thumbnailUrl === undefined &&
       patch.previewImageUrl === undefined &&
-      patch.previewVideoUrl === undefined &&
       patch.bodyCopy === undefined &&
       patch.format === undefined
     ) {
@@ -265,7 +263,6 @@ export class AdAccountsModel {
       .set({
         ...(patch.thumbnailUrl !== undefined ? { thumbnailUrl: patch.thumbnailUrl } : {}),
         ...(patch.previewImageUrl !== undefined ? { previewImageUrl: patch.previewImageUrl } : {}),
-        ...(patch.previewVideoUrl !== undefined ? { previewVideoUrl: patch.previewVideoUrl } : {}),
         ...(patch.bodyCopy !== undefined ? { bodyCopy: patch.bodyCopy } : {}),
         ...(patch.format !== undefined ? { format: patch.format } : {}),
         updatedAt: new Date(),
