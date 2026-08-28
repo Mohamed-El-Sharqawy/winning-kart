@@ -95,7 +95,14 @@ function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
           <DateRangeControl from={from} to={to} onApply={applyRange} />
         </div>
       ) : null}
-      {tab === "overview" ? <OverviewTab client={client} /> : null}
+      {tab === "overview" ? (
+        <div className="flex flex-wrap items-center gap-4">
+          <DateRangeControl from={from} to={to} onApply={applyRange} />
+        </div>
+      ) : null}
+      {tab === "overview" ? (
+        <OverviewTab client={client} range={range} />
+      ) : null}
       {tab === "ad-accounts" ? <AccountsTab client={client} /> : null}
       {tab === "campaigns" ? (
         <CampaignsTab client={client} range={range} rangeExplicit={rangeExplicit} onApplyRange={applyRange} />

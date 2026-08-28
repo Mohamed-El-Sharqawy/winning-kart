@@ -1,13 +1,14 @@
-import { formatMoney, formatRelativeTime, formatRoas } from "@/lib/format";
+import { formatMoney, formatNumber, formatRelativeTime, formatRoas } from "@/lib/format";
 import { Card } from "@/shared/components/Card";
 import { KpiCard } from "@/shared/components/KpiCard";
 import { StatusDot, healthDotVariant } from "@/shared/components/StatusDot";
+import type { DateRange } from "@/shared/components/DateRangeControl";
 import { useOverview } from "@/shared/services/overview.service";
 import type { Client } from "@/shared/types/clients.types";
 import { useAdAccounts } from "../services/ad-accounts.service";
 
-export function OverviewTab({ client }: { client: Client }) {
-  const { data: overview } = useOverview();
+export function OverviewTab({ client, range }: { client: Client; range: DateRange }) {
+  const { data: overview } = useOverview(range);
   const { data: accounts, isPending: accountsPending } = useAdAccounts(client.id);
   const rollup = overview?.clients.find((row) => row.slug === client.slug) ?? null;
   const issuesByAccount = new Map((overview?.issues ?? []).map((issue) => [issue.adAccountId, issue]));
@@ -18,11 +19,7 @@ export function OverviewTab({ client }: { client: Client }) {
         <KpiCard label="Spend" value={formatMoney(rollup?.spend ?? 0, client.displayCurrency)} />
         <KpiCard label="Revenue" value={formatMoney(rollup?.revenue ?? 0, client.displayCurrency)} />
         <KpiCard label="ROAS" value={formatRoas(rollup?.roas ?? 0)} />
-        <KpiCard
-          label="Purchases"
-          value={rollup ? "—" : "0"}
-          meta={rollup ? "client rollup pending" : undefined}
-        />
+        <KpiCard label="Purchases" value={formatNumber(rollup?.purchases ?? 0)} />
       </div>
       <Card title="Ad account health">
         {accountsPending ? (

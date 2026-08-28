@@ -13,6 +13,8 @@ export interface OverviewClientRowDto {
   spend: number | null;
   revenue: number | null;
   roas: number | null;
+  purchases: number | null;
+  cpa: number | null;
 }
 
 export interface OverviewInsightDto {

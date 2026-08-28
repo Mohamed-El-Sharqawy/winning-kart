@@ -1,5 +1,5 @@
 import { round2 } from "../../platforms/meta";
-import { utcWindow } from "../ad-accounts/service";
+import { resolveWindow } from "../../lib/window";
 import type { TopInsightRow, UnhealthyAccount } from "./model";
 import type { OverviewModel } from "./model";
 
@@ -18,6 +18,8 @@ export interface OverviewClientSpend {
   spend: number;
   revenue: number;
   roas: number | null;
+  purchases: number;
+  cpa: number | null;
 }
 
 export interface OverviewPayload {
@@ -33,7 +35,6 @@ export interface OverviewPayload {
   insights: TopInsightRow[];
 }
 
-const OVERVIEW_WINDOW_DAYS = 30;
 const DAY_MS = 86400000;
 const TOKEN_WARNING_DAYS = 7;
 
@@ -55,16 +56,16 @@ function tokenErrorHint(account: UnhealthyAccount): string | null {
 export class OverviewService {
   constructor(private readonly model: OverviewModel) {}
 
-  async overview(): Promise<OverviewPayload> {
-    const since = utcWindow(OVERVIEW_WINDOW_DAYS).since;
+  async overview(from?: string, to?: string): Promise<OverviewPayload> {
+    const { since, until } = resolveWindow({ days: 30, from, to });
     const [totals, counts, unhealthy, allClients, clientIdsWithAccounts, clientSpendRows, topInsights] =
       await Promise.all([
-        this.model.accountTotalsSince(since),
+        this.model.accountTotalsWindow(since, until),
         this.model.healthCounts(),
         this.model.unhealthyAccounts(),
         this.model.listClients(),
         this.model.clientIdsWithAccounts(),
-        this.model.clientSpendSince(since),
+        this.model.clientSpendWindow(since, until),
         this.model.topInsights(),
       ]);
     const jobs = await this.model.latestJobsFor(unhealthy.map((account) => account.id));
@@ -98,6 +99,7 @@ export class OverviewService {
         const row = spendByClient.get(client.id);
         const spend = round2(row?.spend ?? 0);
         const revenue = round2(row?.revenue ?? 0);
+        const purchases = row?.purchases ?? 0;
         return {
           id: client.id,
           name: client.name,
@@ -105,6 +107,8 @@ export class OverviewService {
           spend,
           revenue,
           roas: spend > 0 ? round2(revenue / spend) : null,
+          purchases,
+          cpa: purchases > 0 ? round2(spend / purchases) : null,
         };
       })
       .sort((a, b) => b.spend - a.spend);

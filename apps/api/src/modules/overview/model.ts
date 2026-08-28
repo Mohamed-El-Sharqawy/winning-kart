@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import { adAccounts, clients, dailyInsights, db, insights, syncJobs } from "@wk/db";
 
 export interface AccountLevelTotals {
@@ -25,6 +25,7 @@ export interface ClientSpendRow {
   clientId: string;
   spend: number;
   revenue: number;
+  purchases: number;
 }
 
 export interface LatestJobRow {
@@ -51,7 +52,7 @@ function parseSum(value: string | null): number {
 }
 
 export class OverviewModel {
-  async accountTotalsSince(since: string): Promise<AccountLevelTotals> {
+  async accountTotalsWindow(since: string, until: string): Promise<AccountLevelTotals> {
     const rows = await db
       .select({
         spend: sql<string>`sum(${dailyInsights.spend})`,
@@ -59,7 +60,13 @@ export class OverviewModel {
         purchases: sql<string>`sum(${dailyInsights.purchases})`,
       })
       .from(dailyInsights)
-      .where(and(eq(dailyInsights.entityLevel, "account"), gte(dailyInsights.date, since)));
+      .where(
+        and(
+          eq(dailyInsights.entityLevel, "account"),
+          gte(dailyInsights.date, since),
+          lte(dailyInsights.date, until)
+        )
+      );
     const row = rows[0];
     return {
       spend: parseSum(row?.spend ?? null),
@@ -135,21 +142,29 @@ export class OverviewModel {
     return new Set(rows.map((row) => row.clientId));
   }
 
-  async clientSpendSince(since: string): Promise<ClientSpendRow[]> {
+  async clientSpendWindow(since: string, until: string): Promise<ClientSpendRow[]> {
     const rows = await db
       .select({
         clientId: adAccounts.clientId,
         spend: sql<string>`sum(${dailyInsights.spend})`,
         revenue: sql<string>`sum(${dailyInsights.revenue})`,
+        purchases: sql<string>`sum(${dailyInsights.purchases})`,
       })
       .from(dailyInsights)
       .innerJoin(adAccounts, eq(dailyInsights.adAccountId, adAccounts.id))
-      .where(and(eq(dailyInsights.entityLevel, "account"), gte(dailyInsights.date, since)))
+      .where(
+        and(
+          eq(dailyInsights.entityLevel, "account"),
+          gte(dailyInsights.date, since),
+          lte(dailyInsights.date, until)
+        )
+      )
       .groupBy(adAccounts.clientId);
     return rows.map((row) => ({
       clientId: row.clientId,
       spend: parseSum(row.spend),
       revenue: parseSum(row.revenue),
+      purchases: Math.round(parseSum(row.purchases)),
     }));
   }
 }

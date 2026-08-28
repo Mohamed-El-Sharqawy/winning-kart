@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { resolveSessionUser } from "../../lib/session";
 import { problem } from "../../lib/problem";
 import { overviewDto } from "../../dto/overview";
@@ -9,12 +9,18 @@ const service = new OverviewService(new OverviewModel());
 
 export const overviewModule = new Elysia({ prefix: "/overview" }).get(
   "/",
-  async ({ headers }) => {
+  async ({ query, headers }) => {
     const user = await resolveSessionUser({ cookie: headers.cookie, headers });
     if (!user) {
       throw problem(401, "UNAUTHENTICATED", "Authentication required");
     }
-    return { data: await service.overview() };
+    return { data: await service.overview(query.from, query.to) };
   },
-  { response: { 200: overviewDto } }
+  {
+    query: t.Object({
+      from: t.Optional(t.String()),
+      to: t.Optional(t.String()),
+    }),
+    response: { 200: overviewDto },
+  }
 );

@@ -26,6 +26,8 @@ export const overviewDto = t.Object({
         spend: t.Number(),
         revenue: t.Number(),
         roas: t.Union([t.Number(), t.Null()]),
+        purchases: t.Number(),
+        cpa: t.Union([t.Number(), t.Null()]),
       })
     ),
     insights: t.Array(

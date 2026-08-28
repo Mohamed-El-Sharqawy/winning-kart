@@ -33,6 +33,8 @@ function toClientRow(dto: OverviewClientRowDto): OverviewClientRow {
     spend: dto.spend ?? null,
     revenue: dto.revenue ?? null,
     roas: dto.roas ?? null,
+    purchases: dto.purchases ?? null,
+    cpa: dto.cpa ?? null,
   };
 }
 
