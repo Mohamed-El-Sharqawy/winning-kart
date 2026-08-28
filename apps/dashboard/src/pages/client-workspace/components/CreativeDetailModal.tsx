@@ -47,13 +47,10 @@ export interface CreativeDetailModalProps {
 
 export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetailModalProps) {
   const [imageFailed, setImageFailed] = useState(false);
-  const posterUrl = creative.previewImageUrl ?? creative.thumbnailUrl;
-  const hasVideo = creative.previewVideoUrl !== null;
   const showPreviewImage = creative.previewImageUrl !== null && !imageFailed;
   const showLegacyImage =
     creative.previewImageUrl === null && creative.thumbnailUrl !== null && !imageFailed;
   const format = creative.format ?? "";
-  const isVideo = format.toUpperCase() === "VIDEO";
   const formatLabel = format === "" ? "CREATIVE" : format;
   const share = creative.spendShare === null ? null : `${Math.round(creative.spendShare * 100)}%`;
   const fatigue = creative.fatigue ? FATIGUE_FLAG_COPY[creative.fatigue.flag] : null;
@@ -66,15 +63,7 @@ export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetail
     <Modal title={creative.name} onClose={onClose} width="lg">
       <div className="flex flex-col gap-4">
         <div className="relative flex items-center justify-center overflow-hidden rounded-[10px] border border-volt-border bg-volt-surface-2">
-          {hasVideo ? (
-            <video
-              controls
-              preload="metadata"
-              poster={posterUrl ?? undefined}
-              src={creative.previewVideoUrl ?? undefined}
-              className="max-h-[60vh] w-full object-contain"
-            />
-          ) : showPreviewImage ? (
+          {showPreviewImage ? (
             <img
               src={creative.previewImageUrl ?? undefined}
               alt=""
@@ -93,11 +82,6 @@ export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetail
               {formatLabel}
             </div>
           )}
-          {isVideo && !hasVideo && (showPreviewImage || showLegacyImage) ? (
-            <span className="absolute inset-0 flex items-center justify-center">
-              <Badge>VIDEO</Badge>
-            </span>
-          ) : null}
         </div>
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">

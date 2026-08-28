@@ -596,9 +596,12 @@ export class AdAccountsService {
       if (row.creativeId === null) {
         continue;
       }
-      const previewsComplete =
-        row.previewImageUrl !== null && (row.previewVideoUrl !== null || row.format !== "VIDEO");
-      if (row.thumbnailUrl !== null && row.bodyCopy !== null && row.format !== null && previewsComplete) {
+      if (
+        row.thumbnailUrl !== null &&
+        row.bodyCopy !== null &&
+        row.format !== null &&
+        row.previewImageUrl !== null
+      ) {
         continue;
       }
       const rows = rowsByCreative.get(row.creativeId);
@@ -622,7 +625,6 @@ export class AdAccountsService {
           const patch: {
             thumbnailUrl?: string;
             previewImageUrl?: string;
-            previewVideoUrl?: string;
             bodyCopy?: string;
             format?: string;
           } = {};
@@ -631,9 +633,6 @@ export class AdAccountsService {
           }
           if (row.previewImageUrl === null && record.previewImageUrl !== null) {
             patch.previewImageUrl = record.previewImageUrl;
-          }
-          if (row.previewVideoUrl === null && record.previewVideoUrl !== null) {
-            patch.previewVideoUrl = record.previewVideoUrl;
           }
           if (row.bodyCopy === null && record.bodyCopy !== null) {
             patch.bodyCopy = record.bodyCopy;
@@ -644,7 +643,6 @@ export class AdAccountsService {
           if (
             patch.thumbnailUrl === undefined &&
             patch.previewImageUrl === undefined &&
-            patch.previewVideoUrl === undefined &&
             patch.bodyCopy === undefined &&
             patch.format === undefined
           ) {

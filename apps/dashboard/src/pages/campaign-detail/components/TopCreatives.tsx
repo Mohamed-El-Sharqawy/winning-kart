@@ -18,9 +18,9 @@ function fatigueVariant(flag: string): BadgeVariant {
   return FATIGUE_VARIANTS[flag.toLowerCase()] ?? "neutral";
 }
 
-function CreativeThumb({ url, name }: { url: string | null; name: string }) {
+function CreativeThumb({ url, name, format }: { url: string | null; name: string; format: string }) {
   const [failed, setFailed] = useState(false);
-  if (!url || failed) {
+  if (format.toUpperCase() === "VIDEO" || !url || failed) {
     return (
       <div
         aria-hidden
@@ -63,7 +63,7 @@ export function TopCreatives({ ads, currency }: TopCreativesProps) {
         <div className="flex flex-col divide-y divide-volt-border">
           {ads.map((ad) => (
             <div key={ad.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-              <CreativeThumb url={ad.thumbnailUrl} name={ad.name} />
+              <CreativeThumb url={ad.thumbnailUrl} name={ad.name} format={ad.format} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-volt-text">{ad.name}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">

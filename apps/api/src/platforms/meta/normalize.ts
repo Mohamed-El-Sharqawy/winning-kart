@@ -1,12 +1,11 @@
-import {
-  extractVideoId,
-  type MetaAccountInfo,
-  type MetaActionMetric,
-  type MetaAdRow,
-  type MetaAdSetRow,
-  type MetaCampaignRow,
-  type MetaCreativeDetailRow,
-  type MetaInsightRow,
+import type {
+  MetaAccountInfo,
+  MetaActionMetric,
+  MetaAdRow,
+  MetaAdSetRow,
+  MetaCampaignRow,
+  MetaCreativeDetailRow,
+  MetaInsightRow,
 } from "./client";
 
 export type EntityStatus = "ACTIVE" | "PAUSED" | "ARCHIVED" | "DELETED";
@@ -219,14 +218,8 @@ export interface CreativeDetailRecord {
   creativeId: string | null;
   thumbnailUrl: string | null;
   previewImageUrl: string | null;
-  previewVideoUrl: string | null;
   bodyCopy: string | null;
   format: string | null;
-}
-
-function playableUrl(url: string | null | undefined): string | null {
-  if (typeof url !== "string" || url.length === 0) return null;
-  return url.split("?")[0].toLowerCase().endsWith(".mp4") ? url : null;
 }
 
 export function normalizeCreativeDetail(
@@ -237,29 +230,17 @@ export function normalizeCreativeDetail(
       creativeId: null,
       thumbnailUrl: null,
       previewImageUrl: null,
-      previewVideoUrl: null,
       bodyCopy: null,
       format: null,
     };
   }
-  const storyImage = row.object_story_spec?.video_data?.image_url ?? null;
-  const feedThumb = row.asset_feed_spec?.videos?.find(
-    (video) => typeof video.thumbnail_url === "string" && video.thumbnail_url.length > 0,
-  )?.thumbnail_url ?? null;
-  const isVideo =
-    extractVideoId(row) !== null ||
-    row.video_source != null ||
-    row.attachment_video_url != null ||
-    playableUrl(row.effective_object_store_url) !== null;
+  const hasImage = (row.image_url ?? row.effective_object_store_url ?? null) !== null;
   return {
     creativeId: row.id ?? null,
     thumbnailUrl: row.thumbnail_url ?? row.image_url ?? null,
-    previewImageUrl:
-      row.image_url ?? row.effective_object_store_url ?? storyImage ?? feedThumb ?? row.video_picture ?? null,
-    previewVideoUrl:
-      row.video_source ?? row.attachment_video_url ?? playableUrl(row.effective_object_store_url),
+    previewImageUrl: row.image_url ?? row.effective_object_store_url ?? null,
     bodyCopy: row.body ?? row.title ?? null,
-    format: isVideo ? "VIDEO" : "IMAGE",
+    format: hasImage ? "IMAGE" : null,
   };
 }
 

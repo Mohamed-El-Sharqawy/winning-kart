@@ -26,7 +26,8 @@ function MetricLabel({ children }: { children: string }) {
 
 export function CreativeCard({ creative, onSelect }: { creative: Creative; onSelect?: () => void }) {
   const [imageFailed, setImageFailed] = useState(false);
-  const showImage = creative.thumbnailUrl !== null && !imageFailed;
+  const isVideo = creative.format.toUpperCase() === "VIDEO";
+  const showImage = !isVideo && creative.thumbnailUrl !== null && !imageFailed;
   const copy = creative.fatigue ? FATIGUE_FLAG_COPY[creative.fatigue.flag] : null;
   const share = creative.spendShare === null ? null : `${Math.round(creative.spendShare * 100)}%`;
 
