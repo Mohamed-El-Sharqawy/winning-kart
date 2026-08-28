@@ -20,6 +20,7 @@ import { TeamPage } from "@/pages/team";
 import { TokensPage } from "@/pages/tokens";
 import { sessionQueryOptions } from "@/shared/services/session.service";
 import { RouteError } from "@/shared/components/RouteError";
+import { isIsoDate } from "@/shared/components/DateRangeControl";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -53,6 +54,8 @@ export type WorkspaceTab =
 export interface ClientWorkspaceSearch {
   tab: WorkspaceTab;
   days?: number;
+  from?: string;
+  to?: string;
   account?: string;
   accountName?: string;
   adSet?: string;
@@ -61,6 +64,8 @@ export interface ClientWorkspaceSearch {
 
 export interface CampaignDetailSearch {
   days: number;
+  from?: string;
+  to?: string;
   account?: string;
   accountName?: string;
 }
@@ -103,6 +108,10 @@ function readOptionalNumber(value: unknown): number | undefined {
 
 function readOptionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function readIsoDate(value: unknown): string | undefined {
+  return isIsoDate(value) ? value : undefined;
 }
 
 const authRoute = createRoute({
@@ -152,6 +161,8 @@ const clientWorkspaceRoute = createRoute({
   validateSearch: (search: Record<string, unknown>): ClientWorkspaceSearch => ({
     tab: readTab(search.tab),
     days: readOptionalNumber(search.days),
+    from: readIsoDate(search.from),
+    to: readIsoDate(search.to),
     account: readOptionalString(search.account),
     accountName: readOptionalString(search.accountName),
     adSet: readOptionalString(search.adSet),
@@ -166,6 +177,8 @@ const campaignDetailRoute = createRoute({
   beforeLoad: requireAdmin,
   validateSearch: (search: Record<string, unknown>): CampaignDetailSearch => ({
     days: readDays(search.days),
+    from: readIsoDate(search.from),
+    to: readIsoDate(search.to),
     account: readOptionalString(search.account),
     accountName: readOptionalString(search.accountName),
   }),

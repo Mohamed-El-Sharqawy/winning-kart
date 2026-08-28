@@ -8,12 +8,13 @@ import type { QueryClient } from "@tanstack/react-query";
 import { asErrorClass, looseApi } from "@/shared/lib/loose-api";
 import { OVERVIEW_QUERY_KEY } from "@/shared/services/overview.service";
 import { errorCopy } from "../data/sync-copy.data";
+import type { DateRange } from "@/shared/components/DateRangeControl";
 import {
   toAdAccount,
   toAdAccounts,
   toCampaigns,
 } from "../transformers/ad-accounts.transformer";
-import type { AdAccount, Campaign, TokenType, RateLimitState, SyncRun } from "../types/ad-accounts.types";
+import type { AdAccount, Campaign, TokenType, RateLimitState } from "../types/ad-accounts.types";
 import type { AdAccountDto, CampaignDto, OkResponseDto } from "../dto/ad-accounts.dto";
 
 export class ApiCallError extends Error {
@@ -26,12 +27,12 @@ export class ApiCallError extends Error {
   }
 }
 
-function callFailed(error: unknown, fallback: string): ApiCallError {
+export function callFailed(error: unknown, fallback: string): ApiCallError {
   const errorClass = asErrorClass(error);
   return new ApiCallError(errorClass ? errorCopy(errorClass) : fallback, errorClass);
 }
 
-function invalidateAdAccountData(queryClient: QueryClient) {
+export function invalidateAdAccountData(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ queryKey: ["clients"] });
   void queryClient.invalidateQueries({ queryKey: ["ad-accounts"] });
   void queryClient.invalidateQueries({ queryKey: OVERVIEW_QUERY_KEY });
@@ -67,14 +68,15 @@ export function useRateLimit(accountId: string) {
   return useQuery(rateLimitQueryOptions(accountId));
 }
 
-export function useCampaigns(accountId: string | null, days: number) {
+export function useCampaigns(accountId: string | null, range: DateRange, rangeExplicit: boolean) {
   return useQuery({
-    queryKey: ["ad-accounts", accountId, "campaigns", days],
+    queryKey: ["ad-accounts", accountId, "campaigns", range.from, range.to, rangeExplicit],
     enabled: accountId !== null,
     queryFn: async (): Promise<Campaign[]> => {
+      const query: Record<string, string | number> = rangeExplicit ? { from: range.from, to: range.to } : { days: 30 };
       const { data: body, error } = await looseApi
         ["ad-accounts"]({ id: accountId as string })
-        .campaigns.get({ query: { days } });
+        .campaigns.get({ query });
       if (error) throw new Error("Failed to load campaigns");
       const payload = (body as { data: CampaignDto[] }).data;
       return toCampaigns(payload);
@@ -99,34 +101,6 @@ export function useCreateAdAccount(clientId: string) {
       return toAdAccount(payload);
     },
     onSuccess: () => invalidateAdAccountData(queryClient),
-  });
-}
-
-export function useEnqueueSync() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (accountId: string): Promise<string> => {
-      const { data: body, error } = await looseApi["ad-accounts"]({ id: accountId }).sync.post(null);
-      if (error) throw callFailed(error, "Sync failed to start");
-      const payload = (body as { data: { runId: string } }).data;
-      return payload.runId;
-    },
-    onSettled: () => invalidateAdAccountData(queryClient),
-  });
-}
-
-export function useLatestSyncRun(accountId: string | null) {
-  return useQuery({
-    queryKey: ["ad-accounts", accountId, "sync-run"],
-    enabled: accountId !== null,
-    queryFn: async (): Promise<SyncRun | null> => {
-      const { data: body } = await looseApi["ad-accounts"]({ id: accountId as string }).sync.runs.latest.get();
-      return ((body as { data: SyncRun | null }).data) ?? null;
-    },
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      return status === "queued" || status === "running" ? 3000 : false;
-    },
   });
 }
 

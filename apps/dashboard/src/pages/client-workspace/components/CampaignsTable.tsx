@@ -59,6 +59,8 @@ export function CampaignsTable({ campaigns, accountId, accountName, days }: Camp
   const resolvedAccountName = accountName ?? workspaceSearch.accountName ?? null;
   const detailSearch = {
     days: resolvedDays,
+    from: workspaceSearch.from,
+    to: workspaceSearch.to,
     account: resolvedAccountId ?? undefined,
     accountName: resolvedAccountName ?? undefined,
   };

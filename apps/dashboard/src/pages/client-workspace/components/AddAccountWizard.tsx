@@ -3,11 +3,8 @@ import type { FormEvent } from "react";
 import { Button } from "@/shared/components/Button";
 import { Input } from "@/shared/components/Input";
 import { errorCopy } from "../data/sync-copy.data";
-import {
-  useCreateAdAccount,
-  useEnqueueSync,
-  useLatestSyncRun,
-} from "../services/ad-accounts.service";
+import { useCreateAdAccount } from "../services/ad-accounts.service";
+import { useEnqueueSync, useLatestSyncRun } from "../services/sync.service";
 import type { SyncResult, TokenType } from "../types/ad-accounts.types";
 import { Modal } from "./Modal";
 import { SyncStageList } from "./SyncStageList";

@@ -2,7 +2,8 @@ import { classifyAd, cohortStats } from "../../detection/fatigue";
 import type { CohortAdRow, FatigueFinding } from "../../detection/fatigue";
 import { problem } from "../../lib/problem";
 import { round2 } from "../../platforms/meta";
-import { utcWindow } from "../ad-accounts/service";
+import { shiftDate } from "../../lib/window";
+import type { ResolvedWindow } from "../../lib/window";
 import type {
   AdSetEntityRow,
   AdTrendSums,
@@ -98,10 +99,21 @@ export interface CampaignDetailPayload {
   adAccountPlatformId: string;
   accountName: string;
   campaign: CampaignPerformance;
+  prev: CampaignPrev;
   series: SeriesPoint[];
   funnel: CampaignFunnel;
   adSets: AdSetPerformance[];
   ads: AdPerformance[];
+}
+
+export interface CampaignPrev {
+  spend: number | null;
+  revenue: number | null;
+  purchases: number | null;
+  roas: number | null;
+  cpa: number | null;
+  ctr: number | null;
+  frequency: number | null;
 }
 
 export interface FatigueSummaryPayload {
@@ -111,20 +123,12 @@ export interface FatigueSummaryPayload {
   counts: { fatiguing: number; bleeding: number; scale: number; status_anomaly: number };
 }
 
-const DAY_MS = 86400000;
-
 function accountNotFound(id: string) {
   return problem(404, "RESOURCE_NOT_FOUND", `No ad account with id ${id}`);
 }
 
 function campaignNotFound(id: string) {
   return problem(404, "RESOURCE_NOT_FOUND", `No campaign with id ${id}`);
-}
-
-function shiftDate(date: string, offsetDays: number): string {
-  return new Date(new Date(`${date}T00:00:00.000Z`).getTime() + offsetDays * DAY_MS)
-    .toISOString()
-    .slice(0, 10);
 }
 
 function laterDate(a: string, b: string): string {
@@ -205,12 +209,11 @@ export class PerformanceService {
     }
   }
 
-  async listAdSets(id: string, days: number): Promise<AdSetPerformance[]> {
+  async listAdSets(id: string, window: ResolvedWindow): Promise<AdSetPerformance[]> {
     await this.requireAccount(id);
-    const { since, until } = utcWindow(days);
     const [rows, sumsRows] = await Promise.all([
       this.model.listAdSets(id),
-      this.model.windowMetrics(id, "adset", since, until),
+      this.model.windowMetrics(id, "adset", window.since, window.until),
     ]);
     const sumsById = new Map(sumsRows.map((row) => [row.entityId, row]));
     return rows
@@ -218,18 +221,18 @@ export class PerformanceService {
       .sort((a, b) => (b.spend ?? 0) - (a.spend ?? 0));
   }
 
-  async listAds(id: string, days: number, adSetId?: string): Promise<AdPerformance[]> {
+  async listAds(id: string, window: ResolvedWindow, adSetId?: string): Promise<AdPerformance[]> {
     await this.requireAccount(id);
-    return this.buildAdItems(id, days, undefined, adSetId);
+    return this.buildAdItems(id, window, undefined, adSetId);
   }
 
   private async buildAdItems(
     id: string,
-    days: number,
+    window: ResolvedWindow,
     campaignId?: string,
     adSetId?: string
   ): Promise<AdPerformance[]> {
-    const { since, until } = utcWindow(days);
+    const { since, until } = window;
     const recentSince = laterDate(since, shiftDate(until, -6));
     const priorSince = laterDate(since, shiftDate(recentSince, -7));
     const [allRows, adSumsRows, adSetSumsRows, trendRows] = await Promise.all([
@@ -302,22 +305,26 @@ export class PerformanceService {
   async campaignDetail(
     id: string,
     campaignId: string,
-    days: number
+    window: ResolvedWindow
   ): Promise<CampaignDetailPayload> {
     await this.requireAccount(id);
     const campaign = await this.model.findCampaign(campaignId);
     if (campaign === undefined || campaign.adAccountId !== id) {
       throw campaignNotFound(campaignId);
     }
-    const { since, until } = utcWindow(days);
-    const [sumsRows, seriesRows, adSetItems, adItems] = await Promise.all([
-      this.model.windowMetrics(id, "campaign", since, until),
-      this.model.campaignSeries(id, campaignId, since, until),
-      this.listAdSets(id, days),
-      this.buildAdItems(id, days, campaignId),
+    const prevUntil = shiftDate(window.since, -1);
+    const prevSince = shiftDate(window.since, -window.spanDays);
+    const [sumsRows, prevSumsRows, seriesRows, adSetItems, adItems] = await Promise.all([
+      this.model.windowMetrics(id, "campaign", window.since, window.until),
+      this.model.windowMetrics(id, "campaign", prevSince, prevUntil),
+      this.model.campaignSeries(id, campaignId, window.since, window.until),
+      this.listAdSets(id, window),
+      this.buildAdItems(id, window, campaignId),
     ]);
     const sums = sumsRows.find((row) => row.entityId === campaignId);
+    const prevSums = prevSumsRows.find((row) => row.entityId === campaignId);
     const metrics = deriveMetrics(sums);
+    const prevMetrics = deriveMetrics(prevSums);
     return {
       adAccountId: campaign.adAccountId,
       adAccountPlatformId: campaign.adAccountPlatformId,
@@ -338,7 +345,16 @@ export class PerformanceService {
         ctr: metrics.ctr,
         frequency: metrics.frequency,
       },
-      series: buildSeries(since, until, seriesRows),
+      prev: {
+        spend: prevMetrics.spend,
+        revenue: prevMetrics.revenue,
+        purchases: prevMetrics.purchases,
+        roas: prevMetrics.roas,
+        cpa: prevMetrics.cpa,
+        ctr: prevMetrics.ctr,
+        frequency: prevMetrics.frequency,
+      },
+      series: buildSeries(window.since, window.until, seriesRows),
       funnel: {
         impressions: sums?.impressions ?? 0,
         reach: sums?.reach ?? 0,
@@ -354,9 +370,9 @@ export class PerformanceService {
     };
   }
 
-  async fatigueSummary(id: string, days: number): Promise<FatigueSummaryPayload> {
+  async fatigueSummary(id: string, window: ResolvedWindow): Promise<FatigueSummaryPayload> {
     await this.requireAccount(id);
-    const items = await this.buildAdItems(id, days);
+    const items = await this.buildAdItems(id, window);
     const spends = items
       .map((item) => item.spend)
       .filter((spend): spend is number => spend !== null && spend > 0)

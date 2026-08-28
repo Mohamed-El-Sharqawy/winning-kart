@@ -1,35 +1,37 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/shared/components/Button";
+import { DateRangeControl } from "@/shared/components/DateRangeControl";
+import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
 import type { Client } from "@/shared/types/clients.types";
 import { errorCopy } from "../data/sync-copy.data";
-import {
-  useAdAccounts,
-  useCampaigns,
-  useEnqueueSync,
-  useLatestSyncRun,
-} from "../services/ad-accounts.service";
+import { useAdAccounts, useCampaigns } from "../services/ad-accounts.service";
+import { useEnqueueSync, useLatestSyncRun } from "../services/sync.service";
 import { CampaignsTable } from "./CampaignsTable";
 import { SkeletonRows } from "./SkeletonRows";
-
-const DAY_WINDOWS = [7, 14, 30, 90];
 
 const SELECT_CLASS =
   "rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
 
-export function CampaignsTab({ client }: { client: Client }) {
+export interface CampaignsTabProps {
+  client: Client;
+  range: DateRange;
+  rangeExplicit: boolean;
+  onApplyRange: (range: DateRange | undefined) => void;
+}
+
+export function CampaignsTab({ client, range, rangeExplicit, onApplyRange }: CampaignsTabProps) {
   const { data: accounts, isPending: accountsPending } = useAdAccounts(client.id);
   const queryClient = useQueryClient();
   const [accountId, setAccountId] = useState<string | null>(null);
-  const [days, setDays] = useState(30);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [watchedAccountId, setWatchedAccountId] = useState<string | null>(null);
   const [syncRunId, setSyncRunId] = useState<string | null>(null);
   const enqueue = useEnqueueSync();
   const list = accounts ?? [];
   const selectedId = accountId ?? list[0]?.id ?? null;
-  const { data: campaigns, isPending } = useCampaigns(selectedId, days);
+  const { data: campaigns, isPending } = useCampaigns(selectedId, range, rangeExplicit);
   const { data: run } = useLatestSyncRun(watchedAccountId);
 
   useEffect(() => {
@@ -93,20 +95,11 @@ export function CampaignsTab({ client }: { client: Client }) {
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
-          Window
-          <select
-            value={days}
-            onChange={(event) => setDays(Number(event.target.value))}
-            className={SELECT_CLASS}
-          >
-            {DAY_WINDOWS.map((window) => (
-              <option key={window} value={window}>
-                Last {window} days
-              </option>
-            ))}
-          </select>
-        </label>
+        <DateRangeControl
+          from={rangeExplicit ? range.from : undefined}
+          to={rangeExplicit ? range.to : undefined}
+          onApply={onApplyRange}
+        />
       </div>
       {isPending ? (
         <SkeletonRows rows={8} columns={9} />

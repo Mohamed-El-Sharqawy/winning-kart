@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatDecimal, formatMoney, formatNumber, formatRoas } from "@/lib/format";
 import { Button } from "@/shared/components/Button";
+import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { KpiCard } from "@/shared/components/KpiCard";
 import { useAdSets } from "../services/ad-sets.service";
@@ -13,7 +14,8 @@ const MAX_COMPARE = 4;
 
 export interface AdSetsTabProps {
   accountId: string | null;
-  days: number;
+  range: DateRange;
+  rangeExplicit: boolean;
   clientSlug: string;
 }
 
@@ -29,8 +31,8 @@ function metricValues(rows: AdSet[], key: keyof AdSet): number[] {
   return rows.map((row) => row[key]).filter((value): value is number => typeof value === "number");
 }
 
-export function AdSetsTab({ accountId, days, clientSlug }: AdSetsTabProps) {
-  const { data: adSets, isPending } = useAdSets(accountId, days);
+export function AdSetsTab({ accountId, range, rangeExplicit, clientSlug }: AdSetsTabProps) {
+  const { data: adSets, isPending } = useAdSets(accountId, range, rangeExplicit);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
 

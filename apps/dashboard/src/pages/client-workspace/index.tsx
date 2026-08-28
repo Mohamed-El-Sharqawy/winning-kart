@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams, useSearch } from "@tanstack/react-router";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { DateRangeControl, defaultRange } from "@/shared/components/DateRangeControl";
+import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { AppShell } from "@/shared/layout/AppShell";
 import {
@@ -18,8 +20,6 @@ import { RevenueTab } from "./components/RevenueTab";
 import { WorkspaceHeader } from "./components/WorkspaceHeader";
 import { WorkspaceTabs } from "./components/WorkspaceTabs";
 import { useAdAccounts } from "./services/ad-accounts.service";
-
-const DAY_WINDOWS = [7, 14, 30, 90];
 
 const SELECT_CLASS =
   "rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
@@ -52,13 +52,24 @@ export function ClientWorkspacePage() {
 }
 
 function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
+  const navigate = useNavigate();
+  const { from, to } = useSearch({ from: "/clients/$slug" });
   const [accountId, setAccountId] = useState<string | null>(null);
-  const [days, setDays] = useState(30);
   const { data: accounts, isPending: accountsPending } = useAdAccounts(client.id);
   const list = accounts ?? [];
   const selectedAccountId = accountId ?? list[0]?.id ?? null;
   const metricsTab = tab === "ad-sets" || tab === "creatives";
   const accountsReady = !accountsPending && list.length > 0;
+  const rangeExplicit = from !== undefined && to !== undefined;
+  const range: DateRange = rangeExplicit ? { from, to } : defaultRange();
+
+  function applyRange(next: DateRange | undefined) {
+    void navigate({
+      to: "/clients/$slug",
+      params: { slug: client.slug },
+      search: (prev) => ({ ...prev, tab, from: next?.from, to: next?.to }),
+    });
+  }
 
   return (
     <>
@@ -81,30 +92,19 @@ function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
-            Window
-            <select
-              value={days}
-              onChange={(event) => setDays(Number(event.target.value))}
-              className={SELECT_CLASS}
-            >
-              {DAY_WINDOWS.map((window) => (
-                <option key={window} value={window}>
-                  Last {window} days
-                </option>
-              ))}
-            </select>
-          </label>
+          <DateRangeControl from={from} to={to} onApply={applyRange} />
         </div>
       ) : null}
       {tab === "overview" ? <OverviewTab client={client} /> : null}
       {tab === "ad-accounts" ? <AccountsTab client={client} /> : null}
-      {tab === "campaigns" ? <CampaignsTab client={client} /> : null}
+      {tab === "campaigns" ? (
+        <CampaignsTab client={client} range={range} rangeExplicit={rangeExplicit} onApplyRange={applyRange} />
+      ) : null}
       {tab === "ad-sets" && accountsReady ? (
-        <AdSetsTab accountId={selectedAccountId} days={days} clientSlug={client.slug} />
+        <AdSetsTab accountId={selectedAccountId} range={range} rangeExplicit={rangeExplicit} clientSlug={client.slug} />
       ) : null}
       {tab === "creatives" && accountsReady ? (
-        <CreativesTab accountId={selectedAccountId} days={days} clientSlug={client.slug} />
+        <CreativesTab accountId={selectedAccountId} range={range} rangeExplicit={rangeExplicit} clientSlug={client.slug} />
       ) : null}
       {tab === "revenue" ? <RevenueTab client={client} /> : null}
       {metricsTab && !accountsPending && list.length === 0 ? (

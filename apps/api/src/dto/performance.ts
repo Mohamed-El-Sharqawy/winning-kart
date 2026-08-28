@@ -64,9 +64,27 @@ export const performanceAdSetsDto = t.Object({ data: t.Array(adSetItemDto) });
 
 export const performanceAdsDto = t.Object({ data: t.Array(adItemDto) });
 
-export const performanceAdsQueryDto = t.Object({
+const windowQueryFields = {
   days: t.Optional(t.String({ pattern: "^[0-9]+$" })),
+  from: t.Optional(t.String()),
+  to: t.Optional(t.String()),
+};
+
+export const performanceWindowQueryDto = t.Object(windowQueryFields);
+
+export const performanceAdsQueryDto = t.Object({
+  ...windowQueryFields,
   adSetId: t.Optional(t.String()),
+});
+
+const campaignPrevDto = t.Object({
+  spend: nullableNumber,
+  revenue: nullableNumber,
+  purchases: nullableNumber,
+  roas: nullableNumber,
+  cpa: nullableNumber,
+  ctr: nullableNumber,
+  frequency: nullableNumber,
 });
 
 export const performanceCampaignDto = t.Object({
@@ -90,6 +108,7 @@ export const performanceCampaignDto = t.Object({
       ctr: nullableNumber,
       frequency: nullableNumber,
     }),
+    prev: campaignPrevDto,
     series: t.Array(
       t.Object({
         date: t.String(),

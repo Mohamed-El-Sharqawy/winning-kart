@@ -1,4 +1,5 @@
 import type { AlertListStatus } from "../alerts/model";
+import { resolveWindow } from "../../lib/window";
 import {
   McpTool,
   clampInt,
@@ -31,7 +32,7 @@ const getCampaigns: McpTool = {
   handler: async (ctx, args) => {
     const adAccountId = requireString(args, "adAccountId");
     const days = clampInt(optionalNumber(args, "days") ?? 30, 1, 90);
-    return ctx.models.adAccounts.campaignsWithMetrics(adAccountId, days);
+    return ctx.models.adAccounts.campaignsWithMetrics(adAccountId, resolveWindow({ days }));
   },
 };
 

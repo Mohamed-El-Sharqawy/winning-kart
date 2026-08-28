@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { problem } from "../../lib/problem";
 import { storedRateLimitBlocked } from "../../platforms/meta/rate-limit";
+import { clampBackfillMonths, BACKFILL_DEFAULT_MONTHS } from "./backfill";
+import { isRecord } from "./stages";
 import { AdAccountsModel } from "./model";
 import type { SyncRunRow } from "./model";
 import { AdAccountsService, SyncCancelledError } from "./service";
@@ -35,6 +37,39 @@ export async function enqueueSync(adAccountId: string): Promise<{ runId: string 
   return { runId: run.id };
 }
 
+export async function enqueueBackfill(
+  adAccountId: string,
+  rawMonths: number
+): Promise<{ runId: string }> {
+  const months = clampBackfillMonths(rawMonths);
+  const account = await model.findById(adAccountId);
+  if (!account) {
+    throw problem(404, "RESOURCE_NOT_FOUND", `No ad account with id ${adAccountId}`);
+  }
+  const block = storedRateLimitBlocked(account.platformPayload);
+  if (block.blocked) {
+    const estimate = block.estClearMin !== null ? ` ~${block.estClearMin} min` : "";
+    throw problem(
+      429,
+      "RATE_LIMITED",
+      `Meta rate limit active; do not retry until the window clears.${estimate}`,
+      "rate_limited"
+    );
+  }
+  const active = await model.activeSyncRun(adAccountId);
+  if (active !== null) {
+    return { runId: active.id };
+  }
+  const run = await model.createSyncRun(randomUUID(), adAccountId, {
+    kind: "backfill",
+    months,
+    chunksDone: 0,
+    chunksTotal: months,
+  });
+  void kickWorker();
+  return { runId: run.id };
+}
+
 export async function latestRun(adAccountId: string): Promise<SyncRunRow | null> {
   return model.latestSyncRun(adAccountId);
 }
@@ -55,6 +90,10 @@ export async function recoverInterruptedRuns(): Promise<void> {
   await model.markStaleSyncRunsInterrupted();
 }
 
+function runKind(run: SyncRunRow): "sync" | "backfill" {
+  return isRecord(run.progress) && run.progress.kind === "backfill" ? "backfill" : "sync";
+}
+
 async function kickWorker(): Promise<void> {
   if (workerActive) {
     return;
@@ -66,15 +105,23 @@ async function kickWorker(): Promise<void> {
       if (queued === null) {
         return;
       }
-      await executeRun(queued.id, queued.adAccountId);
+      await executeRun(queued);
     }
   } finally {
     workerActive = false;
   }
 }
 
-async function executeRun(runId: string, adAccountId: string): Promise<void> {
-  await model.updateSyncRun(runId, { status: "running", startedAt: new Date() });
+async function executeRun(run: SyncRunRow): Promise<void> {
+  if (runKind(run) === "backfill") {
+    await executeBackfillRun(run);
+    return;
+  }
+  await executeSyncRun(run);
+}
+
+async function executeSyncRun(run: SyncRunRow): Promise<void> {
+  await model.updateSyncRun(run.id, { status: "running", startedAt: new Date() });
   const stageLog: Array<{ stage: string; status: string; detail?: unknown }> = [];
   let lastWrite = 0;
 
@@ -84,19 +131,19 @@ async function executeRun(runId: string, adAccountId: string): Promise<void> {
       return;
     }
     lastWrite = now;
-    const current = await model.getSyncRun(runId);
+    const current = await model.getSyncRun(run.id);
     if (current === null || current.status !== "running") {
       return;
     }
-    await model.updateSyncRun(runId, {
+    await model.updateSyncRun(run.id, {
       progress: summary === undefined ? { stages: stageLog } : { stages: stageLog, summary },
     });
   };
 
   try {
-    const outcome = await service.sync(adAccountId, {
+    const outcome = await service.sync(run.adAccountId, {
       shouldCancel: async () => {
-        const current = await model.getSyncRun(runId);
+        const current = await model.getSyncRun(run.id);
         return current === null || current.status === "cancelled";
       },
       onStage: async (info) => {
@@ -105,7 +152,7 @@ async function executeRun(runId: string, adAccountId: string): Promise<void> {
       },
     });
     if (!outcome.ok) {
-      await model.updateSyncRun(runId, {
+      await model.updateSyncRun(run.id, {
         status: "failed",
         error: `stage ${outcome.failedStage} failed (${outcome.errorClass})`,
         errorClass: outcome.errorClass,
@@ -115,7 +162,7 @@ async function executeRun(runId: string, adAccountId: string): Promise<void> {
       return;
     }
     stageLog.push(...outcome.stages.filter((s) => !stageLog.some((e) => e.stage === s.stage)));
-    await model.updateSyncRun(runId, {
+    await model.updateSyncRun(run.id, {
       status: "succeeded",
       progress: { stages: outcome.stages, summary: outcome.summary },
       graphCalls: outcome.summary.graphCalls,
@@ -123,11 +170,89 @@ async function executeRun(runId: string, adAccountId: string): Promise<void> {
     });
   } catch (error) {
     if (error instanceof SyncCancelledError) {
-      await model.updateSyncRun(runId, { status: "cancelled", endedAt: new Date() });
+      await model.updateSyncRun(run.id, { status: "cancelled", endedAt: new Date() });
       return;
     }
     const message = error instanceof Error ? error.message : "sync failed";
-    await model.updateSyncRun(runId, {
+    await model.updateSyncRun(run.id, {
+      status: "failed",
+      error: message,
+      errorClass: "upstream_error",
+      endedAt: new Date(),
+    });
+  }
+  await persist(true);
+}
+
+async function executeBackfillRun(run: SyncRunRow): Promise<void> {
+  const stored = isRecord(run.progress) ? run.progress : {};
+  const months = clampBackfillMonths(
+    typeof stored.months === "number" ? stored.months : BACKFILL_DEFAULT_MONTHS
+  );
+  const chunksTotal =
+    typeof stored.chunksTotal === "number" && Number.isFinite(stored.chunksTotal)
+      ? stored.chunksTotal
+      : months;
+  await model.updateSyncRun(run.id, { status: "running", startedAt: new Date() });
+  let lastWrite = 0;
+  let chunksDone = 0;
+  let currentWindow: { since: string; until: string } | null = null;
+
+  const persist = async (force: boolean): Promise<void> => {
+    const now = Date.now();
+    if (!force && now - lastWrite < PROGRESS_WRITE_THROTTLE_MS) {
+      return;
+    }
+    lastWrite = now;
+    const current = await model.getSyncRun(run.id);
+    if (current === null || current.status !== "running") {
+      return;
+    }
+    await model.updateSyncRun(run.id, {
+      progress: { kind: "backfill", months, chunksDone, chunksTotal, currentWindow },
+    });
+  };
+
+  try {
+    const outcome = await service.backfill(run.adAccountId, months, {
+      shouldCancel: async () => {
+        const current = await model.getSyncRun(run.id);
+        return current === null || current.status === "cancelled";
+      },
+      onStage: async (info) => {
+        if (info.stage !== "backfill" || info.status !== "succeeded" || !isRecord(info.detail)) {
+          return;
+        }
+        chunksDone = typeof info.detail.chunk === "number" ? info.detail.chunk : chunksDone + 1;
+        if (typeof info.detail.since === "string" && typeof info.detail.until === "string") {
+          currentWindow = { since: info.detail.since, until: info.detail.until };
+        }
+        await persist(false);
+      },
+    });
+    if (!outcome.ok) {
+      await model.updateSyncRun(run.id, {
+        status: "failed",
+        error: `stage ${outcome.failedStage} failed (${outcome.errorClass})`,
+        errorClass: outcome.errorClass,
+        endedAt: new Date(),
+      });
+      return;
+    }
+    chunksDone = outcome.summary.chunksDone;
+    await model.updateSyncRun(run.id, {
+      status: "succeeded",
+      progress: { kind: "backfill", months, chunksDone, chunksTotal, currentWindow },
+      graphCalls: outcome.summary.graphCalls,
+      endedAt: new Date(),
+    });
+  } catch (error) {
+    if (error instanceof SyncCancelledError) {
+      await model.updateSyncRun(run.id, { status: "cancelled", endedAt: new Date() });
+      return;
+    }
+    const message = error instanceof Error ? error.message : "backfill failed";
+    await model.updateSyncRun(run.id, {
       status: "failed",
       error: message,
       errorClass: "upstream_error",

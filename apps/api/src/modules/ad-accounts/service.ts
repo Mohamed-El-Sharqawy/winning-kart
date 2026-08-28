@@ -10,79 +10,34 @@ import type {
   InsightLevel,
   InsightRecord,
   MetaAccountInfo,
-  MetaAdRow,
-  MetaAdSetRow,
-  MetaCampaignRow,
 } from "../../platforms/meta";
 import {
-  AD_FIELDS,
-  AD_SET_FIELDS,
-  CAMPAIGN_FIELDS,
   aggregateInsightsByDate,
   normalizeAccountInfo,
-  normalizeAd,
-  normalizeAdSet,
-  normalizeCampaign,
-  normalizeCreativeDetail,
   normalizeInsight,
-  parsePlatformTime,
   round2,
 } from "../../platforms/meta";
 import type {
-  AdRow,
-  AdUpsertRow,
-  AdSetUpsertRow,
   CampaignRow,
   CampaignWindowMetrics,
   InsightUpsertRow,
-  PlatformEntityState,
   SyncJobRow,
 } from "./model";
 import type { AdAccountsModel } from "./model";
+import { backfillAccount } from "./backfill";
+import type { BackfillOutcome } from "./backfill";
+import { createStageRunner, runStructureStages } from "./stages";
+import { isRecord, SyncCancelledError } from "./stages";
+import type { SyncStage, StageResult, SyncSummary, SyncRunHooks } from "./stages";
+
+export { SyncCancelledError } from "./stages";
+export type { SyncStage, StageResult, SyncSummary, SyncRunHooks } from "./stages";
 
 export type TokenType = "system_user" | "user_60d";
-
-export type SyncStage =
-  | "account_info"
-  | "campaigns"
-  | "ad_sets"
-  | "ads"
-  | "insights"
-  | "daily_series";
-
-export interface StageResult {
-  stage: SyncStage;
-  status: "succeeded" | "failed";
-  errorClass?: string;
-}
-
-export interface SyncSummary {
-  campaigns: number;
-  adSets: number;
-  ads: number;
-  insightDays: number;
-  graphCalls: number;
-}
 
 export type SyncOutcome =
   | { ok: true; stages: StageResult[]; summary: SyncSummary }
   | { ok: false; failedStage: SyncStage; errorClass: string; stages: StageResult[] };
-
-export class SyncCancelledError extends Error {
-  constructor() {
-    super("sync cancelled");
-    this.name = "SyncCancelledError";
-  }
-}
-
-export interface SyncRunHooks {
-  onStage?: (info: {
-    stage: SyncStage;
-    status: "succeeded" | "failed";
-    detail: unknown;
-  }) => Promise<void> | void;
-  shouldCancel?: () => boolean | Promise<boolean>;
-}
 
 export interface AdAccountView {
   id: string;
@@ -136,15 +91,11 @@ const USER_TOKEN_TTL_DAYS = 60;
 const TOKEN_WARNING_DAYS = 7;
 const INSIGHT_DELTA_DAYS = 3;
 const SYNC_WINDOW_DAYS = clampEnvInt("WK_SYNC_WINDOW_DAYS", 30, 1, 90);
-const DECORATE_MAX = Math.max(1, envInt("WK_DECORATE_MAX", 200));
-
-function envInt(key: string, fallback: number): number {
-  const parsed = Number.parseInt(process.env[key] ?? "", 10);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
 
 function clampEnvInt(key: string, fallback: number, min: number, max: number): number {
-  return Math.min(Math.max(envInt(key, fallback), min), max);
+  const parsed = Number.parseInt(process.env[key] ?? "", 10);
+  const value = Number.isFinite(parsed) ? parsed : fallback;
+  return Math.min(Math.max(value, min), max);
 }
 
 export function utcWindow(days: number): { since: string; until: string } {
@@ -152,10 +103,6 @@ export function utcWindow(days: number): { since: string; until: string } {
   const until = now.toISOString().slice(0, 10);
   const since = new Date(now.getTime() - (days - 1) * DAY_MS).toISOString().slice(0, 10);
   return { since, until };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 function isUniqueViolation(error: unknown): boolean {
@@ -176,71 +123,6 @@ function isForeignKeyViolation(error: unknown): boolean {
   );
 }
 
-function needsRefetch(
-  stored: PlatformEntityState | undefined,
-  lightUpdatedTime: string | undefined
-): boolean {
-  if (stored === undefined) {
-    return true;
-  }
-  const parsed = parsePlatformTime(lightUpdatedTime);
-  if (parsed === null) {
-    return false;
-  }
-  return stored.platformUpdatedAt === null || stored.platformUpdatedAt.getTime() !== parsed.getTime();
-}
-
-function idsToRefetch<T extends { id: string; updated_time?: string }>(
-  lightRows: T[],
-  stored: Map<string, PlatformEntityState>
-): string[] {
-  return lightRows
-    .filter((row) => needsRefetch(stored.get(row.id), row.updated_time))
-    .map((row) => row.id);
-}
-
-const DELTA_PER_ENTITY_MAX_DEFAULT = 25;
-
-function deltaPerEntityMax(): number {
-  const parsed = Number.parseInt(process.env.WK_DELTA_PER_ENTITY_MAX ?? "", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : DELTA_PER_ENTITY_MAX_DEFAULT;
-}
-
-async function fullRowsOrEdgeFallback<T>(
-  meta: AdPlatformAdapter,
-  actId: string,
-  ids: string[],
-  fields: string,
-  entityLabel: string,
-  edgeFetch: () => Promise<T[]>
-): Promise<T[]> {
-  if (ids.length === 0) {
-    return [];
-  }
-  if (ids.length > deltaPerEntityMax()) {
-    return edgeFetch();
-  }
-  const rows: T[] = [];
-  for (const id of ids) {
-    const row = await meta.getEntityById<T>(id, fields);
-    if (row !== null) {
-      rows.push(row);
-    }
-  }
-  if (rows.length < ids.length) {
-    console.warn(`${entityLabel}: ${ids.length - rows.length} of ${ids.length} entity fetches skipped`);
-  }
-  return rows;
-}
-
-function toMetaError(error: unknown): MetaError {
-  if (error instanceof MetaError) {
-    return error;
-  }
-  const message = error instanceof Error ? error.message : "unexpected sync failure";
-  return new MetaError("server_error", message);
-}
-
 function metaProblem(error: MetaError): ProblemError {
   switch (error.errorClass) {
     case "invalid_token":
@@ -257,7 +139,14 @@ function metaProblem(error: MetaError): ProblemError {
 }
 
 function toProblemError(error: unknown): ProblemError {
-  return metaProblem(toMetaError(error));
+  const metaError =
+    error instanceof MetaError
+      ? error
+      : new MetaError(
+          "server_error",
+          error instanceof Error ? error.message : "unexpected sync failure"
+        );
+  return metaProblem(metaError);
 }
 
 function accountNotFound(id: string): ProblemError {
@@ -367,7 +256,8 @@ export class AdAccountsService {
     const account = await this.model.findById(id);
     if (!account) {
       throw accountNotFound(id);
-    }    const recentJobs = await this.model.listRecentJobs(id, RECENT_JOBS_LIMIT);
+    }
+    const recentJobs = await this.model.listRecentJobs(id, RECENT_JOBS_LIMIT);
     return {
       id: account.id,
       name: account.name,
@@ -449,17 +339,12 @@ export class AdAccountsService {
       throw new SyncCancelledError();
     }
 
-    const stages: StageResult[] = [];
+    const runner = createStageRunner(this.model, account, hooks);
     const summary: SyncSummary = { campaigns: 0, adSets: 0, ads: 0, insightDays: 0, graphCalls: 0 };
-    const campaignIdByPlatform = new Map<string, string>();
-    const adSetIdByPlatform = new Map<string, string>();
-    const adIdByPlatform = new Map<string, string>();
     let currency = account.currency;
     let platformPayload = isRecord(account.platformPayload)
       ? { ...account.platformPayload }
       : {};
-    let failedStage: SyncStage | null = null;
-    let failedErrorClass: string | null = null;
     let meta: AdPlatformAdapter | null = null;
 
     const storedBlock = storedRateLimitBlocked(account.platformPayload);
@@ -490,62 +375,14 @@ export class AdAccountsService {
         }
       }
       if (ok) {
-        return { ok: true, stages, summary };
+        return { ok: true, stages: runner.stages, summary };
       }
       return {
         ok: false,
-        failedStage: failedStage as SyncStage,
-        errorClass: failedErrorClass as string,
-        stages,
+        failedStage: runner.failedStage as SyncStage,
+        errorClass: runner.failedErrorClass as string,
+        stages: runner.stages,
       };
-    };
-
-    const runStage = async (
-      stage: SyncStage,
-      run: () => Promise<unknown>
-    ): Promise<boolean> => {
-      if ((await hooks.shouldCancel?.()) === true) {
-        throw new SyncCancelledError();
-      }
-      const jobId = crypto.randomUUID();
-      await this.model.insertSyncJob({
-        id: jobId,
-        adAccountId: account.id,
-        stage,
-        status: "running",
-        startedAt: new Date(),
-      });
-      try {
-        const detail = await run();
-        await this.model.updateSyncJob(jobId, {
-          status: "succeeded",
-          detail: isRecord(detail) ? detail : null,
-          endedAt: new Date(),
-        });
-        stages.push({ stage, status: "succeeded" });
-        await hooks.onStage?.({ stage, status: "succeeded", detail: detail ?? null });
-        return true;
-      } catch (error) {
-        if (error instanceof SyncCancelledError) {
-          throw error;
-        }
-        const metaError = toMetaError(error);
-        failedStage = stage;
-        failedErrorClass = metaError.errorClass;
-        await this.model.updateSyncJob(jobId, {
-          status: "failed",
-          errorClass: metaError.errorClass,
-          detail: { message: metaError.message },
-          endedAt: new Date(),
-        });
-        stages.push({ stage, status: "failed", errorClass: metaError.errorClass });
-        await hooks.onStage?.({
-          stage,
-          status: "failed",
-          detail: { errorClass: metaError.errorClass, message: metaError.message },
-        });
-        return false;
-      }
     };
 
     let adapter: AdPlatformAdapter | null = null;
@@ -558,7 +395,7 @@ export class AdAccountsService {
     }
 
     if (adapter === null) {
-      await runStage("account_info", async () => {
+      await runner.run("account_info", async () => {
         throw new MetaError("invalid_token", "access token is pending oauth connection");
       });
       return finalize(false);
@@ -566,7 +403,8 @@ export class AdAccountsService {
 
     meta = adapter;
 
-    const accountInfoOk = await runStage("account_info", async () => {      const info = await meta.getAccountInfo(account.adAccountId);
+    const accountInfoOk = await runner.run("account_info", async () => {
+      const info = await meta.getAccountInfo(account.adAccountId);
       const snapshot = normalizeAccountInfo(info);
       currency = snapshot.currency ?? currency;
       platformPayload = {
@@ -590,129 +428,21 @@ export class AdAccountsService {
       return finalize(false);
     }
 
-    const campaignsOk = await runStage("campaigns", async () => {
-      const lightRows = await meta.getCampaignIds(account.adAccountId);
-      const states = await this.model.campaignStates(account.id);
-      for (const [platformId, state] of states) {
-        campaignIdByPlatform.set(platformId, state.id);
-      }
-      const changedIds = idsToRefetch(lightRows, states);
-      const rows = await fullRowsOrEdgeFallback<MetaCampaignRow>(
-        meta,
-        account.adAccountId,
-        changedIds,
-        CAMPAIGN_FIELDS,
-        "campaigns",
-        () => meta.getCampaigns(account.adAccountId)
-      );
-      const records = rows.map(normalizeCampaign);
-      const upserted = await this.model.upsertCampaigns(account.id, currency, records);
-      summary.campaigns = upserted.length;
-      for (const row of upserted) {
-        campaignIdByPlatform.set(row.platformCampaignId, row.id);
-      }
-      return { total: lightRows.length, changed: changedIds.length, upserted: upserted.length };
-    });
-    if (!campaignsOk) {
+    const structure = await runStructureStages(
+      this.model,
+      account,
+      meta,
+      currency,
+      runner,
+      summary,
+      hooks
+    );
+    if (!structure.ok) {
       return finalize(false);
     }
+    const { campaignIdByPlatform, adSetIdByPlatform, adIdByPlatform } = structure;
 
-    const adSetsOk = await runStage("ad_sets", async () => {
-      const lightRows = await meta.getAdSetIds(account.adAccountId);
-      const states = await this.model.adSetStates(account.id);
-      for (const [platformId, state] of states) {
-        adSetIdByPlatform.set(platformId, state.id);
-      }
-      const changedIds = idsToRefetch(lightRows, states);
-      const rows = await fullRowsOrEdgeFallback<MetaAdSetRow>(
-        meta,
-        account.adAccountId,
-        changedIds,
-        AD_SET_FIELDS,
-        "ad sets",
-        () => meta.getAdSets(account.adAccountId)
-      );
-      const insertRows: AdSetUpsertRow[] = [];
-      for (const row of rows) {
-        const record = normalizeAdSet(row);
-        const campaignId = campaignIdByPlatform.get(record.campaignPlatformId);
-        if (campaignId === undefined) {
-          continue;
-        }
-        insertRows.push({
-          campaignId,
-          platformAdsetId: record.platformAdsetId,
-          name: record.name,
-          status: record.status,
-          optimizationGoal: record.optimizationGoal,
-          bidStrategy: record.bidStrategy,
-          dailyBudget: record.dailyBudget,
-          lifetimeBudget: record.lifetimeBudget,
-          platformUpdatedAt: record.platformUpdatedAt,
-        });
-      }
-      const upserted = await this.model.upsertAdSets(insertRows);
-      summary.adSets = upserted.length;
-      for (const row of upserted) {
-        adSetIdByPlatform.set(row.platformAdsetId, row.id);
-      }
-      return { total: lightRows.length, changed: changedIds.length, upserted: upserted.length };
-    });
-    if (!adSetsOk) {
-      return finalize(false);
-    }
-
-    const adsOk = await runStage("ads", async () => {
-      const lightRows = await meta.getAdIds(account.adAccountId);
-      const states = await this.model.adStates(account.id);
-      for (const [platformId, state] of states) {
-        adIdByPlatform.set(platformId, state.id);
-      }
-      const changedIds = idsToRefetch(lightRows, states);
-      const rows = await fullRowsOrEdgeFallback<MetaAdRow>(
-        meta,
-        account.adAccountId,
-        changedIds,
-        AD_FIELDS,
-        "ads",
-        () => meta.getAds(account.adAccountId)
-      );
-      const insertRows: AdUpsertRow[] = [];
-      for (const row of rows) {
-        const record = normalizeAd(row);
-        const adSetId = adSetIdByPlatform.get(record.adSetPlatformId);
-        if (adSetId === undefined) {
-          continue;
-        }
-        insertRows.push({
-          adSetId,
-          platformAdId: record.platformAdId,
-          name: record.name,
-          status: record.status,
-          format: record.format,
-          creativeId: record.creativeId,
-          platformUpdatedAt: record.platformUpdatedAt,
-        });
-      }
-      const upserted = await this.model.upsertAds(insertRows);
-      summary.ads = upserted.length;
-      for (const row of upserted) {
-        adIdByPlatform.set(row.platformAdId, row.id);
-      }
-      const allAdRows = await this.model.listAdsByAccount(account.id);
-      const decorated = await this.decorateAdCreatives(meta, account, allAdRows);
-      return {
-        total: lightRows.length,
-        changed: changedIds.length,
-        upserted: upserted.length,
-        ...decorated,
-      };
-    });
-    if (!adsOk) {
-      return finalize(false);
-    }
-
-    const insightsOk = await runStage("insights", async () => {
+    const insightsOk = await runner.run("insights", async () => {
       const insightRows: InsightUpsertRow[] = [];
       const campaignLevelRecords: InsightRecord[] = [];
       const levels: { level: InsightLevel; ids: Map<string, string>; key: "campaign_id" | "adset_id" | "ad_id" }[] = [
@@ -754,7 +484,7 @@ export class AdAccountsService {
       return finalize(false);
     }
 
-    const dailySeriesOk = await runStage("daily_series", async () => {
+    const dailySeriesOk = await runner.run("daily_series", async () => {
       const hasStored = await this.model.hasInsightRows(account.id, "account");
       const window = hasStored ? utcWindow(INSIGHT_DELTA_DAYS) : utcWindow(SYNC_WINDOW_DAYS);
       const rows = await meta.getInsights(account.adAccountId, "account", window);
@@ -773,79 +503,12 @@ export class AdAccountsService {
     return finalize(true);
   }
 
-  private async decorateAdCreatives(
-    meta: AdPlatformAdapter,
-    account: { id: string; adAccountId: string },
-    adRows: AdRow[]
-  ): Promise<{ decorated: number; remaining: number }> {
-    const candidates = adRows
-      .filter(
-        (row): row is AdRow & { creativeId: string } =>
-          row.creativeId !== null &&
-          (row.thumbnailUrl === null ||
-            row.bodyCopy === null ||
-            row.format === null ||
-            row.previewImageUrl === null)
-      )
-      .sort((a, b) => a.updatedAt.getTime() - b.updatedAt.getTime());
-    const capped = candidates.slice(0, DECORATE_MAX);
-    const remaining = candidates.length - capped.length;
-    if (capped.length === 0) {
-      return { decorated: 0, remaining: 0 };
+  async backfill(id: string, months: number, hooks: SyncRunHooks = {}): Promise<BackfillOutcome> {
+    const account = await this.model.findById(id);
+    if (!account) {
+      throw accountNotFound(id);
     }
-    const rowsByCreative = new Map<string, AdRow[]>();
-    for (const row of capped) {
-      const rows = rowsByCreative.get(row.creativeId);
-      if (rows === undefined) {
-        rowsByCreative.set(row.creativeId, [row]);
-      } else {
-        rows.push(row);
-      }
-    }
-    let decorated = 0;
-    try {
-      const details = await meta.getCreativeDetails(account.adAccountId);      for (const [creativeId, detail] of Object.entries(details)) {
-        const rows = rowsByCreative.get(creativeId);
-        if (rows === undefined) {
-          continue;
-        }
-        const record = normalizeCreativeDetail(detail);
-        for (const row of rows) {
-          const patch: {
-            thumbnailUrl?: string;
-            previewImageUrl?: string;
-            bodyCopy?: string;
-            format?: string;
-          } = {};
-          if (row.thumbnailUrl === null && record.thumbnailUrl !== null) {
-            patch.thumbnailUrl = record.thumbnailUrl;
-          }
-          if (row.previewImageUrl === null && record.previewImageUrl !== null) {
-            patch.previewImageUrl = record.previewImageUrl;
-          }
-          if (row.bodyCopy === null && record.bodyCopy !== null) {
-            patch.bodyCopy = record.bodyCopy;
-          }
-          if (row.format === null && record.format !== null) {
-            patch.format = record.format;
-          }
-          if (
-            patch.thumbnailUrl === undefined &&
-            patch.previewImageUrl === undefined &&
-            patch.bodyCopy === undefined &&
-            patch.format === undefined
-          ) {
-            continue;
-          }
-          await this.model.updateAdCreative(account.id, row.platformAdId, patch);
-          decorated += 1;
-        }
-      }
-    } catch (error) {
-      const metaError = toMetaError(error);
-      console.warn(`creative details fetch failed: ${metaError.errorClass}`);
-    }
-    return { decorated, remaining };
+    return backfillAccount(this.model, account, months, hooks);
   }
 
   async reconnect(id: string, accessToken: string, tokenType?: TokenType): Promise<void> {
@@ -881,14 +544,16 @@ export class AdAccountsService {
     }
   }
 
-  async campaignsWithMetrics(id: string, days: number): Promise<CampaignWithMetrics[]> {
+  async campaignsWithMetrics(
+    id: string,
+    window: { since: string; until: string }
+  ): Promise<CampaignWithMetrics[]> {
     const account = await this.model.findById(id);
     if (!account) {
       throw accountNotFound(id);
     }
-    const window = utcWindow(Math.min(Math.max(days, 1), 90));
     const campaignRows = await this.model.listCampaignsByAccount(id);
-    const metricsRows = await this.model.campaignMetricsSince(window.since);
+    const metricsRows = await this.model.campaignMetricsWindow(window.since, window.until);
     const metricsByEntity = new Map(metricsRows.map((row) => [row.entityId, row]));
     if (metricsByEntity.size === 0) {
       return campaignRows.map((row) => toCampaignWithMetrics(row, null));

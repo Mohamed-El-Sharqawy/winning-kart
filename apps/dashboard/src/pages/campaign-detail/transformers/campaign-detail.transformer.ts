@@ -4,6 +4,7 @@ import type {
   CampaignDetailDto,
   CampaignDetailResponseDto,
   CampaignFunnelDto,
+  CampaignPrevDto,
   CampaignSeriesPointDto,
 } from "../dto/campaign-detail.dto";
 import type {
@@ -12,6 +13,7 @@ import type {
   CampaignDayPoint,
   CampaignDetail,
   CampaignFunnel,
+  CampaignPrev,
   CampaignSummary,
 } from "../types/campaign-detail.types";
 
@@ -21,6 +23,19 @@ function toNumber(value: number | null | undefined): number | null {
 
 function toCount(value: number | null | undefined): number {
   return value ?? 0;
+}
+
+function toPrev(dto: CampaignPrevDto | null | undefined): CampaignPrev | null {
+  if (!dto) return null;
+  return {
+    spend: toNumber(dto.spend),
+    revenue: toNumber(dto.revenue),
+    purchases: toNumber(dto.purchases),
+    roas: toNumber(dto.roas),
+    cpa: toNumber(dto.cpa),
+    ctr: toNumber(dto.ctr),
+    frequency: toNumber(dto.frequency),
+  };
 }
 
 function toCampaign(dto: CampaignDetailDto): CampaignSummary {
@@ -107,6 +122,7 @@ export function toCampaignDetail(dto: CampaignDetailResponseDto): CampaignDetail
     adAccountPlatformId: dto.adAccountPlatformId ?? null,
     accountName: dto.accountName ?? null,
     campaign: toCampaign(dto.campaign),
+    prev: toPrev(dto.prev),
     series: dto.series.map(toSeriesPoint),
     funnel: toFunnel(dto.funnel),
     adSets: dto.adSets.map(toAdSet),

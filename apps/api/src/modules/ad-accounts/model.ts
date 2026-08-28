@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, isNotNull, ne, notLike, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, lte, ne, notLike, sql } from "drizzle-orm";
 import { adAccounts, ads, adSets, campaigns, dailyInsights, db, syncJobs, syncRuns } from "@wk/db";
 import type { AdAccount } from "@wk/db";
 import type {
@@ -382,10 +382,14 @@ export class AdAccountsModel {
       );
   }
 
-  async createSyncRun(id: string, adAccountId: string): Promise<SyncRunRow> {
+  async createSyncRun(
+    id: string,
+    adAccountId: string,
+    progress?: unknown
+  ): Promise<SyncRunRow> {
     const rows = await db
       .insert(syncRuns)
-      .values({ id, adAccountId, status: "queued" })
+      .values({ id, adAccountId, status: "queued", ...(progress === undefined ? {} : { progress }) })
       .returning();
     return rows[0];
   }
@@ -478,7 +482,7 @@ export class AdAccountsModel {
       .where(and(eq(adAccounts.id, id), ne(adAccounts.healthState, "error")));
   }
 
-  async campaignMetricsSince(since: string): Promise<CampaignWindowMetrics[]> {
+  async campaignMetricsWindow(since: string, until: string): Promise<CampaignWindowMetrics[]> {
     const rows = await db
       .select({
         entityId: dailyInsights.entityId,
@@ -490,7 +494,13 @@ export class AdAccountsModel {
         reach: sql<string>`sum(${dailyInsights.reach})`,
       })
       .from(dailyInsights)
-      .where(and(eq(dailyInsights.entityLevel, "campaign"), gte(dailyInsights.date, since)))
+      .where(
+        and(
+          eq(dailyInsights.entityLevel, "campaign"),
+          gte(dailyInsights.date, since),
+          lte(dailyInsights.date, until)
+        )
+      )
       .groupBy(dailyInsights.entityId);
     return rows.map((row) => ({
       entityId: row.entityId,

@@ -7,7 +7,9 @@ import {
   performanceAdsDto,
   performanceAdsQueryDto,
   performanceCampaignDto,
+  performanceWindowQueryDto,
 } from "../../dto/performance";
+import { resolveWindow } from "../../lib/window";
 import { PerformanceModel } from "./model";
 import { PerformanceService } from "./service";
 import type { SafeUser } from "../auth/model";
@@ -24,30 +26,21 @@ async function requireUser(headers: Record<string, string | undefined>): Promise
 
 const idParamsDto = t.Object({ id: t.String() });
 const campaignParamsDto = t.Object({ id: t.String(), campaignId: t.String() });
-const daysQueryDto = t.Object({ days: t.Optional(t.String({ pattern: "^[0-9]+$" })) });
-
-function parseDays(value: string | undefined): number {
-  const parsed = Number.parseInt(value ?? "30", 10);
-  if (!Number.isFinite(parsed)) {
-    return 30;
-  }
-  return Math.min(Math.max(parsed, 1), 90);
-}
 
 export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/ad-sets",
     async ({ params, query, headers }) => {
       await requireUser(headers);
-      return { data: await service.listAdSets(params.id, parseDays(query.days)) };
+      return { data: await service.listAdSets(params.id, resolveWindow(query)) };
     },
-    { params: idParamsDto, query: daysQueryDto, response: { 200: performanceAdSetsDto } }
+    { params: idParamsDto, query: performanceWindowQueryDto, response: { 200: performanceAdSetsDto } }
   )
   .get(
     "/:id/ads",
     async ({ params, query, headers }) => {
       await requireUser(headers);
-      return { data: await service.listAds(params.id, parseDays(query.days), query.adSetId) };
+      return { data: await service.listAds(params.id, resolveWindow(query), query.adSetId) };
     },
     { params: idParamsDto, query: performanceAdsQueryDto, response: { 200: performanceAdsDto } }
   )
@@ -56,16 +49,16 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
     async ({ params, query, headers }) => {
       await requireUser(headers);
       return {
-        data: await service.campaignDetail(params.id, params.campaignId, parseDays(query.days)),
+        data: await service.campaignDetail(params.id, params.campaignId, resolveWindow(query)),
       };
     },
-    { params: campaignParamsDto, query: daysQueryDto, response: { 200: performanceCampaignDto } }
+    { params: campaignParamsDto, query: performanceWindowQueryDto, response: { 200: performanceCampaignDto } }
   )
   .get(
     "/:id/fatigue-summary",
     async ({ params, query, headers }) => {
       await requireUser(headers);
-      return { data: await service.fatigueSummary(params.id, parseDays(query.days)) };
+      return { data: await service.fatigueSummary(params.id, resolveWindow(query)) };
     },
-    { params: idParamsDto, query: daysQueryDto, response: { 200: fatigueSummaryDto } }
+    { params: idParamsDto, query: performanceWindowQueryDto, response: { 200: fatigueSummaryDto } }
   );

@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { formatMoney } from "@/lib/format";
+import { DateRangeControl, rangeLabel } from "@/shared/components/DateRangeControl";
+import type { DateRange } from "@/shared/components/DateRangeControl";
 import { StatusDot } from "@/shared/components/StatusDot";
 import type { StatusDotVariant } from "@/shared/components/StatusDot";
 import type { CampaignSummary } from "../types/campaign-detail.types";
@@ -26,10 +28,22 @@ export interface CampaignDetailHeaderProps {
   clientName: string;
   accountName?: string;
   campaign: CampaignSummary | null;
-  days: number;
+  range: DateRange;
+  from: string | undefined;
+  to: string | undefined;
+  onApplyRange: (range: DateRange | undefined) => void;
 }
 
-export function CampaignDetailHeader({ slug, clientName, accountName, campaign, days }: CampaignDetailHeaderProps) {
+export function CampaignDetailHeader({
+  slug,
+  clientName,
+  accountName,
+  campaign,
+  range,
+  from,
+  to,
+  onApplyRange,
+}: CampaignDetailHeaderProps) {
   return (
     <header className="flex flex-col gap-3">
       <nav className="flex flex-wrap items-center gap-2 text-[13px] text-volt-text-3">
@@ -72,9 +86,12 @@ export function CampaignDetailHeader({ slug, clientName, accountName, campaign, 
           {campaign.lifetimeBudget !== null ? (
             <span className="tabular">Lifetime {formatMoney(campaign.lifetimeBudget, campaign.currency)}</span>
           ) : null}
-          <span className="tabular">Last {days} days</span>
+          <span className="tabular">{rangeLabel(range)}</span>
         </div>
       ) : null}
+      <div className="flex flex-wrap items-center gap-4">
+        <DateRangeControl from={from} to={to} onApply={onApplyRange} />
+      </div>
     </header>
   );
 }
