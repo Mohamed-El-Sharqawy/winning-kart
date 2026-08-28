@@ -45,3 +45,12 @@ export interface Campaign {
   ctr: number | null;
   frequency: number | null;
 }
+
+export interface RateLimitState {
+  callCountPct: number | null;
+  totalTimePct: number | null;
+  blocked: boolean;
+  estClearMin: number | null;
+  blockedUntil: string | null;
+  updatedAt: string;
+}

@@ -9,8 +9,11 @@ import type {
   MetaInsightRow,
   TimeRange,
 } from "./client";
+import type { RateGuard, RateSnapshot } from "./rate-limit";
 
 export { MetaClient, MetaError } from "./client";
+export { RateGuard } from "./rate-limit";
+export type { RateSnapshot, RateUsage } from "./rate-limit";
 export type {
   CreativeDetailMap,
   InsightLevel,
@@ -47,6 +50,7 @@ export type {
 } from "./normalize";
 
 export interface AdPlatformAdapter {
+  readonly rateGuard: RateGuard;
   getAccountInfo(actId: string): Promise<MetaAccountInfo>;
   getCampaigns(actId: string): Promise<MetaCampaignRow[]>;
   getAdSets(actId: string): Promise<MetaAdSetRow[]>;

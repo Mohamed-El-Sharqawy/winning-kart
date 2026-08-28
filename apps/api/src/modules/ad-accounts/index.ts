@@ -76,6 +76,14 @@ export const adAccountsModule = new Elysia()
     },
     { params: idParamsDto }
   )
+  .get(
+    "/ad-accounts/:id/rate-limit",
+    async ({ params, headers }) => {
+      await requireUser(headers);
+      return { data: await service.rateLimit(params.id) };
+    },
+    { params: idParamsDto }
+  )
   .post(
     "/ad-accounts/:id/sync",
     async ({ params, headers }) => {

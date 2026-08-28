@@ -1,3 +1,5 @@
+import { RateGuard } from "./rate-limit";
+
 export type MetaErrorClass =
   | "invalid_token"
   | "permission_denied"
@@ -175,6 +177,7 @@ function delay(ms: number): Promise<void> {
 
 export class MetaClient {
   readonly baseUrl = "https://graph.facebook.com/v21.0";
+  readonly rateGuard = new RateGuard();
 
   constructor(private readonly token: string) {}
 
@@ -243,6 +246,7 @@ export class MetaClient {
   }
 
   private async rawRequest(path: string, params: Record<string, string>): Promise<unknown> {
+    await this.rateGuard.pace();
     const url = new URL(`${this.baseUrl}/${path}`);
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, value);
@@ -257,6 +261,7 @@ export class MetaClient {
         error instanceof Error ? error.message : "network request failed"
       );
     }
+    this.rateGuard.observe(response.headers);
     let body: unknown = null;
     try {
       body = await response.json();
