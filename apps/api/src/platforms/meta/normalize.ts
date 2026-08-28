@@ -134,22 +134,19 @@ export function mapEntityStatus(
 }
 
 function isPurchaseType(actionType: string): boolean {
-  return actionType.includes("purchase");
+  return actionType === "purchase";
 }
 
 function isAddToCartType(actionType: string): boolean {
-  return (
-    actionType.includes("add_to_cart") ||
-    actionType === "offsite_conversion.fb_pixel_add_to_cart"
-  );
+  return actionType === "add_to_cart";
 }
 
 function isInitiateCheckoutType(actionType: string): boolean {
-  return actionType.includes("initiate_checkout");
+  return actionType === "initiate_checkout";
 }
 
 function isLandingPageViewType(actionType: string): boolean {
-  return actionType.includes("landing_page_view");
+  return actionType === "landing_page_view";
 }
 
 function sumActionTypes(
