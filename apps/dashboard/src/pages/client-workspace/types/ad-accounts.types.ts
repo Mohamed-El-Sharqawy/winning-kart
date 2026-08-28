@@ -69,8 +69,13 @@ export interface SyncRunProgressStage {
 }
 
 export interface SyncRunProgress {
+  kind?: "sync" | "backfill";
   stages?: SyncRunProgressStage[];
   summary?: { graphCalls?: number };
+  months?: number;
+  chunksDone?: number;
+  chunksTotal?: number;
+  currentWindow?: string | null;
 }
 
 export interface SyncRun {

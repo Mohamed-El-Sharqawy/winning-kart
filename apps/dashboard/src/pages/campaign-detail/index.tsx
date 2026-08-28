@@ -1,4 +1,6 @@
-import { useParams, useSearch } from "@tanstack/react-router";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { defaultRange } from "@/shared/components/DateRangeControl";
+import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { AppShell } from "@/shared/layout/AppShell";
 import { useClients } from "@/shared/services/clients.service";
@@ -13,13 +15,32 @@ import { useCampaignAccountResolution, useCampaignDetail } from "./services/camp
 
 export function CampaignDetailPage() {
   const { slug, campaignId } = useParams({ from: "/clients/$slug/campaigns/$campaignId" });
-  const { days, account, accountName } = useSearch({ from: "/clients/$slug/campaigns/$campaignId" });
+  const { days, from, to, account, accountName } = useSearch({
+    from: "/clients/$slug/campaigns/$campaignId",
+  });
+  const navigate = useNavigate();
   const { data: clients } = useClients();
   const clientName = clients?.find((client) => client.slug === slug)?.name ?? slug;
   const resolution = useCampaignAccountResolution(slug, campaignId, account === undefined);
   const accountId = account ?? resolution.accountId;
-  const detail = useCampaignDetail(accountId, campaignId, days);
+  const rangeExplicit = from !== undefined && to !== undefined;
+  const range: DateRange = rangeExplicit ? { from, to } : defaultRange();
+  const detail = useCampaignDetail(accountId, campaignId, days, rangeExplicit ? range : null);
   const resolvedAccountName = accountName ?? detail.data?.accountName ?? resolution.accountName ?? null;
+
+  function applyRange(next: DateRange | undefined) {
+    void navigate({
+      to: "/clients/$slug/campaigns/$campaignId",
+      params: { slug, campaignId },
+      search: (prev) => ({
+        days: prev.days ?? 30,
+        from: next?.from,
+        to: next?.to,
+        account: "account" in prev ? prev.account : undefined,
+        accountName: "accountName" in prev ? prev.accountName : undefined,
+      }),
+    });
+  }
 
   return (
     <AppShell>
@@ -38,9 +59,16 @@ export function CampaignDetailPage() {
               clientName={clientName}
               accountName={resolvedAccountName ?? undefined}
               campaign={detail.data?.campaign ?? null}
-              days={days}
+              range={range}
+              from={from}
+              to={to}
+              onApplyRange={applyRange}
             />
-            <CampaignKpis campaign={detail.data?.campaign ?? null} loading={detail.isPending} />
+            <CampaignKpis
+              campaign={detail.data?.campaign ?? null}
+              prev={detail.data?.prev ?? null}
+              loading={detail.isPending}
+            />
             {!detail.isError ? (
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <SpendRevenueChartCard points={detail.data?.series ?? []} loading={detail.isPending} />

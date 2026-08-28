@@ -3,6 +3,7 @@ import { resolveSessionUser } from "../../lib/session";
 import { problem } from "../../lib/problem";
 import { clientIp, recordAudit } from "../../lib/audit";
 import {
+  adAccountBackfillDto,
   adAccountCampaignsQueryDto,
   createAdAccountDto,
   deleteAdAccountDto,
@@ -10,7 +11,14 @@ import {
 } from "../../dto/ad-accounts";
 import { AdAccountsModel } from "./model";
 import { AdAccountsService } from "./service";
-import { cancelRun, enqueueSync, latestRun, recoverInterruptedRuns } from "./queue";
+import {
+  cancelRun,
+  enqueueBackfill,
+  enqueueSync,
+  latestRun,
+  recoverInterruptedRuns,
+} from "./queue";
+import { resolveWindow } from "../../lib/window";
 import type { SafeUser } from "../auth/model";
 
 const service = new AdAccountsService(new AdAccountsModel());
@@ -34,14 +42,6 @@ async function requireAdmin(headers: Record<string, string | undefined>): Promis
 
 const idParamsDto = t.Object({ id: t.String() });
 const clientIdParamsDto = t.Object({ clientId: t.String() });
-
-function parseDays(value: string | undefined): number {
-  const parsed = Number.parseInt(value ?? "30", 10);
-  if (!Number.isFinite(parsed)) {
-    return 30;
-  }
-  return Math.min(Math.max(parsed, 1), 90);
-}
 
 export const adAccountsModule = new Elysia()
   .get(
@@ -146,12 +146,22 @@ export const adAccountsModule = new Elysia()
     },
     { params: idParamsDto, body: deleteAdAccountDto }
   )
+  .post(
+    "/ad-accounts/:id/backfill",
+    async ({ params, body, headers, set }) => {
+      await requireAdmin(headers);
+      const result = await enqueueBackfill(params.id, body.months ?? 12);
+      set.status = 202;
+      return { data: result };
+    },
+    { params: idParamsDto, body: adAccountBackfillDto }
+  )
   .get(
     "/ad-accounts/:id/campaigns",
     async ({ params, query, headers }) => {
       await requireUser(headers);
       return {
-        data: await service.campaignsWithMetrics(params.id, parseDays(query.days)),
+        data: await service.campaignsWithMetrics(params.id, resolveWindow(query)),
       };
     },
     { params: idParamsDto, query: adAccountCampaignsQueryDto }

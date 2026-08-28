@@ -1,3 +1,13 @@
+export interface CampaignPrev {
+  spend: number | null;
+  revenue: number | null;
+  purchases: number | null;
+  roas: number | null;
+  cpa: number | null;
+  ctr: number | null;
+  frequency: number | null;
+}
+
 export interface CampaignSummary {
   id: string;
   name: string;
@@ -71,6 +81,7 @@ export interface CampaignDetail {
   adAccountPlatformId: string | null;
   accountName: string | null;
   campaign: CampaignSummary;
+  prev: CampaignPrev | null;
   series: CampaignDayPoint[];
   funnel: CampaignFunnel;
   adSets: CampaignAdSet[];

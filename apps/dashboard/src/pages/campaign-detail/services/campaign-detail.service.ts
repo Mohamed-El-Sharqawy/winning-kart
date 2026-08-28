@@ -1,19 +1,36 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { looseApi } from "@/shared/lib/loose-api";
 import { useClients } from "@/shared/services/clients.service";
+import type { DateRange } from "@/shared/components/DateRangeControl";
 import { adAccountsQueryOptions } from "@/pages/client-workspace/services/ad-accounts.service";
 import type { CampaignDetailResponseDto } from "../dto/campaign-detail.dto";
 import { toCampaignDetail } from "../transformers/campaign-detail.transformer";
 import type { CampaignDetail } from "../types/campaign-detail.types";
 
-export function campaignDetailQueryOptions(accountId: string, campaignId: string, days: number) {
+export function campaignDetailQueryOptions(
+  accountId: string,
+  campaignId: string,
+  days: number,
+  explicitRange: DateRange | null,
+) {
   return queryOptions({
-    queryKey: ["ad-accounts", accountId, "campaigns", campaignId, days],
+    queryKey: [
+      "ad-accounts",
+      accountId,
+      "campaigns",
+      campaignId,
+      days,
+      explicitRange?.from ?? null,
+      explicitRange?.to ?? null,
+    ],
     queryFn: async (): Promise<CampaignDetail> => {
+      const query: Record<string, string | number> = explicitRange
+        ? { from: explicitRange.from, to: explicitRange.to }
+        : { days };
       const { data: body, error } = await looseApi
         ["ad-accounts"]({ id: accountId })
         .campaigns({ campaignId })
-        .get({ query: { days } });
+        .get({ query });
       if (error) throw new Error("Failed to load campaign");
       const payload = (body as { data: CampaignDetailResponseDto }).data;
       return toCampaignDetail(payload);
@@ -21,9 +38,14 @@ export function campaignDetailQueryOptions(accountId: string, campaignId: string
   });
 }
 
-export function useCampaignDetail(accountId: string | null, campaignId: string, days: number) {
+export function useCampaignDetail(
+  accountId: string | null,
+  campaignId: string,
+  days: number,
+  explicitRange: DateRange | null,
+) {
   return useQuery({
-    ...campaignDetailQueryOptions(accountId ?? "", campaignId, days),
+    ...campaignDetailQueryOptions(accountId ?? "", campaignId, days, explicitRange),
     enabled: accountId !== null,
   });
 }

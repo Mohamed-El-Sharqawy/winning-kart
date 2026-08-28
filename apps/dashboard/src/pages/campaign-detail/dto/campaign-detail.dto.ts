@@ -1,3 +1,13 @@
+export interface CampaignPrevDto {
+  spend: number | null;
+  revenue: number | null;
+  purchases: number | null;
+  roas: number | null;
+  cpa: number | null;
+  ctr: number | null;
+  frequency: number | null;
+}
+
 export interface CampaignDetailDto {
   id: string;
   name: string;
@@ -76,6 +86,7 @@ export interface CampaignDetailResponseDto {
   adAccountPlatformId?: string | null;
   accountName?: string | null;
   campaign: CampaignDetailDto;
+  prev?: CampaignPrevDto | null;
   series: CampaignSeriesPointDto[];
   funnel: CampaignFunnelDto;
   adSets: AdSetDto[];

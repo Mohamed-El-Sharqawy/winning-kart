@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/shared/components/Badge";
+import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { useClients } from "@/shared/services/clients.service";
 import { FATIGUE_FLAG_COPY, FATIGUE_FLAG_ORDER } from "../data/gallery-copy.data";
@@ -19,19 +20,16 @@ const SELECT_CLASS =
 const COUNTED_FLAGS: FatigueFlag[] = ["fatiguing", "bleeding", "scale"];
 const SORT_LABELS: Record<SortKey, string> = { spend: "Spend", roas: "ROAS", ctr: "CTR", frequency: "Frequency" };
 type SortKey = "spend" | "roas" | "ctr" | "frequency";
-type FlagFilter = FatigueFlag | "all";
 
 export interface CreativesTabProps {
   accountId: string | null;
-  days: number;
+  range: DateRange;
+  rangeExplicit: boolean;
   clientSlug: string;
 }
 
-function pct(value: number | null): number | null {
-  return value === null ? null : Math.round(value * 100);
-}
-export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps) {
-  const [flagFilter, setFlagFilter] = useState<FlagFilter>("all");
+export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: CreativesTabProps) {
+  const [flagFilter, setFlagFilter] = useState<FatigueFlag | "all">("all");
   const [formatFilter, setFormatFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("spend");
   const [selected, setSelected] = useState<Creative | null>(null);
@@ -39,8 +37,8 @@ export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps)
   const [pageSize, setPageSize] = useState(25);
   const { adSet, adSetName } = useSearch({ from: "/clients/$slug" });
   const navigate = useNavigate();
-  const { data: creatives, isPending } = useCreatives(accountId, days);
-  const { data: summary } = useFatigueSummary(accountId, days);
+  const { data: creatives, isPending } = useCreatives(accountId, range, rangeExplicit);
+  const { data: summary } = useFatigueSummary(accountId, range, rangeExplicit);
   const { data: clients } = useClients();
   const client = clients?.find((candidate) => candidate.slug === clientSlug) ?? null;
   const { data: accounts } = useQuery({ ...adAccountsQueryOptions(client?.id ?? ""), enabled: client !== null });
@@ -55,10 +53,11 @@ export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps)
   const pages = Math.max(1, Math.ceil(visible.length / pageSize));
   const safePage = Math.min(page, pages - 1);
   const paged = visible.slice(safePage * pageSize, safePage * pageSize + pageSize);
-  const concentrationPct =
+  const concentrationRaw =
     summary === undefined || summary.concentration === null
       ? null
-      : pct(summary.concentration === "top1" ? summary.topCreativeSpendShare : summary.top3SpendShare);
+      : (summary.concentration === "top1" ? summary.topCreativeSpendShare : summary.top3SpendShare);
+  const concentrationPct = concentrationRaw === null ? null : Math.round(concentrationRaw * 100);
 
   function clearAdSetFilter() {
     void navigate({
@@ -98,7 +97,7 @@ export function CreativesTab({ accountId, days, clientSlug }: CreativesTabProps)
           Fatigue
           <select
             value={flagFilter}
-            onChange={(event) => setFlagFilter(event.target.value as FlagFilter)}
+            onChange={(event) => setFlagFilter(event.target.value as FatigueFlag | "all")}
             className={SELECT_CLASS}
           >
             <option value="all">All</option>
