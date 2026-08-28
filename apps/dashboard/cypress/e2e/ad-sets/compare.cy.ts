@@ -7,7 +7,11 @@ describe("ad sets compare", () => {
 
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
 
+    cy.intercept("GET", /\/api\/clients\/[^/]+\/ad-accounts(\?.*)?$/, {
+      fixture: "walker-ad-accounts.json",
+    });
     cy.intercept(
       "GET",
       /\/api\/ad-accounts\/[^/]+\/ad-sets/,

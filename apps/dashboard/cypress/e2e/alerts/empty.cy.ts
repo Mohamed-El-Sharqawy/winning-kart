@@ -1,6 +1,13 @@
 describe("alerts and overview against the empty seeded database", () => {
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
+
+    cy.intercept("GET", /\/api\/alerts(\?.*)?$/, { body: { data: [] } });
+    cy.intercept("GET", /\/api\/alerts\/bell(\?.*)?$/, { body: { data: [] } });
+    cy.intercept("GET", /\/api\/insights(\?.*)?$/, { body: { data: [] } });
+    cy.intercept("GET", /\/api\/tasks(\?.*)?$/, { body: { data: [] } });
+    cy.intercept("GET", /\/api\/overview(\?.*)?$/, { fixture: "overview.json" });
   });
 
   it("shows the All clear empty state on the alerts page", () => {

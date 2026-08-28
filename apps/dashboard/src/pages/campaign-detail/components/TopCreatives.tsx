@@ -18,9 +18,9 @@ function fatigueVariant(flag: string): BadgeVariant {
   return FATIGUE_VARIANTS[flag.toLowerCase()] ?? "neutral";
 }
 
-function CreativeThumb({ url, name, format }: { url: string | null; name: string; format: string }) {
+function CreativeThumb({ url, name, format }: { url: string | null; name: string; format: string | null }) {
   const [failed, setFailed] = useState(false);
-  if (format.toUpperCase() === "VIDEO" || !url || failed) {
+  if ((format ?? "").toUpperCase() === "VIDEO" || !url || failed) {
     return (
       <div
         aria-hidden

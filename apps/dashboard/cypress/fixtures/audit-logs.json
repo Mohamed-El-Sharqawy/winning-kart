@@ -2,30 +2,39 @@
   "data": [
     {
       "id": "aud_1001",
+      "actorUserId": "usr_amina",
+      "actorType": "user",
       "action": "auth.login",
+      "targetEntityType": "session",
+      "targetEntityId": "ses_2201",
       "outcome": "success",
-      "actor": { "name": "Hermes Admin", "email": "admin@wk.test" },
-      "target": "session",
       "ip": "10.0.0.12",
-      "createdAt": "2026-08-14T09:12:00.000Z"
+      "userAgent": "cypress",
+      "occurredAt": "2026-08-14T09:12:00.000Z"
     },
     {
       "id": "aud_1002",
+      "actorUserId": "usr_amina",
+      "actorType": "user",
       "action": "pat.create",
+      "targetEntityType": "pat",
+      "targetEntityId": "wkpat_ci_row",
       "outcome": "success",
-      "actor": { "name": "Hermes Admin", "email": "admin@wk.test" },
-      "target": "wkpat_ci_row",
       "ip": "10.0.0.12",
-      "createdAt": "2026-08-14T10:03:00.000Z"
+      "userAgent": "cypress",
+      "occurredAt": "2026-08-14T10:03:00.000Z"
     },
     {
       "id": "aud_1003",
+      "actorUserId": "usr_owner",
+      "actorType": "user",
       "action": "ad_account.delete",
+      "targetEntityType": "ad_account",
+      "targetEntityId": "act_nour_2",
       "outcome": "success",
-      "actor": { "name": "Odysseus Owner", "email": "owner@wk.test" },
-      "target": "act_nour_2",
       "ip": "10.0.0.9",
-      "createdAt": "2026-08-15T16:40:00.000Z"
+      "userAgent": "cypress",
+      "occurredAt": "2026-08-15T16:40:00.000Z"
     }
   ]
 }

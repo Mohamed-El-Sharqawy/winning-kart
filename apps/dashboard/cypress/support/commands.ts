@@ -19,6 +19,39 @@ Cypress.Commands.add("loginAs", (role: LoginRole) => {
   );
 });
 
+const STUB_CLIENT = {
+  id: "cli_nour_test",
+  name: "Maison Nour",
+  slug: "maison-nour",
+  status: "active",
+  displayCurrency: "AED",
+  createdAt: "2026-01-05T09:00:00.000Z",
+};
+
+const STUB_CLIENTS = [
+  {
+    id: "cli_dia_flower",
+    name: "Dia Flower",
+    slug: "dia-flower",
+    status: "active",
+    displayCurrency: "AED",
+    createdAt: "2026-06-01T09:00:00.000Z",
+  },
+  STUB_CLIENT,
+];
+
+Cypress.Commands.add("stubClient", () => {
+  cy.intercept("GET", /\/api\/clients\/cli_nour_test(\?.*)?$/, {
+    body: { data: STUB_CLIENT },
+  });
+  cy.intercept("GET", /\/api\/clients\/maison-nour(\?.*)?$/, {
+    body: { data: STUB_CLIENT },
+  });
+  cy.intercept("GET", /\/api\/clients(\?.*)?$/, {
+    body: { data: STUB_CLIENTS },
+  });
+});
+
 Cypress.Commands.add("seedClient", (slug: string) => {
   cy.request("POST", "/api/clients", {
     name: slug,
@@ -30,6 +63,7 @@ declare global {
   namespace Cypress {
     interface Chainable {
       loginAs(role: LoginRole): Chainable<void>;
+      stubClient(): Chainable<void>;
       seedClient(slug: string): Chainable<void>;
     }
   }

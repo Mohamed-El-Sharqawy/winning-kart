@@ -8,7 +8,7 @@
       "status": "open",
       "clientName": "Maison Nour",
       "entityName": "Summer Editions",
-      "whatHappened": "ROAS fell 28% (4.1x → 3.0x) over 7 days; AED 3,400 at risk",
+      "whatHappened": "ROAS fell 28% (4.1x → 3.0x) over 7 days; AED 3,400 at risk — critical severity",
       "supportingMetrics": {
         "spend": 12200,
         "roasPrior": 4.1,
@@ -25,7 +25,7 @@
       "status": "open",
       "clientName": "Dune Coffee",
       "entityName": "Iftar Carousel",
-      "whatHappened": "Creative fatigue detected — frequency 4.8 with declining CTR",
+      "whatHappened": "Creative fatigue detected — frequency 4.8 with declining CTR — warning severity",
       "supportingMetrics": {
         "frequency": 4.8,
         "ctrPrior": 1.9,
@@ -42,7 +42,7 @@
       "status": "open",
       "clientName": "Zaytoun",
       "entityName": "Ramadan Prospecting",
-      "whatHappened": "AED 620 spend over 3 days with no conversions recorded",
+      "whatHappened": "AED 620 spend over 3 days with no conversions recorded — info severity",
       "supportingMetrics": {
         "spend": 620,
         "conversions": 0

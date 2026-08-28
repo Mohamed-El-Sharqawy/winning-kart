@@ -54,7 +54,7 @@ export interface CampaignAd {
   id: string;
   name: string;
   status: string;
-  format: string;
+  format: string | null;
   thumbnailUrl: string | null;
   spend: number | null;
   revenue: number | null;

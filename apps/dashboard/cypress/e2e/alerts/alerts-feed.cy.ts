@@ -1,5 +1,6 @@
 describe("alerts feed", () => {
   let acknowledged: string[] = [];
+  let alertsFixture: { data: Array<{ id: string; [key: string]: unknown }> };
 
   const severityRank: Record<string, number> = {
     info: 0,
@@ -9,37 +10,42 @@ describe("alerts feed", () => {
 
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
     acknowledged = [];
+    cy.fixture("alerts.json").then((fixture) => {
+      alertsFixture = fixture;
+    });
 
+    cy.intercept("GET", /\/api\/insights(\?.*)?$/, { body: { data: [] } });
+    cy.intercept("GET", /\/api\/tasks(\?.*)?$/, { body: { data: [] } });
     cy.intercept("GET", /\/api\/alerts\/bell(\?.*)?$/, { fixture: "bell.json" });
 
     cy.intercept("GET", /\/api\/alerts(\?.*)?$/, (req) => {
-      cy.fixture("alerts.json").then((fixture) => {
-        const params = new URL(req.url).searchParams;
-        let rows = fixture.data.map((row: { id: string; [key: string]: unknown }) =>
+      const params = new URL(req.url).searchParams;
+      let rows = alertsFixture.data.map(
+        (row: { id: string; [key: string]: unknown }) =>
           acknowledged.includes(row.id)
             ? { ...row, status: "acknowledged" }
             : row,
+      );
+      const severity = params.get("severity");
+      const minSeverity = params.get("minSeverity");
+      const status = params.get("status");
+      if (severity) {
+        rows = rows.filter(
+          (row) => String(row.severity).toLowerCase() === severity.toLowerCase(),
         );
-        const severity = params.get("severity");
-        const minSeverity = params.get("minSeverity");
-        const status = params.get("status");
-        if (severity) {
-          rows = rows.filter(
-            (row) => String(row.severity).toLowerCase() === severity.toLowerCase(),
-          );
-        }
-        if (minSeverity) {
-          const floor = severityRank[minSeverity.toLowerCase()] ?? 0;
-          rows = rows.filter(
-            (row) => (severityRank[String(row.severity)] ?? 0) >= floor,
-          );
-        }
-        if (status) {
-          rows = rows.filter((row) => row.status === status);
-        }
-        req.reply({ statusCode: 200, body: { data: rows } });
-      });
+      }
+      if (minSeverity) {
+        const floor = severityRank[minSeverity.toLowerCase()] ?? 0;
+        rows = rows.filter(
+          (row) => (severityRank[String(row.severity)] ?? 0) >= floor,
+        );
+      }
+      if (status) {
+        rows = rows.filter((row) => row.status === status);
+      }
+      req.reply({ statusCode: 200, body: { data: rows } });
     }).as("alertsGet");
 
     cy.intercept(

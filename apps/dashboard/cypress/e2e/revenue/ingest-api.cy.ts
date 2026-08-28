@@ -1,9 +1,31 @@
-interface ClientRow {
-  id: string;
-  slug: string;
-}
-
 describe("revenue ingest api", () => {
+  const slug = `cypress-ingest-${Date.now()}`;
+  let clientId: string;
+
+  before(() => {
+    cy.loginAs("agency-admin");
+    cy.request({
+      method: "POST",
+      url: "/api/clients",
+      body: { name: "Cypress Ingest Probe", slug },
+      timeout: 20000,
+    }).then((res) => {
+      expect(res.status).to.be.oneOf([200, 201]);
+      clientId = res.body.data.id;
+    });
+  });
+
+  after(() => {
+    if (clientId) {
+      cy.request({
+        method: "DELETE",
+        url: `/api/clients/${clientId}`,
+        body: { confirmSlug: slug },
+        timeout: 20000,
+      });
+    }
+  });
+
   beforeEach(() => {
     cy.loginAs("agency-admin");
   });
@@ -43,17 +65,9 @@ describe("revenue ingest api", () => {
       });
 
   it("issues an ingest key once and grades, dedupes, and rejects revenue events", () => {
-    cy.request({ method: "GET", url: "/api/clients", timeout: 20000 })
-      .then((res) => {
-        expect(res.status).to.eq(200);
-        const clients: ClientRow[] = res.body.data;
-        const maisonNour = clients.find(
-          (client) => client.slug === "maison-nour",
-        );
-        expect(maisonNour, "maison-nour client exists").to.not.be.undefined;
-        return maisonNour!.id;
-      })
-      .then((clientId) => createSource(clientId, "cypress-source"))
+    cy.wrap(clientId)
+      .should("be.a", "string")
+      .then(() => createSource(clientId, "cypress-source"))
       .then((ingestKey) => {
         const post = (body: Record<string, unknown>) =>
           cy.request({

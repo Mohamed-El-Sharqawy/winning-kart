@@ -1,13 +1,14 @@
 describe("settings tokens", () => {
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
   });
 
   it("creates, dismisses, and revokes an api token", () => {
     cy.visit("/settings/tokens");
 
     cy.contains("label", /name/i).find("input").type("e2e-token");
-    cy.contains("button", /create/i).click();
+    cy.contains("button", /new token/i).click();
 
     cy.contains("wkpat_").should("be.visible");
     cy.contains("button", /dismiss|close|done|got it/i).click();

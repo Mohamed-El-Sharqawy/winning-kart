@@ -8,44 +8,49 @@ describe("creatives gallery", () => {
 
   const applyFilter = (label: RegExp) => {
     cy.get("body").then(($body) => {
+      const $option = $body
+        .find("select option")
+        .filter((_, el) => label.test((el.textContent || "").trim()))
+        .first();
+      if ($option.length) {
+        cy.wrap($option.parent("select")).select($option.val() as string);
+        return;
+      }
       const $clickable = $body
         .find("button, [role='tab'], a, [role='menuitem'], label")
         .filter((_, el) => label.test((el.textContent || "").trim()));
       if ($clickable.length) {
         cy.wrap($clickable.first()).click();
-        return;
-      }
-      const $option = $body
-        .find("select option")
-        .filter((_, el) => label.test(el.textContent || ""))
-        .first();
-      if ($option.length) {
-        cy.wrap($option.parent("select")).select($option.val() as string);
       }
     });
   };
 
   const clearFilter = () => {
     cy.get("body").then(($body) => {
+      const $option = $body
+        .find("select option")
+        .filter((_, el) => /^(all|clear|reset)/i.test((el.textContent || "").trim()))
+        .first();
+      if ($option.length) {
+        cy.wrap($option.parent("select")).select($option.val() as string);
+        return;
+      }
       const $clear = $body
         .find("button, [role='tab'], a")
         .filter((_, el) => /^(all|clear|reset)/i.test((el.textContent || "").trim()));
       if ($clear.length) {
         cy.wrap($clear.first()).click();
-        return;
-      }
-      const $fatiguing = $body
-        .find("button, [role='tab'], a, [role='menuitem'], label")
-        .filter((_, el) => /fatiguing/i.test(el.textContent || ""));
-      if ($fatiguing.length) {
-        cy.wrap($fatiguing.first()).click();
       }
     });
   };
 
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
 
+    cy.intercept("GET", /\/api\/clients\/[^/]+\/ad-accounts(\?.*)?$/, {
+      fixture: "walker-ad-accounts.json",
+    });
     cy.intercept(
       "GET",
       /\/api\/ad-accounts\/[^/]+\/ads(\?.*)?$/,

@@ -1,23 +1,27 @@
 describe("recommendations tab", () => {
   let accepted: string[] = [];
   let dismissed: string[] = [];
+  let insightsFixture: { data: Array<{ id: string; [key: string]: unknown }> };
 
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
     accepted = [];
     dismissed = [];
+    cy.fixture("insights.json").then((fixture) => {
+      insightsFixture = fixture;
+    });
 
+    cy.intercept("GET", /\/api\/tasks(\?.*)?$/, { body: { data: [] } });
     cy.intercept("GET", /\/api\/insights(\?.*)?$/, (req) => {
-      cy.fixture("insights.json").then((fixture) => {
-        const rows = fixture.data
-          .filter((row: { id: string }) => !dismissed.includes(row.id))
-          .map((row: { id: string; acceptedAsTaskId: string | null }) =>
-            accepted.includes(row.id)
-              ? { ...row, acceptedAsTaskId: "tsk_010" }
-              : row,
-          );
-        req.reply({ statusCode: 200, body: { data: rows } });
-      });
+      const rows = insightsFixture.data
+        .filter((row: { id: string }) => !dismissed.includes(row.id))
+        .map((row: { id: string; acceptedAsTaskId: string | null }) =>
+          accepted.includes(row.id)
+            ? { ...row, acceptedAsTaskId: "tsk_010" }
+            : row,
+        );
+      req.reply({ statusCode: 200, body: { data: rows } });
     }).as("insightsGet");
 
     cy.intercept("POST", /\/api\/insights\/([^/?]+)\/accept(\?.*)?$/, (req) => {

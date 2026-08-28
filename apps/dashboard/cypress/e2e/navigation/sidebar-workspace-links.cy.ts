@@ -1,6 +1,17 @@
 describe("sidebar workspace links", () => {
   beforeEach(() => {
     cy.loginAs("agency-admin");
+    cy.stubClient();
+
+    cy.intercept("GET", /\/api\/clients\/[^/]+\/ad-accounts(\?.*)?$/, {
+      fixture: "walker-ad-accounts.json",
+    });
+    cy.intercept("GET", /\/api\/clients\/[^/]+\/revenue(\?.*)?$/, {
+      fixture: "walker-revenue.json",
+    });
+    cy.intercept("GET", /\/api\/clients\/[^/]+\/revenue-sources(\?.*)?$/, {
+      fixture: "walker-revenue-sources.json",
+    });
   });
 
   it("falls back to the clients roster before any workspace client is visited", () => {
