@@ -68,6 +68,22 @@ export type SyncOutcome =
   | { ok: true; stages: StageResult[]; summary: SyncSummary }
   | { ok: false; failedStage: SyncStage; errorClass: string; stages: StageResult[] };
 
+export class SyncCancelledError extends Error {
+  constructor() {
+    super("sync cancelled");
+    this.name = "SyncCancelledError";
+  }
+}
+
+export interface SyncRunHooks {
+  onStage?: (info: {
+    stage: SyncStage;
+    status: "succeeded" | "failed";
+    detail: unknown;
+  }) => Promise<void> | void;
+  shouldCancel?: () => boolean | Promise<boolean>;
+}
+
 export interface AdAccountView {
   id: string;
   name: string;
@@ -424,10 +440,13 @@ export class AdAccountsService {
     }
   }
 
-  async sync(id: string): Promise<SyncOutcome> {
+  async sync(id: string, hooks: SyncRunHooks = {}): Promise<SyncOutcome> {
     const account = await this.model.findById(id);
     if (!account) {
       throw accountNotFound(id);
+    }
+    if ((await hooks.shouldCancel?.()) === true) {
+      throw new SyncCancelledError();
     }
 
     const stages: StageResult[] = [];
@@ -485,6 +504,9 @@ export class AdAccountsService {
       stage: SyncStage,
       run: () => Promise<unknown>
     ): Promise<boolean> => {
+      if ((await hooks.shouldCancel?.()) === true) {
+        throw new SyncCancelledError();
+      }
       const jobId = crypto.randomUUID();
       await this.model.insertSyncJob({
         id: jobId,
@@ -501,8 +523,12 @@ export class AdAccountsService {
           endedAt: new Date(),
         });
         stages.push({ stage, status: "succeeded" });
+        await hooks.onStage?.({ stage, status: "succeeded", detail: detail ?? null });
         return true;
       } catch (error) {
+        if (error instanceof SyncCancelledError) {
+          throw error;
+        }
         const metaError = toMetaError(error);
         failedStage = stage;
         failedErrorClass = metaError.errorClass;
@@ -513,6 +539,11 @@ export class AdAccountsService {
           endedAt: new Date(),
         });
         stages.push({ stage, status: "failed", errorClass: metaError.errorClass });
+        await hooks.onStage?.({
+          stage,
+          status: "failed",
+          detail: { errorClass: metaError.errorClass, message: metaError.message },
+        });
         return false;
       }
     };

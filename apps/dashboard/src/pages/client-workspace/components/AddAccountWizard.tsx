@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "@/shared/components/Button";
 import { Input } from "@/shared/components/Input";
 import { errorCopy } from "../data/sync-copy.data";
-import { useCreateAdAccount, useSyncAdAccount } from "../services/ad-accounts.service";
+import {
+  useCreateAdAccount,
+  useEnqueueSync,
+  useLatestSyncRun,
+} from "../services/ad-accounts.service";
 import type { SyncResult, TokenType } from "../types/ad-accounts.types";
 import { Modal } from "./Modal";
 import { SyncStageList } from "./SyncStageList";
@@ -42,17 +46,42 @@ export function AddAccountWizard({ clientId, onClose }: { clientId: string; onCl
   const [phase, setPhase] = useState<WizardPhase>({ kind: "form" });
   const [formError, setFormError] = useState<string | null>(null);
   const create = useCreateAdAccount(clientId);
-  const sync = useSyncAdAccount();
+  const enqueue = useEnqueueSync();
+  const [syncRunId, setSyncRunId] = useState<string | null>(null);
+  const [syncAccountId, setSyncAccountId] = useState<string | null>(null);
+  const { data: run } = useLatestSyncRun(syncAccountId);
+
+  useEffect(() => {
+    if (run === null || run === undefined || run.id !== syncRunId) {
+      return;
+    }
+    if (run.status === "succeeded") {
+      onClose();
+      return;
+    }
+    if (run.status === "failed") {
+      const stages = run.progress?.stages ?? [];
+      setPhase({
+        kind: "failed",
+        result: {
+          ok: false,
+          stages: stages.map((stage) => ({
+            stage: stage.stage,
+            status: stage.status as "succeeded" | "failed",
+            errorClass: stage.errorClass,
+          })),
+        },
+        accountId: syncAccountId ?? "",
+      });
+    }
+  }, [run, syncRunId, syncAccountId, onClose]);
 
   async function runSync(accountId: string) {
+    setPhase({ kind: "syncing" });
+    setSyncAccountId(accountId);
     try {
-      setPhase({ kind: "syncing" });
-      const result = await sync.mutateAsync(accountId);
-      if (result.ok) {
-        onClose();
-        return;
-      }
-      setPhase({ kind: "failed", result, accountId });
+      const runId = await enqueue.mutateAsync(accountId);
+      setSyncRunId(runId);
     } catch {
       setPhase({ kind: "failed", result: { ok: false, stages: [] }, accountId });
     }
@@ -134,7 +163,7 @@ export function AddAccountWizard({ clientId, onClose }: { clientId: string; onCl
       ) : (
         <div className="flex flex-col gap-4">
           <SyncStageList
-            result={phase.kind === "failed" ? phase.result : null}
+            stages={phase.kind === "failed" ? phase.result.stages : null}
             inFlight={phase.kind === "syncing"}
           />
           {phase.kind === "failed" ? (
@@ -147,7 +176,11 @@ export function AddAccountWizard({ clientId, onClose }: { clientId: string; onCl
                 <Button onClick={() => void handleRetrySync()}>Retry sync</Button>
               </div>
             </>
-          ) : null}
+          ) : (
+            <p className="text-[13px] text-volt-text-3">
+              The sync runs in the background — this window updates when it finishes.
+            </p>
+          )}
         </div>
       )}
     </Modal>

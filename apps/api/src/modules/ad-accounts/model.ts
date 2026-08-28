@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, inArray, isNotNull, ne, notLike, sql } from "drizzle-orm";
-import { adAccounts, ads, adSets, campaigns, dailyInsights, db, syncJobs } from "@wk/db";
+import { adAccounts, ads, adSets, campaigns, dailyInsights, db, syncJobs, syncRuns } from "@wk/db";
 import type { AdAccount } from "@wk/db";
 import type {
   CampaignRecord,
@@ -11,6 +11,8 @@ export type CampaignRow = typeof campaigns.$inferSelect;
 export type AdSetRow = typeof adSets.$inferSelect;
 export type AdRow = typeof ads.$inferSelect;
 export type SyncJobRow = typeof syncJobs.$inferSelect;
+export type SyncRunRow = typeof syncRuns.$inferSelect;
+export type SyncRunStatus = SyncRunRow["status"];
 
 export interface AdSetUpsertRow {
   campaignId: string;
@@ -378,6 +380,76 @@ export class AdAccountsModel {
           notLike(adAccounts.accessTokenEncrypted, "pending-oauth%")
         )
       );
+  }
+
+  async createSyncRun(id: string, adAccountId: string): Promise<SyncRunRow> {
+    const rows = await db
+      .insert(syncRuns)
+      .values({ id, adAccountId, status: "queued" })
+      .returning();
+    return rows[0];
+  }
+
+  async updateSyncRun(
+    id: string,
+    patch: {
+      status?: SyncRunStatus;
+      progress?: unknown;
+      error?: string | null;
+      errorClass?: string | null;
+      graphCalls?: number | null;
+      startedAt?: Date;
+      endedAt?: Date;
+    }
+  ): Promise<void> {
+    await db.update(syncRuns).set(patch).where(eq(syncRuns.id, id));
+  }
+
+  async getSyncRun(id: string): Promise<SyncRunRow | null> {
+    const rows = await db.select().from(syncRuns).where(eq(syncRuns.id, id)).limit(1);
+    return rows[0] ?? null;
+  }
+
+  async latestSyncRun(adAccountId: string): Promise<SyncRunRow | null> {
+    const rows = await db
+      .select()
+      .from(syncRuns)
+      .where(eq(syncRuns.adAccountId, adAccountId))
+      .orderBy(desc(syncRuns.createdAt))
+      .limit(1);
+    return rows[0] ?? null;
+  }
+
+  async activeSyncRun(adAccountId: string): Promise<SyncRunRow | null> {
+    const rows = await db
+      .select()
+      .from(syncRuns)
+      .where(
+        and(
+          eq(syncRuns.adAccountId, adAccountId),
+          inArray(syncRuns.status, ["queued", "running"])
+        )
+      )
+      .orderBy(desc(syncRuns.createdAt))
+      .limit(1);
+    return rows[0] ?? null;
+  }
+
+  async markStaleSyncRunsInterrupted(): Promise<void> {
+    await db
+      .update(syncRuns)
+      .set({ status: "interrupted", endedAt: new Date() })
+      .where(inArray(syncRuns.status, ["queued", "running"]));
+  }
+
+  async oldestQueuedSyncRun(): Promise<SyncRunRow | null> {
+    const rows = await db
+      .select()
+      .from(syncRuns)
+      .where(eq(syncRuns.status, "queued"))
+      .orderBy(syncRuns.createdAt)
+      .limit(1);
+    return rows[0] ?? null;
   }
 
   listUserTokenExpiries(): Promise<{ id: string; tokenExpiresAt: Date | null }[]> {

@@ -255,6 +255,27 @@ export const syncJobs = pgTable(
   ]
 );
 
+export const syncRuns = pgTable(
+  "sync_runs",
+  {
+    id: text("id").primaryKey(),
+    adAccountId: text("ad_account_id")
+      .notNull()
+      .references(() => adAccounts.id, { onDelete: "cascade" }),
+    status: text("status", {
+      enum: ["queued", "running", "succeeded", "failed", "cancelled", "interrupted"],
+    }).notNull(),
+    progress: jsonb("progress"),
+    error: text("error"),
+    errorClass: text("error_class"),
+    graphCalls: integer("graph_calls"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+  },
+  (t) => [index("sync_runs_account_created_idx").on(t.adAccountId, t.createdAt.desc())]
+);
+
 export const alerts = pgTable(
   "alerts",
   {

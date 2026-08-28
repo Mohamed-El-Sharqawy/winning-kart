@@ -1,13 +1,24 @@
 import { StatusDot } from "@/shared/components/StatusDot";
 import { SYNC_STAGE_LABELS, SYNC_STAGE_ORDER } from "../data/sync-copy.data";
-import type { SyncResult } from "../types/ad-accounts.types";
 
-export function SyncStageList({ result, inFlight }: { result: SyncResult | null; inFlight: boolean }) {
+export interface SyncStageView {
+  stage: string;
+  status: string;
+  errorClass?: string;
+}
+
+export function SyncStageList({
+  stages,
+  inFlight,
+}: {
+  stages: SyncStageView[] | null;
+  inFlight: boolean;
+}) {
   return (
     <ol className="flex flex-col gap-3">
       {SYNC_STAGE_ORDER.map((stage) => {
         const label = SYNC_STAGE_LABELS[stage] ?? stage;
-        const stageResult = result?.stages.find((entry) => entry.stage === stage);
+        const stageResult = stages?.find((entry) => entry.stage === stage);
         let dot = (
           <StatusDot variant="neutral">{inFlight ? "syncing" : "queued"}</StatusDot>
         );

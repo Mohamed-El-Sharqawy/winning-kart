@@ -54,3 +54,34 @@ export interface RateLimitState {
   blockedUntil: string | null;
   updatedAt: string;
 }
+export type SyncRunStatus =
+  | "queued"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "cancelled"
+  | "interrupted";
+
+export interface SyncRunProgressStage {
+  stage: string;
+  status: string;
+  errorClass?: string;
+}
+
+export interface SyncRunProgress {
+  stages?: SyncRunProgressStage[];
+  summary?: { graphCalls?: number };
+}
+
+export interface SyncRun {
+  id: string;
+  adAccountId: string;
+  status: SyncRunStatus;
+  progress: SyncRunProgress | null;
+  error: string | null;
+  errorClass: string | null;
+  graphCalls: number | null;
+  createdAt: string;
+  startedAt: string | null;
+  endedAt: string | null;
+}
