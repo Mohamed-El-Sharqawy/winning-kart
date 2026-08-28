@@ -12,7 +12,7 @@ function CreativeThumb({ creative }: { creative: PortalCreative }) {
         aria-hidden
         className="flex h-[120px] w-full items-center justify-center rounded-[8px] border border-volt-border bg-volt-surface-2 text-[10px] font-medium uppercase tracking-wider text-volt-text-3"
       >
-        {creative.format.replace(/_/g, " ")}
+        {(creative.format ?? "creative").replace(/_/g, " ")}
       </div>
     );
   }

@@ -13,7 +13,7 @@ export interface Creative {
   platformAdId: string;
   name: string;
   status: string;
-  format: string;
+  format: string | null;
   bodyCopy: string | null;
   creativeId: string;
   thumbnailUrl: string | null;

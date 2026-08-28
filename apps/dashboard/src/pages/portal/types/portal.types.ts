@@ -32,7 +32,7 @@ export interface PortalCampaign {
 export interface PortalCreative {
   id: string;
   name: string;
-  format: string;
+  format: string | null;
   thumbnailUrl: string | null;
   spend: number;
   roas: number | null;

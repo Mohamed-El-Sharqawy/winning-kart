@@ -110,7 +110,7 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
           Format
           <select value={formatFilter} onChange={(event) => setFormatFilter(event.target.value)} className={SELECT_CLASS}>
             <option value="all">All</option>
-            {Array.from(new Set(rows.map((row) => row.format))).map((format) => (
+            {Array.from(new Set(rows.map((row) => row.format).filter((format): format is string => format !== null))).map((format) => (
               <option key={format} value={format}>{format}</option>
             ))}
           </select>

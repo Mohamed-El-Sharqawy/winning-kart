@@ -88,6 +88,26 @@
       "cpc": 0.79,
       "cpm": 13.87,
       "frequency": 1.8
+    },
+    {
+      "id": "ad_nour_null_format",
+      "name": "Legacy Pixel Banner",
+      "accountId": "act_nour_1",
+      "adSetId": "as_nour_broad_purchases",
+      "format": null,
+      "status": "PAUSED",
+      "fatigue": null,
+      "thumbnailUrl": null,
+      "spend": 12.4,
+      "revenue": null,
+      "roas": null,
+      "purchases": 0,
+      "impressions": 900,
+      "clicks": 4,
+      "ctr": 0.0044,
+      "cpc": 3.1,
+      "cpm": 13.8,
+      "frequency": 1.1
     }
   ]
 }

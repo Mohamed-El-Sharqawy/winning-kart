@@ -26,7 +26,8 @@ function MetricLabel({ children }: { children: string }) {
 
 export function CreativeCard({ creative, onSelect }: { creative: Creative; onSelect?: () => void }) {
   const [imageFailed, setImageFailed] = useState(false);
-  const isVideo = creative.format.toUpperCase() === "VIDEO";
+  const formatLabel = creative.format ?? "CREATIVE";
+  const isVideo = formatLabel.toUpperCase() === "VIDEO";
   const showImage = !isVideo && creative.thumbnailUrl !== null && !imageFailed;
   const copy = creative.fatigue ? FATIGUE_FLAG_COPY[creative.fatigue.flag] : null;
   const share = creative.spendShare === null ? null : `${Math.round(creative.spendShare * 100)}%`;
@@ -58,11 +59,11 @@ export function CreativeCard({ creative, onSelect }: { creative: Creative; onSel
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-volt-surface-2 text-sm capitalize text-volt-text-3">
-            {creative.format}
+            {formatLabel.toLowerCase()}
           </div>
         )}
         <span className="absolute left-3 top-3">
-          <Badge>{creative.format}</Badge>
+          <Badge>{formatLabel}</Badge>
         </span>
         <span className="absolute right-3 top-3">
           <StatusDot variant={statusVariant(creative.status)} />
