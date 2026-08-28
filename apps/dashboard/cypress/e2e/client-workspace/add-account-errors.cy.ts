@@ -36,16 +36,27 @@ describe("add ad account error handling", () => {
       },
     });
     cy.intercept("POST", /\/api\/ad-accounts\/[^/]+\/sync(\?.*)?$/, {
-      statusCode: 200,
+      statusCode: 202,
+      body: { data: { runId: "run_err_1" } },
+    });
+    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/sync\/runs\/latest(\?.*)?$/, {
       body: {
         data: {
-          ok: false,
-          stages: [
-            { stage: "account_info", status: "succeeded" },
-            { stage: "campaigns", status: "failed", errorClass: "invalid_token" },
-          ],
-          failedStage: "campaigns",
+          id: "run_err_1",
+          adAccountId: "act_new_1",
+          status: "failed",
+          progress: {
+            stages: [
+              { stage: "account_info", status: "succeeded" },
+              { stage: "campaigns", status: "failed", errorClass: "invalid_token" },
+            ],
+          },
+          error: "stage campaigns failed (invalid_token)",
           errorClass: "invalid_token",
+          graphCalls: 3,
+          createdAt: new Date().toISOString(),
+          startedAt: new Date().toISOString(),
+          endedAt: new Date().toISOString(),
         },
       },
     });
