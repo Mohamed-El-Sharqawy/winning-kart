@@ -157,6 +157,13 @@ const REQUEST_TIMEOUT_MS = 30000;
 const RETRY_DELAY_MS = 500;
 const PAGE_LIMIT = 100;
 
+function numFromEnv(key: string, fallback: number): number {
+  const parsed = Number.parseInt(process.env[key] ?? "", 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+const MIN_CALL_INTERVAL_MS = numFromEnv("WK_QUEUE_MIN_CALL_INTERVAL_MS", 300);
+
 export const CAMPAIGN_FIELDS =
   "id,name,status,effective_status,objective,buying_type,daily_budget,lifetime_budget,start_time,stop_time,updated_time";
 export const AD_SET_FIELDS =
@@ -228,6 +235,7 @@ export class MetaClient {
   readonly baseUrl = "https://graph.facebook.com/v21.0";
   readonly rateGuard = new RateGuard();
   private graphCalls = 0;
+  private lastCallAt = 0;
 
   constructor(private readonly token: string) {}
 
@@ -325,6 +333,11 @@ export class MetaClient {
   private async rawRequest(path: string, params: Record<string, string>): Promise<unknown> {
     this.graphCalls += 1;
     await this.rateGuard.pace();
+    const sinceLastCall = Date.now() - this.lastCallAt;
+    if (sinceLastCall < MIN_CALL_INTERVAL_MS) {
+      await delay(MIN_CALL_INTERVAL_MS - sinceLastCall);
+    }
+    this.lastCallAt = Date.now();
     const url = new URL(`${this.baseUrl}/${path}`);
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, value);

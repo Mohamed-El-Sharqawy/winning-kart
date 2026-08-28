@@ -1,8 +1,7 @@
 import { AdAccountsModel } from "../modules/ad-accounts/model";
-import { AdAccountsService } from "../modules/ad-accounts/service";
+import { enqueueSync } from "../modules/ad-accounts/queue";
 
 const model = new AdAccountsModel();
-const service = new AdAccountsService(model);
 const HOURLY_MS = 3600000;
 const TOKEN_WARNING_MS = 7 * 86400000;
 
@@ -57,7 +56,7 @@ async function runSyncTick(): Promise<void> {
   const accounts = await model.listSyncEligible();
   for (const account of accounts) {
     try {
-      await service.sync(account.id);
+      await enqueueSync(account.id);
     } catch {
     }
   }

@@ -12,10 +12,9 @@ import {
   toAdAccount,
   toAdAccounts,
   toCampaigns,
-  toSyncResult,
 } from "../transformers/ad-accounts.transformer";
-import type { AdAccount, Campaign, SyncResult, TokenType, RateLimitState } from "../types/ad-accounts.types";
-import type { AdAccountDto, CampaignDto, OkResponseDto, SyncResponseDto } from "../dto/ad-accounts.dto";
+import type { AdAccount, Campaign, TokenType, RateLimitState, SyncRun } from "../types/ad-accounts.types";
+import type { AdAccountDto, CampaignDto, OkResponseDto } from "../dto/ad-accounts.dto";
 
 export class ApiCallError extends Error {
   readonly errorClass: string | null;
@@ -103,16 +102,31 @@ export function useCreateAdAccount(clientId: string) {
   });
 }
 
-export function useSyncAdAccount() {
+export function useEnqueueSync() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (accountId: string): Promise<SyncResult> => {
+    mutationFn: async (accountId: string): Promise<string> => {
       const { data: body, error } = await looseApi["ad-accounts"]({ id: accountId }).sync.post(null);
-      if (error) throw callFailed(error, "Sync failed");
-      const payload = (body as { data: SyncResponseDto | null }).data;
-      return toSyncResult(payload);
+      if (error) throw callFailed(error, "Sync failed to start");
+      const payload = (body as { data: { runId: string } }).data;
+      return payload.runId;
     },
     onSettled: () => invalidateAdAccountData(queryClient),
+  });
+}
+
+export function useLatestSyncRun(accountId: string | null) {
+  return useQuery({
+    queryKey: ["ad-accounts", accountId, "sync-run"],
+    enabled: accountId !== null,
+    queryFn: async (): Promise<SyncRun | null> => {
+      const { data: body } = await looseApi["ad-accounts"]({ id: accountId as string }).sync.runs.latest.get();
+      return ((body as { data: SyncRun | null }).data) ?? null;
+    },
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "queued" || status === "running" ? 3000 : false;
+    },
   });
 }
 

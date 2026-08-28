@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/shared/components/Button";
 import { EmptyState } from "@/shared/components/EmptyState";
 import type { Client } from "@/shared/types/clients.types";
 import { errorCopy } from "../data/sync-copy.data";
-import { useAdAccounts, useCampaigns, useSyncAdAccount } from "../services/ad-accounts.service";
+import {
+  useAdAccounts,
+  useCampaigns,
+  useEnqueueSync,
+  useLatestSyncRun,
+} from "../services/ad-accounts.service";
 import { CampaignsTable } from "./CampaignsTable";
 import { SkeletonRows } from "./SkeletonRows";
 
@@ -14,24 +20,43 @@ const SELECT_CLASS =
 
 export function CampaignsTab({ client }: { client: Client }) {
   const { data: accounts, isPending: accountsPending } = useAdAccounts(client.id);
+  const queryClient = useQueryClient();
   const [accountId, setAccountId] = useState<string | null>(null);
   const [days, setDays] = useState(30);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
-  const sync = useSyncAdAccount();
+  const [watchedAccountId, setWatchedAccountId] = useState<string | null>(null);
+  const [syncRunId, setSyncRunId] = useState<string | null>(null);
+  const enqueue = useEnqueueSync();
   const list = accounts ?? [];
   const selectedId = accountId ?? list[0]?.id ?? null;
   const { data: campaigns, isPending } = useCampaigns(selectedId, days);
+  const { data: run } = useLatestSyncRun(watchedAccountId);
+
+  useEffect(() => {
+    if (run === null || run === undefined || run.id !== syncRunId || watchedAccountId === null) {
+      return;
+    }
+    if (run.status === "succeeded" || run.status === "failed" || run.status === "cancelled") {
+      void queryClient.invalidateQueries({ queryKey: ["ad-accounts", watchedAccountId, "campaigns"] });
+      if (run.status === "failed") {
+        setSyncMessage(errorCopy(run.errorClass ?? "server_error"));
+      } else if (run.status === "succeeded") {
+        setSyncMessage(null);
+      }
+      setWatchedAccountId(null);
+      setSyncRunId(null);
+    }
+  }, [run, syncRunId, watchedAccountId, queryClient]);
 
   function handleSync() {
     if (selectedId === null) return;
     setSyncMessage(null);
-    sync.mutate(selectedId, {
-      onSuccess: (result) => {
-        if (!result.ok) {
-          setSyncMessage(
-            errorCopy(result.errorClass ?? result.stages.find((stage) => stage.status === "failed")?.errorClass),
-          );
-        }
+    const target = selectedId;
+    enqueue.mutate(target, {
+      onSuccess: (runId) => {
+        setWatchedAccountId(target);
+        setSyncRunId(runId);
+        setSyncMessage("Sync queued — campaigns refresh when it finishes.");
       },
       onError: (error: Error) => setSyncMessage(error.message),
     });
@@ -90,8 +115,8 @@ export function CampaignsTab({ client }: { client: Client }) {
           title="No campaigns yet"
           hint="Sync the ad account to pull data."
           action={
-            <Button variant="ghost" disabled={sync.isPending} onClick={handleSync}>
-              {sync.isPending ? "Syncing…" : "Sync now"}
+            <Button variant="ghost" disabled={enqueue.isPending} onClick={handleSync}>
+              {enqueue.isPending ? "Starting…" : "Sync now"}
             </Button>
           }
         />

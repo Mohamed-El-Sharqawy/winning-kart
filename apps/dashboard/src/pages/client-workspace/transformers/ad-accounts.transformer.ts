@@ -47,17 +47,3 @@ export function toCampaign(dto: CampaignDto): Campaign {
 export function toCampaigns(dtos: CampaignDto[]): Campaign[] {
   return dtos.map(toCampaign);
 }
-
-export function toSyncResult(dto: SyncResponseDto | null | undefined): SyncResult {
-  const stages: SyncStageResult[] = (dto?.stages ?? []).map((stage) => ({
-    stage: stage.stage,
-    status: stage.status,
-    errorClass: stage.errorClass ?? undefined,
-  }));
-  return {
-    ok: dto?.ok ?? false,
-    stages,
-    failedStage: dto?.failedStage ?? undefined,
-    errorClass: dto?.errorClass ?? undefined,
-  };
-}

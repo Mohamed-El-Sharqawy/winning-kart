@@ -11,3 +11,8 @@ cypress/videos/
 cypress/screenshots/
 .turbo/
 drizzle/meta/_journal.json.bak
+
+# Cypress artifacts
+apps/dashboard/cypress/screenshots
+apps/dashboard/cypress/videos
+apps/dashboard/cypress/downloads

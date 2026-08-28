@@ -10,9 +10,11 @@ import {
 } from "../../dto/ad-accounts";
 import { AdAccountsModel } from "./model";
 import { AdAccountsService } from "./service";
+import { cancelRun, enqueueSync, latestRun, recoverInterruptedRuns } from "./queue";
 import type { SafeUser } from "../auth/model";
 
 const service = new AdAccountsService(new AdAccountsModel());
+void recoverInterruptedRuns();
 
 async function requireUser(headers: Record<string, string | undefined>): Promise<SafeUser> {
   const user = await resolveSessionUser({ cookie: headers.cookie, headers });
@@ -86,11 +88,29 @@ export const adAccountsModule = new Elysia()
   )
   .post(
     "/ad-accounts/:id/sync",
-    async ({ params, headers }) => {
+    async ({ params, headers, set }) => {
       await requireAdmin(headers);
-      return { data: await service.sync(params.id) };
+      const result = await enqueueSync(params.id);
+      set.status = 202;
+      return { data: result };
     },
     { params: idParamsDto }
+  )
+  .get(
+    "/ad-accounts/:id/sync/runs/latest",
+    async ({ params, headers }) => {
+      await requireUser(headers);
+      return { data: await latestRun(params.id) };
+    },
+    { params: idParamsDto }
+  )
+  .post(
+    "/ad-accounts/:id/sync/runs/:runId/cancel",
+    async ({ params, headers }) => {
+      await requireAdmin(headers);
+      return { data: { ok: await cancelRun(params.id, params.runId) } };
+    },
+    { params: t.Object({ id: t.String(), runId: t.String() }) }
   )
   .post(
     "/ad-accounts/:id/reconnect",
