@@ -183,6 +183,13 @@ function idsToRefetch<T extends { id: string; updated_time?: string }>(
     .map((row) => row.id);
 }
 
+const DELTA_PER_ENTITY_MAX_DEFAULT = 25;
+
+function deltaPerEntityMax(): number {
+  const parsed = Number.parseInt(process.env.WK_DELTA_PER_ENTITY_MAX ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DELTA_PER_ENTITY_MAX_DEFAULT;
+}
+
 async function fullRowsOrEdgeFallback<T>(
   meta: AdPlatformAdapter,
   actId: string,
@@ -194,13 +201,20 @@ async function fullRowsOrEdgeFallback<T>(
   if (ids.length === 0) {
     return [];
   }
-  try {
-    return await meta.getEntitiesByIds<T>(actId, ids, fields);
-  } catch (error) {
-    const metaError = toMetaError(error);
-    console.warn(`${entityLabel} ids fetch failed (${metaError.errorClass}); using full edge fetch`);
+  if (ids.length > deltaPerEntityMax()) {
     return edgeFetch();
   }
+  const rows: T[] = [];
+  for (const id of ids) {
+    const row = await meta.getEntityById<T>(id, fields);
+    if (row !== null) {
+      rows.push(row);
+    }
+  }
+  if (rows.length < ids.length) {
+    console.warn(`${entityLabel}: ${ids.length - rows.length} of ${ids.length} entity fetches skipped`);
+  }
+  return rows;
 }
 
 function toMetaError(error: unknown): MetaError {

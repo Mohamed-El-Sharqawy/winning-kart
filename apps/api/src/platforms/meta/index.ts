@@ -67,7 +67,7 @@ export interface AdPlatformAdapter {
   getAdSetIds(actId: string): Promise<MetaAdSetLightRow[]>;
   getAds(actId: string): Promise<MetaAdRow[]>;
   getAdIds(actId: string): Promise<MetaAdLightRow[]>;
-  getEntitiesByIds<T>(actId: string, ids: string[], fields: string): Promise<T[]>;
+  getEntityById<T>(id: string, fields: string): Promise<T | null>;
   getCreativeDetails(actId: string): Promise<CreativeDetailMap>;
   getInsights(actId: string, level: InsightLevel, timeRange: TimeRange): Promise<MetaInsightRow[]>;
 }

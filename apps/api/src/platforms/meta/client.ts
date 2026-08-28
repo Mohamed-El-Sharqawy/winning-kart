@@ -156,7 +156,6 @@ interface PagedBody<T> {
 const REQUEST_TIMEOUT_MS = 30000;
 const RETRY_DELAY_MS = 500;
 const PAGE_LIMIT = 100;
-const IDS_BATCH_LIMIT = 50;
 
 export const CAMPAIGN_FIELDS =
   "id,name,status,effective_status,objective,buying_type,daily_budget,lifetime_budget,start_time,stop_time,updated_time";
@@ -273,22 +272,17 @@ export class MetaClient {
     });
   }
 
-  async getEntitiesByIds<T>(actId: string, ids: string[], fields: string): Promise<T[]> {
-    const rows: T[] = [];
-    for (let index = 0; index < ids.length; index += IDS_BATCH_LIMIT) {
-      const batch = ids.slice(index, index + IDS_BATCH_LIMIT);
-      try {
-        const body = await this.request("", { ids: batch.join(","), fields });
-        rows.push(...flattenIdedBody<T>(body));
-      } catch (error) {
-        if (error instanceof MetaError && error.retryable) {
-          throw error;
-        }
-        const errorClass = error instanceof MetaError ? error.errorClass : "unknown";
-        console.warn(`entities-by-ids batch skipped: ${errorClass}`);
+  async getEntityById<T>(id: string, fields: string): Promise<T | null> {
+    try {
+      const body = await this.request(id, { fields });
+      return flattenIdedBody<T>([body])[0] ?? null;
+    } catch (error) {
+      if (error instanceof MetaError && !error.retryable) {
+        console.warn(`entity ${id} fetch skipped: ${error.errorClass}`);
+        return null;
       }
+      throw error;
     }
-    return rows;
   }
 
   async getCreativeDetails(actId: string): Promise<CreativeDetailMap> {
