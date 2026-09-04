@@ -9,6 +9,7 @@ import { FATIGUE_FLAG_COPY, FATIGUE_FLAG_ORDER } from "../data/gallery-copy.data
 import { adAccountsQueryOptions } from "../services/ad-accounts.service";
 import { useCreatives, useFatigueSummary } from "../services/creatives.service";
 import type { Creative, FatigueFlag } from "../types/creatives.types";
+import { GalleryPrototype } from "../prototype/GalleryPrototype";
 import { CreativeCard } from "./CreativeCard";
 import { CreativeDetailModal } from "./CreativeDetailModal";
 import { FilterChip } from "./FilterChip";
@@ -35,7 +36,7 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
   const [selected, setSelected] = useState<Creative | null>(null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
-  const { adSet, adSetName } = useSearch({ from: "/clients/$slug" });
+  const { adSet, adSetName, variant } = useSearch({ from: "/clients/$slug" });
   const navigate = useNavigate();
   const { data: creatives, isPending } = useCreatives(accountId, range, rangeExplicit);
   const { data: summary } = useFatigueSummary(accountId, range, rangeExplicit);
@@ -43,6 +44,10 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
   const client = clients?.find((candidate) => candidate.slug === clientSlug) ?? null;
   const { data: accounts } = useQuery({ ...adAccountsQueryOptions(client?.id ?? ""), enabled: client !== null });
   const actId = accounts?.find((account) => account.id === accountId)?.adAccountId ?? null;
+
+  if (variant !== undefined) {
+    return <GalleryPrototype variant={variant} />;
+  }
 
   const rows = creatives ?? [];
   const scoped = adSet === undefined ? rows : rows.filter((row) => row.adSetId === adSet);
