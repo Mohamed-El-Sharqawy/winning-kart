@@ -4,8 +4,14 @@ A CRM that syncs Meta ad accounts so agencies can monitor campaign performance w
 
 ## Language
 
+**Ad**:
+The synced Meta ad inside an ad set. The entity that carries effective status and window metrics. Canonical in code, endpoints, and API paths.
+
 **Creative media**:
 The displayable media belonging to one creative: thumbnail (grid image), poster (video still frame), source (playable video URL).
+
+**Creative**:
+The gallery UI's display name for an ad. Every creative row, card, or filter in the gallery is an ad; "creative" never denotes a separate entity.
 
 **Resolve**:
 Exchange a stored platform ID for a fresh, expiring Meta CDN URL.
