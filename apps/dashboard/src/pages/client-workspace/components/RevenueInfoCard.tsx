@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Card } from "@/shared/components/Card";
 
 export function RevenueInfoCard() {
@@ -10,8 +11,14 @@ export function RevenueInfoCard() {
           <li>Meta-attributed revenue already appears in campaign metrics.</li>
         </ul>
         <p className="text-[13px] text-volt-text-3">
-          Generate a key, then send orders from your store's backend — see{" "}
-          <span className="font-mono text-volt-text-2">docs/revenue-ingest.md</span>.
+          Generate a key, then send orders from your store's backend — the{" "}
+          <Link
+            to="/docs/integrations"
+            className="font-medium text-volt-primary-strong underline-offset-2 hover:underline"
+          >
+            integration guide
+          </Link>{" "}
+          walks through the full contract step by step.
         </p>
       </div>
     </Card>

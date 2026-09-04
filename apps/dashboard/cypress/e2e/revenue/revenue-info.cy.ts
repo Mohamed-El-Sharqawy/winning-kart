@@ -12,7 +12,7 @@ describe("workspace revenue tab info card", () => {
     }).as("revenueSourcesGet");
   });
 
-  it("explains where the revenue data comes from and points at the docs", () => {
+  it("explains where the revenue data comes from and links the integration guide", () => {
     cy.visit("/clients/maison-nour?tab=revenue");
 
     cy.wait("@revenueGet", { timeout: 20000 });
@@ -24,6 +24,9 @@ describe("workspace revenue tab info card", () => {
     cy.contains(/Shopify and WooCommerce connectors arrive in V1/, { timeout: 15000 }).should(
       "be.visible",
     );
-    cy.contains("docs/revenue-ingest.md", { timeout: 15000 }).should("be.visible");
+    cy.contains("a", "integration guide", { timeout: 15000 })
+      .should("be.visible")
+      .and("have.attr", "href")
+      .and("include", "/docs/integrations");
   });
 });

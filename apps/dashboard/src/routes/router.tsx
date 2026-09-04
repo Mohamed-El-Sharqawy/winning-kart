@@ -11,6 +11,7 @@ import { AuthPage } from "@/pages/auth";
 import { CampaignDetailPage } from "@/pages/campaign-detail";
 import { ClientWorkspacePage } from "@/pages/client-workspace";
 import { ClientsPage } from "@/pages/clients";
+import { IntegrationDocsPage } from "@/pages/integration-docs";
 import { OverviewPage } from "@/pages/overview";
 import { PortalPage } from "@/pages/portal";
 import { SettingsAuditPage } from "@/pages/settings-audit";
@@ -220,6 +221,13 @@ const teamRoute = createRoute({
   component: TeamPage,
 });
 
+const integrationDocsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/docs/integrations",
+  beforeLoad: requireAdmin,
+  component: IntegrationDocsPage,
+});
+
 const portalRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/portal",
@@ -240,6 +248,7 @@ const routeTree = rootRoute.addChildren([
   settingsDataRoute,
   settingsSchedulerRoute,
   teamRoute,
+  integrationDocsRoute,
   portalRoute,
 ]);
 

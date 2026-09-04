@@ -20,5 +20,5 @@ export const NAV_GROUPS = [
       "Marketing Plans",
     ],
   },
-  { label: "Administration", items: ["Integrations", "Team & Permissions", "Settings"] },
+  { label: "Administration", items: ["Integrations", "Integration Guide", "Team & Permissions", "Settings"] },
 ] as const;
