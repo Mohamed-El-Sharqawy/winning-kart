@@ -328,6 +328,11 @@ export async function runStructureStages(
         status: record.status,
         format: record.format,
         creativeId: record.creativeId,
+        videoId: record.videoId,
+        effectiveStoryId: record.effectiveStoryId,
+        carouselCount: record.carouselCount,
+        thumbnailUrl: record.thumbnailUrl,
+        thumbnailResolvedAt: record.thumbnailResolvedAt,
         platformUpdatedAt: record.platformUpdatedAt,
       });
     }

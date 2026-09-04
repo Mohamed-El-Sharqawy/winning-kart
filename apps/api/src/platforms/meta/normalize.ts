@@ -3,6 +3,7 @@ import type { AdFormat, EntityStatus } from "@wk/db";
 import type {
   MetaAccountInfo,
   MetaActionMetric,
+  MetaAdCreativeRef,
   MetaAdRow,
   MetaAdSetRow,
   MetaCampaignRow,
@@ -42,8 +43,13 @@ export interface AdRecord {
   adSetPlatformId: string;
   name: string;
   status: EntityStatus;
-  format: AdFormat | null;
+  format: AdFormat;
   creativeId: string | null;
+  videoId: string | null;
+  effectiveStoryId: string | null;
+  carouselCount: number | null;
+  thumbnailUrl: string | null;
+  thumbnailResolvedAt: Date | null;
   platformUpdatedAt: Date | null;
 }
 
@@ -207,14 +213,42 @@ export function normalizeAdSet(row: MetaAdSetRow): AdSetRecord {
   };
 }
 
-export function normalizeAd(row: MetaAdRow): AdRecord {
+function hasTemplateData(
+  storySpec: MetaAdCreativeRef["object_story_spec"]
+): boolean {
+  return storySpec?.template_data !== undefined && storySpec.template_data !== null;
+}
+
+function deriveAdFormat(creative: MetaAdCreativeRef | undefined): {
+  format: AdFormat;
+  carouselCount: number | null;
+} {
+  if (creative?.video_id) {
+    return { format: "VIDEO", carouselCount: null };
+  }
+  const attachments = creative?.object_story_spec?.link_data?.child_attachments;
+  if ((attachments !== undefined && attachments.length > 1) || hasTemplateData(creative?.object_story_spec)) {
+    return { format: "CAROUSEL", carouselCount: attachments?.length ?? 0 };
+  }
+  return { format: "IMAGE", carouselCount: null };
+}
+
+export function normalizeAd(row: MetaAdRow, resolvedAt: Date = new Date()): AdRecord {
+  const creative = row.creative;
+  const { format, carouselCount } = deriveAdFormat(creative);
+  const thumbnailUrl = creative?.thumbnail_url ?? null;
   return {
     platformAdId: row.id,
     adSetPlatformId: row.adset_id,
     name: row.name,
     status: mapEntityStatus(row.effective_status, row.status),
-    format: null,
-    creativeId: row.creative?.id ?? null,
+    format,
+    creativeId: creative?.id ?? null,
+    videoId: creative?.video_id ?? null,
+    effectiveStoryId: creative?.effective_object_story_id ?? null,
+    carouselCount,
+    thumbnailUrl,
+    thumbnailResolvedAt: thumbnailUrl === null ? null : resolvedAt,
     platformUpdatedAt: parseMetaTime(row.updated_time),
   };
 }

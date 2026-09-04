@@ -78,9 +78,21 @@ export interface MetaAdSetLightRow {
   updated_time?: string;
 }
 
+export interface MetaChildAttachment {
+  id: string;
+}
+
+export interface MetaObjectStorySpec {
+  link_data?: { child_attachments?: MetaChildAttachment[] };
+  template_data?: Record<string, unknown>;
+}
+
 export interface MetaAdCreativeRef {
   id: string;
-  name?: string;
+  thumbnail_url?: string;
+  video_id?: string;
+  effective_object_story_id?: string;
+  object_story_spec?: MetaObjectStorySpec;
 }
 
 export interface MetaAdRow {
@@ -157,7 +169,21 @@ export const CAMPAIGN_FIELDS =
 export const AD_SET_FIELDS =
   "id,campaign_id,name,status,effective_status,optimization_goal,bid_strategy,daily_budget,lifetime_budget,updated_time";
 export const AD_FIELDS =
-  "id,adset_id,name,status,effective_status,creative{id,name},updated_time";
+  "id,adset_id,name,status,effective_status,updated_time,creative{id,thumbnail_url,video_id,effective_object_story_id,object_story_spec{link_data{child_attachments{id}},template_data}}";
+
+export const THUMBNAIL_WIDTH = "512";
+export const THUMBNAIL_HEIGHT = "640";
+
+export function withThumbnailDimensions(params: Record<string, string>): Record<string, string> {
+  if (params.fields?.includes("thumbnail_url")) {
+    return {
+      ...params,
+      thumbnail_width: THUMBNAIL_WIDTH,
+      thumbnail_height: THUMBNAIL_HEIGHT,
+    };
+  }
+  return params;
+}
 
 const BASE_INSIGHT_FIELDS =
   "spend,impressions,reach,clicks,ctr,cpc,cpm,frequency,actions,action_values";
@@ -294,12 +320,13 @@ export class MetaClient {
   }
 
   private async request(path: string, params: Record<string, string>): Promise<unknown> {
+    const requestParams = withThumbnailDimensions(params);
     try {
-      return await this.rawRequest(path, params);
+      return await this.rawRequest(path, requestParams);
     } catch (error) {
       if (error instanceof MetaError && error.retryable) {
         await delay(RETRY_DELAY_MS);
-        return this.rawRequest(path, params);
+        return this.rawRequest(path, requestParams);
       }
       throw error;
     }
