@@ -13,6 +13,7 @@ COPY packages packages
 RUN cd apps/dashboard && bun run build
 
 FROM nginx:alpine
-COPY apps/dashboard/nginx.conf /etc/nginx/conf.d/default.conf
+ENV API_UPSTREAM=api:3000
+COPY apps/dashboard/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/apps/dashboard/dist /usr/share/nginx/html
 EXPOSE 80

@@ -10,7 +10,8 @@ One domain serves everything:
 
 - `Host(<domain>) && PathPrefix(/api)` routes to the api container (Bun, port 3000).
 - `Host(<domain>)` routes to the dashboard container (nginx, port 80) serving the built SPA.
-- The dashboard's `nginx.conf` also proxies `/api` and `/health` to `api:3000`, so the stack
+- The dashboard's nginx also proxies `/api` and `/health` to the api (upstream host from
+  `API_UPSTREAM`, default `api:3000`), so the stack
   works even when only the dashboard router is exposed.
 - The labels in `docker-compose.yml` carry the routing; Coolify's proxy (Traefik) already
   exposes the `websecure` entrypoint and the `letsencrypt` resolver.
@@ -75,10 +76,12 @@ Both Dockerfiles COPY from the repository root workspace, so set the build conte
    `apps/dashboard/Dockerfile`, build context `/`, port 80, domain `https://<domain>`.
 
 `WK_HOST` is not needed in this mode (routing comes from the domains set per app; it is
-only read by the compose file's Traefik labels). The dashboard's nginx proxies `/api` and
-`/health` to `http://api:3000`, so both apps must sit on a shared docker network where
-the api container resolves as `api` (Coolify's `coolify` network plus a network alias or
-resource name of `api` on the api app).
+only read by the compose file's Traefik labels). Dockerfiles cannot attach networks —
+attach the api, dashboard, and postgres resources to the same docker network in each
+resource's Coolify Network settings. The dashboard proxies `/api` and `/health` to
+`API_UPSTREAM` (default `api:3000`): set it on the dashboard resource to the api's
+resolvable name on that shared network, and point the api's `DATABASE_URL` at the
+postgres resource's name.
 
 ### docker compose alternative
 
