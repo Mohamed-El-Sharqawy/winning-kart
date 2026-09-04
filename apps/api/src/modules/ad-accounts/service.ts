@@ -29,6 +29,7 @@ import type { BackfillOutcome } from "./backfill";
 import { createStageRunner, runStructureStages } from "./stages";
 import { isRecord, SyncCancelledError } from "./stages";
 import type { SyncStage, StageResult, SyncSummary, SyncRunHooks } from "./stages";
+import { resolveInsightWindow, utcToday } from "./sync-window";
 
 export { SyncCancelledError } from "./stages";
 export type { SyncStage, StageResult, SyncSummary, SyncRunHooks } from "./stages";
@@ -367,6 +368,7 @@ export class AdAccountsService {
         healthState: ok ? successHealthState(account) : "error",
         lastSyncAt: new Date(),
         platformPayload,
+        ...(ok ? { insightsSyncedThrough: utcToday() } : {}),
       });
       if (ok) {
         try {
@@ -442,6 +444,13 @@ export class AdAccountsService {
     }
     const { campaignIdByPlatform, adSetIdByPlatform, adIdByPlatform } = structure;
 
+    const insightWindow = resolveInsightWindow({
+      today: utcToday(),
+      syncedThrough: account.insightsSyncedThrough,
+      windowDays: SYNC_WINDOW_DAYS,
+      deltaDays: INSIGHT_DELTA_DAYS,
+    });
+
     const insightsOk = await runner.run("insights", async () => {
       const insightRows: InsightUpsertRow[] = [];
       const campaignLevelRecords: InsightRecord[] = [];
@@ -451,11 +460,7 @@ export class AdAccountsService {
         { level: "ad", ids: adIdByPlatform, key: "ad_id" },
       ];
       for (const entry of levels) {
-        const hasStored = await this.model.hasInsightRows(account.id, entry.level);
-        const window = hasStored
-          ? utcWindow(INSIGHT_DELTA_DAYS)
-          : utcWindow(SYNC_WINDOW_DAYS);
-        const rows = await meta.getInsights(account.adAccountId, entry.level, window);
+        const rows = await meta.getInsights(account.adAccountId, entry.level, insightWindow);
         for (const row of rows) {
           const platformId = row[entry.key];
           if (!platformId) {
@@ -485,9 +490,7 @@ export class AdAccountsService {
     }
 
     const dailySeriesOk = await runner.run("daily_series", async () => {
-      const hasStored = await this.model.hasInsightRows(account.id, "account");
-      const window = hasStored ? utcWindow(INSIGHT_DELTA_DAYS) : utcWindow(SYNC_WINDOW_DAYS);
-      const rows = await meta.getInsights(account.adAccountId, "account", window);
+      const rows = await meta.getInsights(account.adAccountId, "account", insightWindow);
       const insightRows: InsightUpsertRow[] = rows.map((row) => ({
         entityLevel: "account" as const,
         entityId: account.id,
@@ -508,7 +511,11 @@ export class AdAccountsService {
     if (!account) {
       throw accountNotFound(id);
     }
-    return backfillAccount(this.model, account, months, hooks);
+    const outcome = await backfillAccount(this.model, account, months, hooks);
+    if (outcome.ok) {
+      await this.model.updateAdAccount(account.id, { insightsSyncedThrough: utcToday() });
+    }
+    return outcome;
   }
 
   async reconnect(id: string, accessToken: string, tokenType?: TokenType): Promise<void> {

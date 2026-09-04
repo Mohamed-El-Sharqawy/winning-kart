@@ -88,6 +88,7 @@ export const adAccounts = pgTable(
       .notNull()
       .default("healthy"),
     lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+    insightsSyncedThrough: date("insights_synced_through"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

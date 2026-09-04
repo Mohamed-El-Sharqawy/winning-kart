@@ -1,0 +1,1 @@
+ALTER TABLE "ad_accounts" ADD COLUMN "insights_synced_through" date;

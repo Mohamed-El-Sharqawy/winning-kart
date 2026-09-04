@@ -570,20 +570,6 @@ export class AdAccountsModel {
       .orderBy(ads.updatedAt);
     return rows.map((row) => row.ad);
   }
-
-  async hasInsightRows(
-    adAccountId: string,
-    level: "account" | "campaign" | "adset" | "ad"
-  ): Promise<boolean> {
-    const rows = await db
-      .select({ id: dailyInsights.id })
-      .from(dailyInsights)
-      .where(
-        and(eq(dailyInsights.adAccountId, adAccountId), eq(dailyInsights.entityLevel, level))
-      )
-      .limit(1);
-    return rows.length > 0;
-  }
 }
 
 function toState(row: {
