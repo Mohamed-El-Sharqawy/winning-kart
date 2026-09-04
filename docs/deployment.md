@@ -1,8 +1,8 @@
 # Deployment guide (Coolify + Traefik on a VPS)
 
 This guide deploys Winning Kart on a generic VPS (Hostinger / AWS EC2 / DigitalOcean) with
-Coolify managing Traefik, automatic Let's Encrypt SSL, and Docker-label routing. Postgres runs
-on the VPS host itself, not as a compose service.
+Coolify managing Traefik and automatic Let's Encrypt SSL. Postgres runs on the VPS host or
+as a Coolify postgres resource.
 
 ## Architecture
 
@@ -10,11 +10,8 @@ One domain serves everything:
 
 - `Host(<domain>) && PathPrefix(/api)` routes to the api container (Bun, port 3000).
 - `Host(<domain>)` routes to the dashboard container (nginx, port 80) serving the built SPA.
-- The dashboard's nginx also proxies `/api` and `/health` to the api (upstream host from
-  `API_UPSTREAM`, default `api:3000`), so the stack
-  works even when only the dashboard router is exposed.
-- The labels in `docker-compose.yml` carry the routing; Coolify's proxy (Traefik) already
-  exposes the `websecure` entrypoint and the `letsencrypt` resolver.
+- The dashboard's nginx also proxies `/api` and `/health` to the api via `API_UPSTREAM`
+  (default `api:3000`), a fallback when the SPA is not configured with `VITE_API_URL`.
 - The api service has a compose healthcheck hitting `/health`; the dashboard waits for it.
 
 ## Prerequisites
@@ -76,23 +73,26 @@ Both Dockerfiles COPY from the repository root workspace, so set the build conte
    `apps/dashboard/Dockerfile`, build context `/`, port 80, domain `https://<domain>`.
 
 `WK_HOST` is not needed in this mode (routing comes from the domains set per app; it is
-only read by the compose file's Traefik labels). Dockerfiles cannot attach networks —
-attach the api, dashboard, and postgres resources to the same docker network in each
-resource's Coolify Network settings. The dashboard proxies `/api` and `/health` to
-`API_UPSTREAM` (default `api:3000`): set it on the dashboard resource to the api's
-resolvable name on that shared network, and point the api's `DATABASE_URL` at the
-postgres resource's name.
+only read by the compose file's Traefik labels). With per-app subdomains, skip docker
+DNS entirely: set the dashboard's build-time `VITE_API_URL=https://<api-domain>` so the
+SPA calls the api directly, and the api's runtime
+`CORS_ORIGINS=https://<dashboard-domain>` to allow the dashboard origin with
+credentials (`CORS_ORIGINS` is read once at api boot, so changing it needs a
+redeploy). The dashboard's nginx `/api` proxy (`API_UPSTREAM`, default `api:3000`)
+remains as a same-origin fallback for deployments that keep one domain. The api's
+`DATABASE_URL` should point at the postgres resource's container name on a shared
+docker network (Coolify container names carry a per-deploy suffix, so use the postgres
+resource's name, which is stable).
 
 ### docker compose alternative
 
 New Resource -> App -> Docker Compose, import this Git repository; Coolify builds from
 the root `docker-compose.yml`. Set the same environment variables, set `WK_HOST` to your
 domain (the compose Traefik labels read it), and deploy. Subject to the Cloudflare 504
-issue described above — prefer the two-app path.
-
-Coolify's proxy (Traefik) exposes the `websecure` entrypoint and the `letsencrypt`
-resolver; the certificate is issued automatically on first deploy for both deploy modes.
-No certificate action is needed beyond correct DNS.
+issue described above — prefer the two-app path. Coolify's proxy (Traefik) exposes the
+`websecure` entrypoint and the `letsencrypt` resolver; the certificate is issued
+automatically on first deploy for both deploy modes. No certificate action is needed
+beyond correct DNS.
 
 ## First run: migrate, then decide about seed
 

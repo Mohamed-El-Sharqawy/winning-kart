@@ -16,6 +16,7 @@ import { portalModule } from "./modules/portal";
 import { mcpModule } from "./modules/mcp";
 import { schedulerModule } from "./modules/scheduler";
 import { startSyncCron } from "./lib/sync-cron";
+import { corsPlugin } from "./lib/cors";
 import { ProblemError, problemResponse, reasonPhrase } from "./lib/problem";
 
 const api = new Elysia({ prefix: "/api" })
@@ -36,6 +37,7 @@ const api = new Elysia({ prefix: "/api" })
   .use(schedulerModule);
 
 const app = new Elysia()
+  .use(corsPlugin)
   .onError(({ code, error, path, set }) => {
     set.headers["content-type"] = "application/problem+json";
     if (error instanceof ProblemError) {
