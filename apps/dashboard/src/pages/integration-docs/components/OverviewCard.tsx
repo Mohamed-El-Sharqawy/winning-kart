@@ -1,4 +1,6 @@
+import { Link } from "@tanstack/react-router";
 import { Card } from "@/shared/components/Card";
+import { DOC_LINK_CLASS } from "@/shared/components/doc-styles";
 
 export function OverviewCard() {
   return (
@@ -26,6 +28,13 @@ export function OverviewCard() {
           script — can feed it. Every order is graded into a match tier so you can see how much of
           the ledger is actually attributed to campaigns, and how much is revenue you cannot yet
           attribute. Winning Kart never fabricates a match.
+        </p>
+        <p className="text-[13px] text-volt-text-3">
+          New to attribution? Start with{" "}
+          <Link to="/docs/attribution" className={DOC_LINK_CLASS}>
+            why attribution matters
+          </Link>
+          .
         </p>
       </div>
     </Card>

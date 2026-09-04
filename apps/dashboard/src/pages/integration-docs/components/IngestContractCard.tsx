@@ -1,6 +1,6 @@
 import { Card } from "@/shared/components/Card";
+import { DOC_TD, DOC_TH } from "@/shared/components/doc-styles";
 import { CodeBlock } from "./CodeBlock";
-import { DOC_TD, DOC_TH } from "./doc-table";
 
 const FIELDS: Array<[string, string, string]> = [
   ["source_order_id", "yes", "Your store's order id, 1-200 characters. Unique per source — used for deduplication."],

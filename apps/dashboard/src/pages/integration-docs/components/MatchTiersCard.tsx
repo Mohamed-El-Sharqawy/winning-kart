@@ -1,7 +1,7 @@
 import { Badge } from "@/shared/components/Badge";
 import type { BadgeVariant } from "@/shared/components/Badge";
 import { Card } from "@/shared/components/Card";
-import { DOC_TD, DOC_TH } from "./doc-table";
+import { DOC_TD, DOC_TH } from "@/shared/components/doc-styles";
 
 const TIERS: Array<{ tier: string; variant: BadgeVariant; signal: string; resolves: string }> = [
   {

@@ -23,6 +23,7 @@ const ROUTES: RouteCheck[] = [
   { name: "settings data", path: "/settings/data", anchor: /download full export/i },
   { name: "settings scheduler", path: "/settings/scheduler", anchor: /sync jobs/i },
   { name: "integration docs", path: "/docs/integrations", anchor: /generate ingest key/i },
+  { name: "attribution docs", path: "/docs/attribution", anchor: /why attribution matters/i },
   {
     name: "campaign detail",
     path: `${DIA}/campaigns/${CAMPAIGN_ID}?days=30`,

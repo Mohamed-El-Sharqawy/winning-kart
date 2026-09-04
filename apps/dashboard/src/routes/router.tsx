@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { queryClient } from "@/lib/query-client";
 import { AlertsTasksPage } from "@/pages/alerts-tasks";
+import { AttributionDocsPage } from "@/pages/attribution-docs";
 import { AuthPage } from "@/pages/auth";
 import { CampaignDetailPage } from "@/pages/campaign-detail";
 import { ClientWorkspacePage } from "@/pages/client-workspace";
@@ -228,6 +229,13 @@ const integrationDocsRoute = createRoute({
   component: IntegrationDocsPage,
 });
 
+const attributionDocsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/docs/attribution",
+  beforeLoad: requireAdmin,
+  component: AttributionDocsPage,
+});
+
 const portalRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/portal",
@@ -249,6 +257,7 @@ const routeTree = rootRoute.addChildren([
   settingsSchedulerRoute,
   teamRoute,
   integrationDocsRoute,
+  attributionDocsRoute,
   portalRoute,
 ]);
 
