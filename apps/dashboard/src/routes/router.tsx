@@ -62,6 +62,7 @@ export interface ClientWorkspaceSearch {
   accountName?: string;
   adSet?: string;
   adSetName?: string;
+  variant?: string;
 }
 
 export interface CampaignDetailSearch {
@@ -173,6 +174,7 @@ const clientWorkspaceRoute = createRoute({
     accountName: readOptionalString(search.accountName),
     adSet: readOptionalString(search.adSet),
     adSetName: readOptionalString(search.adSetName),
+    variant: readOptionalString(search.variant),
   }),
   component: ClientWorkspacePage,
 });
