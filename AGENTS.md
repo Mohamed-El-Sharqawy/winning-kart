@@ -2,6 +2,8 @@
 
 Pre-PR QA gate: run `bun run typecheck` and `bun run build` from the repo root, then the e2e suite from `apps/dashboard` (`bun run test:e2e:smoke` for the route-walker smoke gate). No PR is pushed before e2e passes. New pages must be added to `apps/dashboard/cypress/e2e/smoke/routes.cy.ts`. See [docs/qa-gate.md](docs/qa-gate.md).
 
+Delivery workflow: each unit of work (ticket, docs change, feature) lands as its own PR against `main`. A PR is merged only after the owner has reviewed and approved it - never agent-merged without that review.
+
 ## Core conventions
 
 - No comments in code.
