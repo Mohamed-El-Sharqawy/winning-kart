@@ -7,6 +7,7 @@ build/
 .DS_Store
 *.log
 *.dump
+wk-neon.sql
 coverage/
 cypress/videos/
 cypress/screenshots/

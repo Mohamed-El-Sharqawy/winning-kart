@@ -1,5 +1,6 @@
 param(
-    [string]$OutFile = "wk-neon.dump"
+    [string]$OutFile = "",
+    [switch]$Plain
 )
 
 $ErrorActionPreference = "Stop"
@@ -40,14 +41,27 @@ $sanitizedUrl = $url -replace "channel_binding=[^&]*&?", ""
 $sanitizedUrl = $sanitizedUrl -replace "\?&", "?"
 $sanitizedUrl = $sanitizedUrl.TrimEnd("&")
 
+if (-not $OutFile) {
+    $OutFile = $(if ($Plain) { "wk-neon.sql" } else { "wk-neon.dump" })
+}
 $outPath = if ([IO.Path]::IsPathRooted($OutFile)) { $OutFile } else { Join-Path $repoRoot $OutFile }
 
-& pg_dump $sanitizedUrl --format=custom --no-owner --no-privileges --file=$outPath
+$dumpArgs = @("--format=custom", "--no-owner", "--no-privileges", "--file=$outPath")
+if ($Plain) {
+    $dumpArgs = @("--format=plain", "--no-owner", "--no-privileges", "--file=$outPath")
+}
+
+& pg_dump $sanitizedUrl @dumpArgs
 if ($LASTEXITCODE -ne 0) {
     throw "pg_dump failed with exit code $LASTEXITCODE"
 }
 
 $sizeMb = [Math]::Round((Get-Item -LiteralPath $outPath).Length / 1MB, 2)
 Write-Host "Dump written: $outPath ($sizeMb MB) from $hostName"
-Write-Host "Transfer:      scp `"$outPath`" root@<vps-ip>:/tmp/wk-neon.dump"
-Write-Host "Restore on VPS: sudo -u postgres pg_restore --dbname=winningkart --role=winningkart --no-owner --no-privileges /tmp/wk-neon.dump"
+if ($Plain) {
+    Write-Host "Restore (PG 17 target, run inside the postgres container):"
+    Write-Host "  psql `"postgresql://winningkart:PASSWORD@localhost:5432/winningkart`" -v ON_ERROR_STOP=1 -f /tmp/wk-neon.sql"
+} else {
+    Write-Host "Transfer:      scp `"$outPath`" root@<vps-ip>:/tmp/wk-neon.dump"
+    Write-Host "Restore on VPS: sudo -u postgres pg_restore --dbname=winningkart --role=winningkart --no-owner --no-privileges /tmp/wk-neon.dump"
+}
