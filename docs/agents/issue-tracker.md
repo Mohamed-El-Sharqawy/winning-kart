@@ -33,6 +33,14 @@ Create a GitHub issue.
 
 Run `gh issue view <number> --comments`.
 
+## Working an issue
+
+Every issue an agent implements goes through both steps. Skipping either is a failed session even if the code is done.
+
+- **Assign at start**: before writing code, assign the issue to the owner. From the owner's session: `gh issue edit <n> --add-assignee "@me"` (quote `"@me"` in PowerShell or it is eaten as splatting). An issue with committed work but no assignee is a lost ticket.
+- **Tick acceptance criteria when done**: before reporting completion, verify each acceptance criterion in the issue body against the actual work, and tick every met checkbox. Fetch the body with `gh issue view <n> --json body --jq .body`, replace `- [ ]` with `- [x]` for satisfied items only, and write it back with `gh issue edit <n> --body-file <file>`. No criterion the work satisfied may still read `- [ ]` when the session ends.
+- **Leave closing to review**: the issue stays open until the owner reviews the work (see the delivery workflow in AGENTS.md).
+
 ## Wayfinding operations
 
 Used by `/wayfinder`. The **map** is a single issue with **child** issues as tickets.
