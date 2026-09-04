@@ -33,8 +33,13 @@ export interface AdUpsertRow {
   platformAdId: string;
   name: string;
   status: EntityStatus;
-  format: AdFormat | null;
+  format: AdFormat;
   creativeId: string | null;
+  videoId: string | null;
+  effectiveStoryId: string | null;
+  carouselCount: number | null;
+  thumbnailUrl: string | null;
+  thumbnailResolvedAt: Date | null;
   platformUpdatedAt: Date | null;
 }
 
@@ -239,6 +244,11 @@ export class AdAccountsModel {
           status: row.status,
           format: row.format,
           creativeId: row.creativeId,
+          videoId: row.videoId,
+          effectiveStoryId: row.effectiveStoryId,
+          carouselCount: row.carouselCount,
+          thumbnailUrl: row.thumbnailUrl,
+          thumbnailResolvedAt: row.thumbnailResolvedAt,
           platformUpdatedAt: row.platformUpdatedAt,
           updatedAt: new Date(),
         }))
@@ -248,8 +258,13 @@ export class AdAccountsModel {
         set: {
           name: sql`excluded.name`,
           status: sql`excluded.status`,
-          format: sql`coalesce(excluded.format, ${ads.format})`,
+          format: sql`excluded.format`,
           creativeId: sql`excluded.creative_id`,
+          videoId: sql`coalesce(excluded.video_id, ${ads.videoId})`,
+          effectiveStoryId: sql`coalesce(excluded.effective_story_id, ${ads.effectiveStoryId})`,
+          carouselCount: sql`coalesce(excluded.carousel_count, ${ads.carouselCount})`,
+          thumbnailUrl: sql`coalesce(excluded.thumbnail_url, ${ads.thumbnailUrl})`,
+          thumbnailResolvedAt: sql`coalesce(excluded.thumbnail_resolved_at, ${ads.thumbnailResolvedAt})`,
           platformUpdatedAt: sql`excluded.platform_updated_at`,
           updatedAt: sql`excluded.updated_at`,
         },
