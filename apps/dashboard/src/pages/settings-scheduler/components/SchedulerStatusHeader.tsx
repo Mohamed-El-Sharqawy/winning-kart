@@ -3,7 +3,7 @@ import type { SchedulerStatus } from "../types/scheduler.types";
 
 export function SchedulerStatusHeader({ status }: { status: SchedulerStatus }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-[10px] border border-volt-border bg-volt-surface px-5 py-4">
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-wk border border-volt-border bg-volt-surface px-5 py-4">
       {status.enabled ? (
         <StatusDot variant="up">Hourly sync</StatusDot>
       ) : (
