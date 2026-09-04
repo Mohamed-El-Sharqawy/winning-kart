@@ -8,7 +8,6 @@ All knobs are optional environment variables with safe defaults sized for accoun
 | `WK_META_SLOWDOWN_MS` | `400` | Sleep between Graph calls once usage is over the soft limit |
 | `WK_QUEUE_MIN_CALL_INTERVAL_MS` | `300` | Minimum gap between any two Graph calls |
 | `WK_SYNC_WINDOW_DAYS` | `30` | Days of daily insights pulled for a first-time sync |
-| `WK_DECORATE_MAX` | `200` | Max creatives decorated per sync run (remainder continues next run) |
 | `WK_DELTA_PER_ENTITY_MAX` | `25` | Max per-entity fetches in one sync before falling back to a full edge pull |
 
 Behavior notes:

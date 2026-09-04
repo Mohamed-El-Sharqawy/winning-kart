@@ -12,23 +12,13 @@ import {
 } from "@/lib/format";
 import { DataTable } from "@/shared/components/DataTable";
 import type { DataTableColumn } from "@/shared/components/DataTable";
-import { StatusDot } from "@/shared/components/StatusDot";
-import type { StatusDotVariant } from "@/shared/components/StatusDot";
+import { StatusDot, entityStatusVariant, statusWords } from "@/shared/components/StatusDot";
 import type { Campaign } from "../types/ad-accounts.types";
 import { nextSortState, sortHeaderCell, sortRows } from "./SortHeader";
 import type { SortDirection, SortState } from "./SortHeader";
 import { TablePager } from "./TablePager";
 
 const DASH = "—";
-const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
-  active: "up", paused: "neutral", archived: "neutral",
-  pending: "warning", in_review: "warning", with_issues: "down",
-};
-
-function statusVariant(status: string | null | undefined): StatusDotVariant {
-  if (status === null || status === undefined) return "neutral";
-  return STATUS_VARIANTS[status.toLowerCase()] ?? "neutral";
-}
 
 function humanize(value: string | null | undefined): string {
   if (value === null || value === undefined) return DASH;
@@ -93,7 +83,7 @@ export function CampaignsTable({ campaigns, accountId, accountName, days }: Camp
           >
             {row.name}
           </Link>
-          <StatusDot variant={statusVariant(row.status)}>{humanize(row.status)}</StatusDot>
+          <StatusDot variant={entityStatusVariant(row.status)}>{statusWords(row.status)}</StatusDot>
         </div>
       ),
     },

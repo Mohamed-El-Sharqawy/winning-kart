@@ -1,7 +1,9 @@
 import { and, desc, eq, gte, inArray, isNotNull, lte, ne, notLike, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import { adAccounts, ads, adSets, campaigns, dailyInsights, db, syncJobs, syncRuns } from "@wk/db";
 import type { AdAccount } from "@wk/db";
 import type {
+  AdFormat,
   CampaignRecord,
   EntityStatus,
   InsightRecord,
@@ -31,7 +33,7 @@ export interface AdUpsertRow {
   platformAdId: string;
   name: string;
   status: EntityStatus;
-  format: string | null;
+  format: AdFormat | null;
   creativeId: string | null;
   platformUpdatedAt: Date | null;
 }
@@ -39,6 +41,11 @@ export interface AdUpsertRow {
 export interface PlatformEntityState {
   id: string;
   platformUpdatedAt: Date | null;
+}
+
+export interface EntityStatusPatch {
+  platformId: string;
+  status: EntityStatus;
 }
 
 export interface InsightUpsertRow {
@@ -241,48 +248,13 @@ export class AdAccountsModel {
         set: {
           name: sql`excluded.name`,
           status: sql`excluded.status`,
-          format: sql`excluded.format`,
+          format: sql`coalesce(excluded.format, ${ads.format})`,
           creativeId: sql`excluded.creative_id`,
           platformUpdatedAt: sql`excluded.platform_updated_at`,
           updatedAt: sql`excluded.updated_at`,
         },
       })
       .returning();
-  }
-
-  async updateAdCreative(
-    accountId: string,
-    platformAdId: string,
-    patch: {
-      thumbnailUrl?: string;
-      previewImageUrl?: string;
-      bodyCopy?: string;
-      format?: string;
-    }
-  ): Promise<void> {
-    if (
-      patch.thumbnailUrl === undefined &&
-      patch.previewImageUrl === undefined &&
-      patch.bodyCopy === undefined &&
-      patch.format === undefined
-    ) {
-      return;
-    }
-    const accountAdSetIds = db
-      .select({ id: adSets.id })
-      .from(adSets)
-      .innerJoin(campaigns, eq(campaigns.id, adSets.campaignId))
-      .where(eq(campaigns.adAccountId, accountId));
-    await db
-      .update(ads)
-      .set({
-        ...(patch.thumbnailUrl !== undefined ? { thumbnailUrl: patch.thumbnailUrl } : {}),
-        ...(patch.previewImageUrl !== undefined ? { previewImageUrl: patch.previewImageUrl } : {}),
-        ...(patch.bodyCopy !== undefined ? { bodyCopy: patch.bodyCopy } : {}),
-        ...(patch.format !== undefined ? { format: patch.format } : {}),
-        updatedAt: new Date(),
-      })
-      .where(and(eq(ads.platformAdId, platformAdId), inArray(ads.adSetId, accountAdSetIds)));
   }
 
   async upsertInsights(
@@ -521,6 +493,32 @@ export class AdAccountsModel {
       .orderBy(campaigns.name);
   }
 
+  updateCampaignStatuses(adAccountId: string, patches: EntityStatusPatch[]): Promise<void> {
+    return applyStatusPatches(patches, (values) => sql`
+      update campaigns as t set status = v.status
+      from (values ${values}) as v(platform_id, status)
+      where t.platform_campaign_id = v.platform_id and t.ad_account_id = ${adAccountId}
+    `);
+  }
+
+  updateAdSetStatuses(adAccountId: string, patches: EntityStatusPatch[]): Promise<void> {
+    return applyStatusPatches(patches, (values) => sql`
+      update ad_sets as t set status = v.status
+      from (values ${values}) as v(platform_id, status), campaigns c
+      where t.platform_adset_id = v.platform_id
+        and c.id = t.campaign_id and c.ad_account_id = ${adAccountId}
+    `);
+  }
+
+  updateAdStatuses(adAccountId: string, patches: EntityStatusPatch[]): Promise<void> {
+    return applyStatusPatches(patches, (values) => sql`
+      update ads as t set status = v.status
+      from (values ${values}) as v(platform_id, status), ad_sets s, campaigns c
+      where t.platform_ad_id = v.platform_id
+        and s.id = t.ad_set_id and c.id = s.campaign_id and c.ad_account_id = ${adAccountId}
+    `);
+  }
+
   async campaignStates(adAccountId: string): Promise<Map<string, PlatformEntityState>> {
     const rows = await db
       .select({
@@ -559,17 +557,6 @@ export class AdAccountsModel {
       .where(eq(campaigns.adAccountId, adAccountId));
     return new Map(rows.map((row) => [row.platformId, toState(row)]));
   }
-
-  async listAdsByAccount(adAccountId: string): Promise<AdRow[]> {
-    const rows = await db
-      .select({ ad: ads })
-      .from(ads)
-      .innerJoin(adSets, eq(ads.adSetId, adSets.id))
-      .innerJoin(campaigns, eq(adSets.campaignId, campaigns.id))
-      .where(eq(campaigns.adAccountId, adAccountId))
-      .orderBy(ads.updatedAt);
-    return rows.map((row) => row.ad);
-  }
 }
 
 function toState(row: {
@@ -577,4 +564,20 @@ function toState(row: {
   platformUpdatedAt: Date | null;
 }): PlatformEntityState {
   return { id: row.id, platformUpdatedAt: row.platformUpdatedAt };
+}
+
+const STATUS_PATCH_CHUNK = 1000;
+
+async function applyStatusPatches(
+  patches: EntityStatusPatch[],
+  statement: (values: SQL) => SQL
+): Promise<void> {
+  for (let index = 0; index < patches.length; index += STATUS_PATCH_CHUNK) {
+    const chunk = patches.slice(index, index + STATUS_PATCH_CHUNK);
+    const values = sql.join(
+      chunk.map((patch) => sql`(${patch.platformId}::text, ${patch.status}::text)`),
+      sql`, `
+    );
+    await db.execute(statement(values));
+  }
 }

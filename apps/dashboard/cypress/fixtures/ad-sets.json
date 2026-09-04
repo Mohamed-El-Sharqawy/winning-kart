@@ -24,7 +24,7 @@
       "id": "as_nour_retarget_links",
       "name": "Nour Retargeting - Link Clicks",
       "accountId": "act_nour_1",
-      "status": "ACTIVE",
+      "status": "CAMPAIGN_PAUSED",
       "optimizationGoal": "Link Clicks",
       "spend": 7210.4,
       "revenue": 4326.24,
