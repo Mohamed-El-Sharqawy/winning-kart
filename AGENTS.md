@@ -10,3 +10,17 @@ Pre-PR QA gate: run `bun run typecheck` and `bun run build` from the repo root, 
 - Page-locality: a page owns its components, services, DTOs, transformers, and types under `src/pages/<page>/`; shared code goes under `src/shared/`.
 - API success envelope is always `{ "data": ... }` (see [docs/api-conventions.md](docs/api-conventions.md)).
 - API errors are RFC 9457 problem+json, never plain text or `{ "error": ... }`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default triage labels: label string equals role name. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
