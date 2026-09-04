@@ -96,8 +96,14 @@ beyond correct DNS.
 
 ## First run: migrate, then decide about seed
 
-Apply Drizzle migrations from a checkout of this repository on your operator machine, pointing
-at the VPS Postgres (drizzle reads `DIRECT_DATABASE_URL`, falling back to `DATABASE_URL`):
+The api image applies pending Drizzle migrations automatically at container start (its
+entrypoint runs `drizzle-kit migrate` from `packages/db` before the server boots; a failed
+migration stops the container instead of starting an api against an old schema). No manual
+migrate step is required on a fresh deploy.
+
+Manual fallback (restore recovery, or migrating before the container can start), from a
+checkout of this repository on your operator machine, pointing at the VPS Postgres (drizzle
+reads `DIRECT_DATABASE_URL`, falling back to `DATABASE_URL`):
 
 ```bash
 DIRECT_DATABASE_URL='postgresql://winningkart:STRONG_PASSWORD@<VPS_IP>:5432/winningkart' bun run db:migrate
@@ -105,6 +111,14 @@ DIRECT_DATABASE_URL='postgresql://winningkart:STRONG_PASSWORD@<VPS_IP>:5432/winn
 
 If port 5432 is not exposed publicly, tunnel first: `ssh -L 5433:localhost:5432 root@<VPS_IP>`
 and use `...@localhost:5433/...`.
+
+Do not run `bun run db:generate` against production — generate is a development step that
+writes new SQL files from `schema.ts`; the committed files under `packages/db/drizzle/` are
+the source of truth that deploys apply.
+
+Startup migrations are safe for the single api instance Coolify deploys. If you ever scale
+the api to more than one replica, concurrent starts could race on the same migration; run
+the manual migrate once per release instead and keep replicas from running it.
 
 Seed decision:
 
@@ -144,7 +158,8 @@ has never been restored is unverified.
 
 1. Push to the repository branch Coolify tracks.
 2. Redeploy from Coolify; both images rebuild and restart.
-3. Run `bun run db:migrate` (as above) when the release includes migrations, before or
-   immediately after the redeploy. Single-operator downtime of a few seconds is expected.
+3. Migrations included in the release apply automatically during api startup, before the
+   server accepts traffic. If you must migrate manually instead (replica setups, debugging),
+   use the fallback command from the first-run section.
 
 For moving existing data from Neon to this VPS, follow `docs/migration-runbook.md`.

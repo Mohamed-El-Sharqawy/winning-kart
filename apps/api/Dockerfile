@@ -20,4 +20,4 @@ COPY --from=build /app/packages ./packages
 ENV NODE_ENV=production
 USER bun
 EXPOSE 3000
-CMD ["bun", "dist/index.js"]
+CMD ["sh", "-c", "cd packages/db && bun run migrate && cd ../.. && exec bun dist/index.js"]
