@@ -23,12 +23,16 @@ One domain serves everything:
 3. A DNS A record pointing your domain (for example `wk.example.com`) at the VPS IP.
 4. Bun available on your operator machine (for migrations and key generation).
 
-## Postgres on the host
+## Postgres 18 on the host
 
-Install and prepare Postgres on the VPS:
+Neon runs PostgreSQL 18, and a custom-format dump made by pg_dump 18 restores only with
+pg_restore 18 or newer — the distro's stock `postgresql` package is older. Install from PGDG:
 
 ```bash
-sudo apt update && sudo apt install -y postgresql
+sudo install -d /usr/share/postgresql-common/pgdg
+sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+. /etc/os-release && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $VERSION_CODENAME-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+sudo apt update && sudo apt install -y postgresql-18
 sudo -u postgres psql -c "CREATE ROLE winningkart WITH LOGIN PASSWORD 'STRONG_PASSWORD';"
 sudo -u postgres psql -c "CREATE DATABASE winningkart OWNER winningkart;"
 ```
@@ -45,23 +49,47 @@ Then `sudo systemctl restart postgresql`. The app connects as
 `postgresql://winningkart:STRONG_PASSWORD@172.17.0.1:5432/winningkart` from inside containers.
 `172.17.0.1` is the default Docker bridge gateway; adjust if your setup differs.
 
-## Configure Coolify
+## Deploy as two Dockerfile apps (recommended)
 
-1. In Coolify: New Resource -> App -> Docker Compose, import this Git repository.
-   Coolify builds from the root `docker-compose.yml`.
-2. Set the environment variables (see `.env.production.example`) in the Coolify environment
+Deploy the two applications as separate Coolify Dockerfile resources rather than one
+compose stack. With Cloudflare proxying in front, compose-based deploys in Coolify
+restart containers instead of recreating them, so the proxy keeps hitting a stale target
+and you see 504s until you redeploy several times; per-app Dockerfile deploys do not
+hit this.
+
+Both Dockerfiles COPY from the repository root workspace, so set the build context to
+`/` in each resource:
+
+1. **api**: New Resource -> App -> Dockerfile. Dockerfile path `apps/api/Dockerfile`,
+   build context `/`, port 3000, domain `https://<domain>/api`, health check path
+   `/health`. Paste the environment from `.env.production.example` in the environment
    editor. Generate the secrets on your operator machine:
 
    ```bash
    bun -e "console.log(crypto.randomBytes(32).toString('hex'))"
    ```
 
-   Use one output for `ENCRYPTION_KEY` and a second for `JWT_SECRET`.
+   Use one output for `ENCRYPTION_KEY` and a second for `JWT_SECRET`. Set `DATABASE_URL`
+   to the VPS Postgres URL from the previous section.
+2. **dashboard**: New Resource -> App -> Dockerfile. Dockerfile path
+   `apps/dashboard/Dockerfile`, build context `/`, port 80, domain `https://<domain>`.
 
-3. Set `WK_HOST` to your domain (for example `wk.example.com`). The Traefik labels in the
-   compose file use it for routing; Coolify's proxy issues the Let's Encrypt certificate
-   automatically on first deploy. No certificate action is needed beyond correct DNS.
-4. Deploy. Coolify builds both images and starts the stack.
+`WK_HOST` is not needed in this mode (routing comes from the domains set per app; it is
+only read by the compose file's Traefik labels). The dashboard's nginx proxies `/api` and
+`/health` to `http://api:3000`, so both apps must sit on a shared docker network where
+the api container resolves as `api` (Coolify's `coolify` network plus a network alias or
+resource name of `api` on the api app).
+
+### docker compose alternative
+
+New Resource -> App -> Docker Compose, import this Git repository; Coolify builds from
+the root `docker-compose.yml`. Set the same environment variables, set `WK_HOST` to your
+domain (the compose Traefik labels read it), and deploy. Subject to the Cloudflare 504
+issue described above — prefer the two-app path.
+
+Coolify's proxy (Traefik) exposes the `websecure` entrypoint and the `letsencrypt`
+resolver; the certificate is issued automatically on first deploy for both deploy modes.
+No certificate action is needed beyond correct DNS.
 
 ## First run: migrate, then decide about seed
 

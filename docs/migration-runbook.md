@@ -6,10 +6,16 @@ VPS. Total expected downtime: minutes. Run it in a quiet window.
 Placeholders used below: `<vps-ip>`, `<dump-path>`, and Neon values `<neon-user>`,
 `<neon-password>`, `<neon-host>`, `<neon-db>`.
 
-## 1. Provision Postgres on the VPS
+## 1. Provision Postgres 18 on the VPS
+
+Neon runs PostgreSQL 18, and a custom-format dump made by pg_dump 18 restores only with
+pg_restore 18 or newer. Ubuntu's stock `postgresql` package is older, so install from PGDG:
 
 ```bash
-sudo apt update && sudo apt install -y postgresql
+sudo install -d /usr/share/postgresql-common/pgdg
+sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+. /etc/os-release && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $VERSION_CODENAME-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+sudo apt update && sudo apt install -y postgresql-18
 sudo -u postgres psql -c "CREATE ROLE winningkart WITH LOGIN PASSWORD 'STRONG_PASSWORD';"
 sudo -u postgres psql -c "CREATE DATABASE winningkart OWNER winningkart;"
 ```
@@ -20,39 +26,52 @@ Configure `listen_addresses = 'localhost,172.17.0.1'` in `postgresql.conf` and a
 
 ## 2. Stop the api (Coolify pause)
 
-In Coolify, stop the api service (or the whole stack). This stops all writes so the dump is
-consistent with what the app last saw.
+In Coolify, stop the api application (with per-app Dockerfile deploys: stop the api
+resource; with the compose stack: stop the api service or the whole stack). This stops
+all writes so the dump is consistent with what the app last saw. Skip this on a first
+deploy before anything has run.
 
 ## 3. Dump Neon and restore into self-hosted Postgres
 
-Dump using the **direct** (non-pooler) Neon URL from `.env`: `DIRECT_DATABASE_URL` is the one
-whose host has **no `-pooler` segment** (for example `ep-small-morning-b2ntckch.c-6...neon.tech`,
-not `ep-small-morning-b2ntckch-pooler.c-6...neon.tech`).
+On the operator machine (needs `pg_dump` 18+ on PATH and `DIRECT_DATABASE_URL` in `.env`),
+run the dump script. It uses the **direct** (non-pooler) Neon host, strips the
+`channel_binding=require` parameter, keeps `sslmode=require`, and writes `wk-neon.dump`
+at the repo root:
 
-Strip the `channel_binding=require` query parameter before running `pg_dump`: Neon URLs carry
-`?sslmode=require&channel_binding=require`, and self-hosted tooling and Postgres do not need
-or use channel binding — unknown parameters make libpq fail. Keep `sslmode=require` for the
-Neon connection.
+```bash
+pwsh scripts/db/dump-neon.ps1
+```
 
-On the operator machine:
+Manual equivalent, with both gotchas applied by hand:
 
 ```bash
 pg_dump "postgresql://<neon-user>:<neon-password>@<neon-host>/<neon-db>?sslmode=require" \
   --format=custom --no-owner --no-privileges --file=wk-neon.dump
 ```
 
-Transfer and restore on the VPS:
+Transfer and restore on the VPS. `--no-owner` drops the source role (Neon's
+`neondb_owner` does not exist here — without it the restore spews 21 `role "neondb_owner"
+does not exist` errors) and `--role=winningkart` creates every object owned by the app
+role. Without `--role`, objects land under `postgres` and the api gets permission denied
+on first query:
 
 ```bash
 scp wk-neon.dump root@<vps-ip>:/tmp/wk-neon.dump
 ssh root@<vps-ip>
-sudo -u postgres pg_restore --dbname=winningkart --no-owner --no-privileges /tmp/wk-neon.dump
+sudo -u postgres pg_restore --dbname=winningkart --role=winningkart --no-owner --no-privileges /tmp/wk-neon.dump
+sudo -u postgres psql -d winningkart -c '\dt public.*' -c 'SELECT count(*) FROM users;' -c 'SELECT count(*) FROM drizzle.__drizzle_migrations;'
+```
+
+The restore targets a fresh empty database. To re-run it, recreate the database first:
+
+```bash
+sudo -u postgres psql -c 'DROP DATABASE winningkart;' -c 'CREATE DATABASE winningkart OWNER winningkart;'
 ```
 
 ## 4. Update DATABASE_URL in Coolify
 
-Set the api service environment to the self-hosted URL, with all Neon query parameters
-removed (no `sslmode`, no `channel_binding` — the connection stays on the VPS):
+Set the api application's environment to the self-hosted URL, with all Neon query
+parameters removed (no `sslmode`, no `channel_binding` — the connection stays on the VPS):
 
 ```text
 DATABASE_URL=postgresql://winningkart:STRONG_PASSWORD@172.17.0.1:5432/winningkart

@@ -6,6 +6,7 @@ build/
 *.local
 .DS_Store
 *.log
+*.dump
 coverage/
 cypress/videos/
 cypress/screenshots/
