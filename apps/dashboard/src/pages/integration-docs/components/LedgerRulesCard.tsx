@@ -13,8 +13,8 @@ export function LedgerRulesCard() {
         <li>
           <span className="font-medium text-volt-text">Refunds are your call.</span> value must
           always be greater than 0 — negative amounts are rejected. The ledger records what you
-          send: there is no netting or reversal on this side. The optional status field is stored
-          as-is and does not adjust totals. To make refunds visible, send the events that represent
+          send: there is no netting or reversal on this side. The optional status field is accepted
+          and does not adjust totals. To make refunds visible, send the events that represent
           your reality — for example export refund-adjusted figures and reconcile on your side.
         </li>
         <li>

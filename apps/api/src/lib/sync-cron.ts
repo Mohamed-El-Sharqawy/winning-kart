@@ -10,7 +10,9 @@ export function startSyncCron(): void {
     return;
   }
   const tick = (): void => {
-    void runSyncTick();
+    runSyncTick().catch((error) => {
+      console.error("sync tick failed", error);
+    });
   };
   const bunModuleName = "bun";
   void import(bunModuleName)

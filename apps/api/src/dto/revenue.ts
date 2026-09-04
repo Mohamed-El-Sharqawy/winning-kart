@@ -3,7 +3,7 @@ import { t } from "elysia";
 export const ingestRevenueDto = t.Object({
   source_order_id: t.String({ minLength: 1, maxLength: 200 }),
   timestamp: t.String({ minLength: 1 }),
-  value: t.Number({ exclusiveMinimum: 0 }),
+  value: t.Number({ exclusiveMinimum: 0, maximum: 999999999999 }),
   currency: t.Optional(t.String({ pattern: "^[A-Za-z]{3}$" })),
   status: t.Optional(
     t.Union([t.Literal("paid"), t.Literal("refunded"), t.Literal("cancelled")])

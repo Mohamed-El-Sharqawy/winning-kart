@@ -13,7 +13,7 @@ function TopbarBell() {
     <Link
       to="/alerts"
       search={{ tab: "alerts" }}
-      className="inline-flex items-center gap-1.5 rounded-[10px] px-2 py-1 text-sm text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text"
+      className="inline-flex items-center gap-1.5 rounded-wk px-2 py-1 text-sm text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text"
     >
       Alerts
       {count > 0 ? (

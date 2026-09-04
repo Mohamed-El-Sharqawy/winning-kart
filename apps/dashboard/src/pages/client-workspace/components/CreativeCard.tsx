@@ -44,7 +44,7 @@ export function CreativeCard({ creative, onSelect }: { creative: Creative; onSel
       }}
       tabIndex={onSelect ? 0 : undefined}
       className={cn(
-        "flex flex-col overflow-hidden rounded-[10px] border border-volt-border bg-volt-surface transition-colors hover:border-volt-border-2",
+        "flex flex-col overflow-hidden rounded-wk border border-volt-border bg-volt-surface transition-colors hover:border-volt-border-2",
         onSelect && "cursor-pointer",
       )}
     >

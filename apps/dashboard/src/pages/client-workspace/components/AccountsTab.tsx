@@ -111,7 +111,7 @@ export function AccountsTab({ client }: { client: Client }) {
         </>
       )}
       {run !== null && run !== undefined && runActive ? (
-        <div className="rounded-[10px] border border-volt-border bg-volt-surface p-4">
+        <div className="rounded-wk border border-volt-border bg-volt-surface p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <span className="text-sm font-medium text-volt-text">
               {backfilling

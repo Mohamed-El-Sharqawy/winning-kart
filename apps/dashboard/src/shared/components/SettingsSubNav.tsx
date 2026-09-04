@@ -21,7 +21,7 @@ export function SettingsSubNav() {
             to={page.to}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "border-b-2 py-2 text-sm transition-colors",
+              "border-b py-2 text-sm transition-colors",
               active
                 ? "border-volt-primary font-medium text-volt-text"
                 : "border-transparent text-volt-text-3 hover:text-volt-text",

@@ -16,7 +16,11 @@ export function sessionQueryOptions() {
     queryKey: SESSION_QUERY_KEY,
     queryFn: async (): Promise<Session | null> => {
       const { data: body, error } = await api.auth.me.get();
-      if (error) return null;
+      if (error) {
+        const status = (error as { status?: number }).status;
+        if (status === 401) return null;
+        throw new Error("Session check failed");
+      }
       const payload = (body as unknown as { data: MeDto }).data;
       return toSession(payload);
     },
@@ -58,7 +62,7 @@ export function useLogout() {
       return payload;
     },
     onSuccess: () => {
-      queryClient.setQueryData(SESSION_QUERY_KEY, null);
+      queryClient.clear();
     },
   });
 }

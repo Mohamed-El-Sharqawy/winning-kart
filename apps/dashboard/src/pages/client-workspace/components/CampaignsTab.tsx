@@ -12,7 +12,7 @@ import { CampaignsTable } from "./CampaignsTable";
 import { SkeletonRows } from "./SkeletonRows";
 
 const SELECT_CLASS =
-  "rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
+  "rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
 
 export interface CampaignsTabProps {
   client: Client;

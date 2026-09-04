@@ -22,7 +22,7 @@ export function Select({ label, value, options, onChange, disabled = false, clas
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none disabled:opacity-50"
+        className="rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none disabled:opacity-50"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

@@ -10,7 +10,7 @@ interface KpiTileProps {
 
 function KpiTile({ label, value, sub }: KpiTileProps) {
   return (
-    <div className="rounded-[10px] border border-volt-border bg-volt-surface px-5 py-4">
+    <div className="rounded-wk border border-volt-border bg-volt-surface px-5 py-4">
       <p className="text-xs font-medium uppercase tracking-wider text-volt-text-3">{label}</p>
       <p className="tabular mt-2 text-2xl font-semibold text-volt-text">{value}</p>
       <p className="mt-1.5 text-xs text-volt-text-3">{sub}</p>
@@ -32,7 +32,7 @@ export function PortalKpis({ kpis }: PortalKpisProps) {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <KpiTile label="Spend" value={formatAed(kpis.spend)} sub="invested in your campaigns" />
       <KpiTile label="Revenue" value={formatAed(kpis.revenue)} sub="attributed to your ads" />
-      <div className="rounded-[10px] border border-volt-border bg-volt-surface px-5 py-4">
+      <div className="rounded-wk border border-volt-border bg-volt-surface px-5 py-4">
         <p className="text-xs font-medium uppercase tracking-wider text-volt-text-3">ROAS</p>
         <p className={cn("tabular mt-2 text-3xl font-semibold", roasTone(kpis.roas))}>
           {formatRoas(kpis.roas)}

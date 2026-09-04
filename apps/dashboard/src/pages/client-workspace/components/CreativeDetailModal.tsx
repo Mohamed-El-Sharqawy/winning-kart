@@ -11,7 +11,7 @@ import type { Creative } from "../types/creatives.types";
 const DASH = "—";
 
 const GHOST_ANCHOR_CLASS =
-  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text";
+  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-wk border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text";
 
 const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
   active: "up",
@@ -62,7 +62,7 @@ export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetail
   return (
     <Modal title={creative.name} onClose={onClose} width="lg">
       <div className="flex flex-col gap-4">
-        <div className="relative flex items-center justify-center overflow-hidden rounded-[10px] border border-volt-border bg-volt-surface-2">
+        <div className="relative flex items-center justify-center overflow-hidden rounded-wk border border-volt-border bg-volt-surface-2">
           {showPreviewImage ? (
             <img
               src={creative.previewImageUrl ?? undefined}
@@ -112,7 +112,7 @@ export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetail
           <MetricCell label="Spend share" value={share ?? DASH} />
         </dl>
         {creative.fatigue && fatigue ? (
-          <div className="flex items-start gap-2 rounded-[10px] border border-volt-border bg-volt-surface-2 px-3 py-2">
+          <div className="flex items-start gap-2 rounded-wk border border-volt-border bg-volt-surface-2 px-3 py-2">
             <Badge variant={fatigue.badgeVariant}>{fatigue.label}</Badge>
             <span className="text-xs text-volt-text-3">{creative.fatigue.reason}</span>
           </div>

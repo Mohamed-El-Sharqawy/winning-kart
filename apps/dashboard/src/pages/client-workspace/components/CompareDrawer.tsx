@@ -14,22 +14,28 @@ interface MetricDef {
 }
 
 const METRIC_GROUPS: Array<{ title: string; metrics: MetricDef[] }> = [
-  { title: "Volume", metrics: [
-    { key: "spend", label: "Spend", kind: "money" },
-    { key: "reach", label: "Reach", kind: "number" },
-    { key: "frequency", label: "Frequency", kind: "decimal" },
-  ] },
-  { title: "Efficiency", metrics: [
-    { key: "cpm", label: "CPM", kind: "money", inverted: true },
-    { key: "cpc", label: "CPC", kind: "money", inverted: true },
-    { key: "ctr", label: "CTR", kind: "pct" },
-  ] },
-  { title: "Conversion", metrics: [
-    { key: "purchases", label: "Purchases", kind: "number" },
-    { key: "cpa", label: "CPA", kind: "money", inverted: true },
-    { key: "revenue", label: "Revenue", kind: "money" },
-    { key: "roas", label: "ROAS", kind: "roas" },
-  ] },
+  {
+    title: "Volume", metrics: [
+      { key: "spend", label: "Spend", kind: "money" },
+      { key: "reach", label: "Reach", kind: "number" },
+      { key: "frequency", label: "Frequency", kind: "decimal" },
+    ]
+  },
+  {
+    title: "Efficiency", metrics: [
+      { key: "cpm", label: "CPM", kind: "money", inverted: true },
+      { key: "cpc", label: "CPC", kind: "money", inverted: true },
+      { key: "ctr", label: "CTR", kind: "pct" },
+    ]
+  },
+  {
+    title: "Conversion", metrics: [
+      { key: "purchases", label: "Purchases", kind: "number" },
+      { key: "cpa", label: "CPA", kind: "money", inverted: true },
+      { key: "revenue", label: "Revenue", kind: "money" },
+      { key: "roas", label: "ROAS", kind: "roas" },
+    ]
+  },
 ];
 
 function formatMetric(def: MetricDef, value: number | null, currency: string): string {
@@ -85,7 +91,7 @@ export function CompareDrawer({ adSets, open, onClose }: CompareDrawerProps) {
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <aside
-        className="absolute inset-y-0 right-0 flex w-[520px] max-w-full flex-col border-l border-volt-border bg-volt-surface"
+        className="absolute inset-y-0 right-0 flex w-130 max-w-full flex-col border-l border-volt-border bg-volt-surface"
         role="dialog"
         aria-modal="true"
         aria-label="Compare ad sets"
@@ -98,7 +104,7 @@ export function CompareDrawer({ adSets, open, onClose }: CompareDrawerProps) {
         </header>
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {mixedGoals ? (
-            <p className="mb-4 rounded-[10px] border border-volt-border bg-volt-down-tint/30 px-4 py-3 text-[13px] text-volt-text-2">
+            <p className="mb-4 rounded-wk border border-volt-border bg-volt-down-tint/30 px-4 py-3 text-[13px] text-volt-text-2">
               Ad sets optimize for different events — comparison is indicative only
             </p>
           ) : null}

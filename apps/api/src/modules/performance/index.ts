@@ -24,6 +24,14 @@ async function requireUser(headers: Record<string, string | undefined>): Promise
   return user;
 }
 
+async function requireAgency(headers: Record<string, string | undefined>): Promise<SafeUser> {
+  const user = await requireUser(headers);
+  if (user.role === "client") {
+    throw problem(403, "FORBIDDEN", "Agency role required");
+  }
+  return user;
+}
+
 const idParamsDto = t.Object({ id: t.String() });
 const campaignParamsDto = t.Object({ id: t.String(), campaignId: t.String() });
 
@@ -31,7 +39,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/ad-sets",
     async ({ params, query, headers }) => {
-      await requireUser(headers);
+      await requireAgency(headers);
       return { data: await service.listAdSets(params.id, resolveWindow(query)) };
     },
     { params: idParamsDto, query: performanceWindowQueryDto, response: { 200: performanceAdSetsDto } }
@@ -39,7 +47,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/ads",
     async ({ params, query, headers }) => {
-      await requireUser(headers);
+      await requireAgency(headers);
       return { data: await service.listAds(params.id, resolveWindow(query), query.adSetId) };
     },
     { params: idParamsDto, query: performanceAdsQueryDto, response: { 200: performanceAdsDto } }
@@ -47,7 +55,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/campaigns/:campaignId",
     async ({ params, query, headers }) => {
-      await requireUser(headers);
+      await requireAgency(headers);
       return {
         data: await service.campaignDetail(params.id, params.campaignId, resolveWindow(query)),
       };
@@ -57,7 +65,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/fatigue-summary",
     async ({ params, query, headers }) => {
-      await requireUser(headers);
+      await requireAgency(headers);
       return { data: await service.fatigueSummary(params.id, resolveWindow(query)) };
     },
     { params: idParamsDto, query: performanceWindowQueryDto, response: { 200: fatigueSummaryDto } }

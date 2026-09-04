@@ -58,7 +58,7 @@ export function InsightsRegion() {
         <Link
           to="/alerts"
           search={{ tab: "recommendations" }}
-          className="rounded-[10px] border border-transparent px-3 py-1.5 text-sm font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text"
+          className="rounded-wk border border-transparent px-3 py-1.5 text-sm font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text"
         >
           Show all
         </Link>
@@ -74,7 +74,7 @@ export function InsightsRegion() {
           {list.map((insight) => (
             <article
               key={insight.id}
-              className="flex flex-col gap-2 rounded-[10px] border border-volt-border bg-volt-surface px-5 py-4"
+              className="flex flex-col gap-2 rounded-wk border border-volt-border bg-volt-surface px-5 py-4"
             >
               <span className="inline-flex items-center gap-2">
                 <span

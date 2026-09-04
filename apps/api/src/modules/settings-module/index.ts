@@ -98,7 +98,7 @@ export const settingsModule = new Elysia()
       },
       request: requestContext(headers),
     });
-    return bundle;
+    return { data: bundle };
   })
   .post(
     "/admin/clients/:id/delete",

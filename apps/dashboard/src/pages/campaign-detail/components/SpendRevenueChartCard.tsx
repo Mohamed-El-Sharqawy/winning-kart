@@ -6,7 +6,7 @@ import { LineChart } from "@/shared/components/LineChart";
 import { dayLabel } from "./day-label";
 import type { CampaignDayPoint } from "../types/campaign-detail.types";
 
-const SKELETON_CLASS = "h-[260px] animate-pulse rounded-[10px] bg-volt-surface-2";
+const SKELETON_CLASS = "h-[260px] animate-pulse rounded-wk bg-volt-surface-2";
 
 export interface SpendRevenueChartCardProps {
   points: CampaignDayPoint[];

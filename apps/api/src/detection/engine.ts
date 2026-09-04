@@ -82,7 +82,8 @@ export async function runDetectionForAccount(accountId: string): Promise<Detecti
       });
     }
     return { alerts: alertCandidates.length, insights: insightCandidates.length };
-  } catch {
+  } catch (error) {
+    console.error("detection run failed", error);
     return { alerts: 0, insights: 0 };
   }
 }

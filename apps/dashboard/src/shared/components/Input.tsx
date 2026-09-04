@@ -9,7 +9,7 @@ export function Input({ label, className, id, ...props }: InputProps) {
     <input
       id={id}
       className={cn(
-        "w-full rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text placeholder:text-volt-text-3 focus:border-volt-primary focus:outline-none",
+        "w-full rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text placeholder:text-volt-text-3 focus:border-volt-primary focus:outline-none",
         className,
       )}
       {...props}

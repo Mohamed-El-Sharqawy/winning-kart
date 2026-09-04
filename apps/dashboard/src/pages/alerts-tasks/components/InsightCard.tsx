@@ -21,7 +21,7 @@ export function InsightCard({ insight }: { insight: Insight }) {
   }));
 
   return (
-    <section className="flex flex-col gap-3 rounded-[10px] border border-volt-border bg-volt-surface px-5 py-4">
+    <section className="flex flex-col gap-3 rounded-wk border border-volt-border bg-volt-surface px-5 py-4">
       <div className="flex items-center gap-3">
         <SeverityChip severity={insight.severity} />
         <span className="font-mono text-xs tabular-nums text-volt-text-3">

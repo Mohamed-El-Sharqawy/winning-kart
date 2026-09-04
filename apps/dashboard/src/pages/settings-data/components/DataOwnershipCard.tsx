@@ -1,7 +1,7 @@
 import { Card } from "@/shared/components/Card";
 
 const EXPORT_CLASS =
-  "mt-4 inline-flex w-fit cursor-pointer items-center rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-4 py-2 text-sm font-semibold text-volt-text transition-colors hover:border-volt-primary";
+  "mt-4 inline-flex w-fit cursor-pointer items-center rounded-wk border border-volt-border-2 bg-volt-surface-2 px-4 py-2 text-sm font-semibold text-volt-text transition-colors hover:border-volt-primary";
 
 export function DataOwnershipCard() {
   return (

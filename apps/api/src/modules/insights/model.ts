@@ -37,7 +37,8 @@ export class InsightsModel {
       .from(insights)
       .innerJoin(clients, eq(insights.clientId, clients.id))
       .where(clientId !== undefined ? eq(insights.clientId, clientId) : undefined)
-      .orderBy(desc(insights.priorityScore), desc(insights.lastSeenAt));
+      .orderBy(desc(insights.priorityScore), desc(insights.lastSeenAt))
+      .limit(500);
   }
 
   async findById(id: string): Promise<Insight | null> {

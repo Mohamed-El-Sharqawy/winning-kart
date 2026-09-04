@@ -557,7 +557,7 @@ export class AdAccountsService {
   ): Promise<CampaignWithMetrics[]> {
     const account = await this.model.findById(id);
     if (!account) {
-      throw accountNotFound(id);
+      return [];
     }
     const campaignRows = await this.model.listCampaignsByAccount(id);
     const metricsRows = await this.model.campaignMetricsWindow(window.since, window.until);

@@ -43,7 +43,7 @@ export function NewTaskModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <section
-        className="flex w-full max-w-md flex-col gap-4 rounded-[10px] border border-volt-border bg-volt-surface p-5"
+        className="flex w-full max-w-md flex-col gap-4 rounded-wk border border-volt-border bg-volt-surface p-5"
         onClick={(event) => event.stopPropagation()}
       >
         <h2 className="text-sm font-semibold text-volt-text">New task</h2>

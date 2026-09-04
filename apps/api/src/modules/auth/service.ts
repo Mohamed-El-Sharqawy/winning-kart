@@ -11,7 +11,7 @@ export class AuthService {
       return null;
     }
     const valid = await compare(password, user.passwordHash);
-    if (!valid) {
+    if (!valid || user.status !== "active") {
       return null;
     }
     void this.model.touchLastActive(user.id);

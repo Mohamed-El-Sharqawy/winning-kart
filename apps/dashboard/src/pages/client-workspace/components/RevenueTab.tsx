@@ -51,7 +51,7 @@ export function RevenueTab({ client }: { client: Client }) {
 
 function TierChips({ summary }: { summary: RevenueSummary | null }) {
   return (
-    <div className="rounded-[10px] border border-volt-border bg-volt-surface px-5 py-4">
+    <div className="rounded-wk border border-volt-border bg-volt-surface px-5 py-4">
       <p className="text-xs font-medium uppercase tracking-wider text-volt-text-3">Match tiers</p>
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
         <Badge variant="up">A {formatNumber(summary?.tierA.count ?? null)}</Badge>

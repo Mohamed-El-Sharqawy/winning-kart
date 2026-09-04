@@ -18,7 +18,7 @@ export function TabStrip({ tab }: { tab: AlertsTab }) {
           search={{ tab: id }}
           aria-current={id === tab ? "page" : undefined}
           className={cn(
-            "-mb-px border-b-2 pb-3 pt-1 text-sm transition-colors",
+            "-mb-px border-b pb-3 pt-1 text-sm transition-colors",
             id === tab
               ? "border-volt-primary font-medium text-volt-text"
               : "border-transparent text-volt-text-3 hover:text-volt-text",

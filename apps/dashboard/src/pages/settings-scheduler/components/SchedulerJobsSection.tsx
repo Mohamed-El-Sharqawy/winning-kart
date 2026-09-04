@@ -5,7 +5,7 @@ import type { SchedulerAccount, SchedulerJobFilters } from "../types/scheduler.t
 import { SchedulerJobsTable } from "./SchedulerJobsTable";
 
 const SELECT_CLASS =
-  "rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
+  "rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
 
 const HOUR_OPTIONS = [24, 72, 168];
 

@@ -21,7 +21,7 @@ const WORKSPACE_TABS: Record<string, WorkspaceTab> = {
   "Attribution & Revenue": "revenue",
 };
 
-const NAV_BASE_CLASS = "rounded-[10px] px-3 py-1.5 text-sm transition-colors";
+const NAV_BASE_CLASS = "rounded-wk px-3 py-1.5 text-sm transition-colors";
 const NAV_ACTIVE_CLASS = "bg-volt-primary/15 font-medium text-volt-primary-strong";
 const NAV_IDLE_CLASS = "text-volt-text-2 hover:bg-volt-surface-2 hover:text-volt-text";
 

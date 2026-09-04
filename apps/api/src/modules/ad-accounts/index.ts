@@ -47,7 +47,7 @@ export const adAccountsModule = new Elysia()
   .get(
     "/clients/:clientId/ad-accounts",
     async ({ params, headers }) => {
-      await requireUser(headers);
+      await requireAdmin(headers);
       return { data: await service.listForClient(params.clientId) };
     },
     { params: clientIdParamsDto }
@@ -73,7 +73,7 @@ export const adAccountsModule = new Elysia()
   .get(
     "/ad-accounts/:id",
     async ({ params, headers }) => {
-      await requireUser(headers);
+      await requireAdmin(headers);
       return { data: await service.detail(params.id) };
     },
     { params: idParamsDto }
@@ -81,7 +81,7 @@ export const adAccountsModule = new Elysia()
   .get(
     "/ad-accounts/:id/rate-limit",
     async ({ params, headers }) => {
-      await requireUser(headers);
+      await requireAdmin(headers);
       return { data: await service.rateLimit(params.id) };
     },
     { params: idParamsDto }
@@ -99,7 +99,7 @@ export const adAccountsModule = new Elysia()
   .get(
     "/ad-accounts/:id/sync/runs/latest",
     async ({ params, headers }) => {
-      await requireUser(headers);
+      await requireAdmin(headers);
       return { data: await latestRun(params.id) };
     },
     { params: idParamsDto }
@@ -159,7 +159,7 @@ export const adAccountsModule = new Elysia()
   .get(
     "/ad-accounts/:id/campaigns",
     async ({ params, query, headers }) => {
-      await requireUser(headers);
+      await requireAdmin(headers);
       return {
         data: await service.campaignsWithMetrics(params.id, resolveWindow(query)),
       };

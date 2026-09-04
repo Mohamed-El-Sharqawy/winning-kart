@@ -11,10 +11,10 @@ import type { AuditOutcomeFilter } from "./types/audit-logs.types";
 const DAY_OPTIONS = [7, 30, 90];
 
 const SELECT_CLASS =
-  "rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
+  "rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
 
 const EXPORT_CLASS =
-  "inline-flex cursor-pointer items-center rounded-[10px] border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text";
+  "inline-flex cursor-pointer items-center rounded-wk border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text";
 
 export function SettingsAuditPage() {
   const [actionInput, setActionInput] = useState("");

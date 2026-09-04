@@ -157,7 +157,7 @@ function roasDropAlert(accountId: string, window: EntityWindow): AlertCandidate 
     entityId: window.id,
     entityName: window.name,
     severity: drop >= ROAS_DROP_CRITICAL_DROP ? "critical" : "warning",
-    whatHappened: `ROAS fell ${percent(drop * 100)}% (${ratio(roasPrior)}x → ${ratio(roasRecent)}x) over 7 days; ${money(window.spendRecent)} at risk`,
+    whatHappened: `ROAS fell ${percent(drop * 100)}% (${ratio(roasPrior)}x to ${ratio(roasRecent)}x) over 7 days; ${money(window.spendRecent)} at risk`,
     headline: window.level === "account" ? "Account ROAS drop" : "Campaign ROAS drop",
     supportingMetrics: {
       roasPrior: round2(roasPrior),
@@ -243,7 +243,7 @@ function cpaSpikeAlert(accountId: string, window: EntityWindow): AlertCandidate 
     entityId: window.id,
     entityName: window.name,
     severity: spike >= CPA_SPIKE_CRITICAL_RATIO ? "critical" : "warning",
-    whatHappened: `CPA up ${percent((spike - 1) * 100)}% (${money(cpaPrior)} → ${money(cpaRecent)}) on steady volume`,
+    whatHappened: `CPA up ${percent((spike - 1) * 100)}% (${money(cpaPrior)} to ${money(cpaRecent)}) on steady volume`,
     headline: "Campaign CPA spike",
     supportingMetrics: {
       cpaPrior: round2(cpaPrior),

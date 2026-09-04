@@ -23,7 +23,7 @@ export interface DataTableProps<Row> {
 
 export function DataTable<Row>({ columns, rows, rowKey, onRowClick, rowClassName }: DataTableProps<Row>) {
   return (
-    <div className="overflow-x-auto rounded-[10px] border border-volt-border bg-volt-surface">
+    <div className="overflow-x-auto rounded-wk border border-volt-border bg-volt-surface">
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-volt-border">
@@ -61,7 +61,7 @@ export function DataTable<Row>({ columns, rows, rowKey, onRowClick, rowClassName
                 >
                   {column.render
                     ? column.render(row)
-                    : String(row[column.key as keyof Row] ?? "")}
+                    : renderFallback(row[column.key as keyof Row])}
                 </td>
               ))}
             </tr>
@@ -70,4 +70,11 @@ export function DataTable<Row>({ columns, rows, rowKey, onRowClick, rowClassName
       </table>
     </div>
   );
+}
+
+function renderFallback(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  return typeof value === "object" ? "-" : String(value);
 }

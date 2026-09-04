@@ -30,7 +30,11 @@ export async function resolveSessionUser(input: SessionInput): Promise<SafeUser 
   if (!session) {
     return null;
   }
-  return model.findUserById(session.sub);
+  const user = await model.findUserById(session.sub);
+  if (!user || user.status !== "active") {
+    return null;
+  }
+  return user;
 }
 
 async function resolvePatUser(pat: string): Promise<SafeUser | null> {
@@ -39,7 +43,7 @@ async function resolvePatUser(pat: string): Promise<SafeUser | null> {
     return null;
   }
   const user = await model.findUserById(token.userId);
-  if (!user) {
+  if (!user || user.status !== "active") {
     return null;
   }
   await model.touchPatLastUsed(token.id);

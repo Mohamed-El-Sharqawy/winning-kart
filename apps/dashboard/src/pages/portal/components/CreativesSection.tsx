@@ -46,7 +46,7 @@ export function CreativesSection({ creatives }: CreativesSectionProps) {
       <h2 className="text-sm font-semibold text-volt-text">Your creatives</h2>
       <div className="flex gap-4 overflow-x-auto pb-2">
         {creatives.map((creative) => (
-          <div key={creative.id} className="w-40 shrink-0 rounded-[10px] border border-volt-border bg-volt-surface p-3">
+          <div key={creative.id} className="w-40 shrink-0 rounded-wk border border-volt-border bg-volt-surface p-3">
             <CreativeThumb creative={creative} />
             <p className="mt-2 truncate text-sm font-medium text-volt-text" title={creative.name}>
               {creative.name}

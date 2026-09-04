@@ -131,7 +131,7 @@ export function AddAccountWizard({ clientId, onClose }: { clientId: string; onCl
               value={tokenType}
               disabled={phase.kind === "creating"}
               onChange={(event) => setTokenType(event.target.value as TokenType)}
-              className="w-full rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none"
+              className="w-full rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none"
             >
               {TOKEN_TYPE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>

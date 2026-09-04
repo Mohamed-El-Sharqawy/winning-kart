@@ -147,6 +147,21 @@ function emptyTier(): TierSummary {
   return { count: 0, value: 0 };
 }
 
+function emptyRevenueView(): ClientRevenueView {
+  return {
+    events: [],
+    summary: {
+      totalValue: 0,
+      currency: "AED",
+      count: 0,
+      tierA: emptyTier(),
+      tierB: emptyTier(),
+      tierC: emptyTier(),
+      matchedPct: 0,
+    },
+  };
+}
+
 export class RevenueService {
   constructor(private readonly model: RevenueModel) {}
 
@@ -170,6 +185,9 @@ export class RevenueService {
     const tsUtc = new Date(input.body.timestamp);
     if (Number.isNaN(tsUtc.getTime())) {
       throw problem(422, "VALIDATION", "timestamp must be an ISO 8601 date string");
+    }
+    if (tsUtc.getTime() > Date.now() + DAY_MS) {
+      throw problem(422, "VALIDATION", "timestamp must not be more than 24 hours in the future");
     }
     const dedupeKey = `${source.id}:${input.body.source_order_id}`;
     const existing = await this.model.findEventByDedupeKey(dedupeKey);
@@ -236,7 +254,7 @@ export class RevenueService {
   async listClientRevenue(clientId: string, days: number): Promise<ClientRevenueView> {
     const client = await this.model.findClientById(clientId);
     if (!client) {
-      throw problem(404, "RESOURCE_NOT_FOUND", `No client with id ${clientId}`);
+      return emptyRevenueView();
     }
     const windowDays = Math.min(Math.max(
       Number.isFinite(days) ? days : DEFAULT_DAYS,

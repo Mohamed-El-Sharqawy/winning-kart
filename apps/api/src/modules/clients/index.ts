@@ -29,7 +29,7 @@ async function requireAdmin(headers: Record<string, string | undefined>): Promis
 
 export const clientsModule = new Elysia({ prefix: "/clients" })
   .get("/", async ({ headers }) => {
-    await requireUser(headers);
+    await requireAdmin(headers);
     return { data: await service.list() };
   })
   .post(
@@ -53,7 +53,7 @@ export const clientsModule = new Elysia({ prefix: "/clients" })
   .get(
     "/:clientId",
     async ({ params, headers }) => {
-      await requireUser(headers);
+      await requireAdmin(headers);
       return { data: await service.detail(params.clientId) };
     },
     { params: clientIdParamsDto }

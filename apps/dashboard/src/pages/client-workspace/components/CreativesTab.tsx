@@ -16,7 +16,7 @@ import { SkeletonRows } from "./SkeletonRows";
 import { TablePager } from "./TablePager";
 
 const SELECT_CLASS =
-  "rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
+  "rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
 const COUNTED_FLAGS: FatigueFlag[] = ["fatiguing", "bleeding", "scale"];
 const SORT_LABELS: Record<SortKey, string> = { spend: "Spend", roas: "ROAS", ctr: "CTR", frequency: "Frequency" };
 type SortKey = "spend" | "roas" | "ctr" | "frequency";
@@ -77,7 +77,7 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
   return (
     <div className="flex flex-col gap-4">
       {summary && summary.concentration !== null && concentrationPct !== null ? (
-        <p className="rounded-[10px] border border-volt-border bg-volt-surface px-4 py-3 text-[13px] text-volt-text-2">
+        <p className="rounded-wk border border-volt-border bg-volt-surface px-4 py-3 text-[13px] text-volt-text-2">
           Concentration risk:{" "}
           {summary.concentration === "top1" ? "top creative is" : "top 3 creatives are"} {concentrationPct}% of spend
         </p>

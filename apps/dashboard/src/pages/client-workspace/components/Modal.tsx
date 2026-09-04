@@ -17,7 +17,7 @@ export function Modal({ title, onClose, wide, children }: ModalProps) {
     >
       <div
         className={cn(
-          "max-h-[85vh] w-full overflow-y-auto rounded-[10px] border border-volt-border bg-volt-surface p-6",
+          "max-h-[85vh] w-full overflow-y-auto rounded-wk border border-volt-border bg-volt-surface p-6",
           wide ? "max-w-xl" : "max-w-md",
         )}
       >

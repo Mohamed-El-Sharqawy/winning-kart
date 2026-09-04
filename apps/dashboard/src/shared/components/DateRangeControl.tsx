@@ -7,7 +7,7 @@ export { defaultRange, isIsoDate, rangeLabel } from "@/shared/lib/date-range";
 export type { DateRange } from "@/shared/lib/date-range";
 
 const INPUT_CLASS =
-  "rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
+  "rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
 
 function chipClass(active: boolean): string {
   return active

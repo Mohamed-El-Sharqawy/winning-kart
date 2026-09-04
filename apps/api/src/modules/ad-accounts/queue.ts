@@ -33,7 +33,9 @@ export async function enqueueSync(adAccountId: string): Promise<{ runId: string 
     return { runId: active.id };
   }
   const run = await model.createSyncRun(randomUUID(), adAccountId);
-  void kickWorker();
+  kickWorker().catch((error) => {
+    console.error("sync worker failed", error);
+  });
   return { runId: run.id };
 }
 
@@ -66,7 +68,9 @@ export async function enqueueBackfill(
     chunksDone: 0,
     chunksTotal: months,
   });
-  void kickWorker();
+  kickWorker().catch((error) => {
+    console.error("sync worker failed", error);
+  });
   return { runId: run.id };
 }
 

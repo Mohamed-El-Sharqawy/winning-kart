@@ -17,7 +17,7 @@ const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
   pending: "warning", in_review: "warning", with_issues: "down",
 };
 const GHOST_ACTION_CLASS =
-  "inline-flex cursor-pointer items-center rounded-[10px] border border-transparent bg-transparent px-3 py-1 text-xs font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text";
+  "inline-flex cursor-pointer items-center rounded-wk border border-transparent bg-transparent px-3 py-1 text-xs font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text";
 
 function statusVariant(status: string | null | undefined): StatusDotVariant {
   if (status === null || status === undefined) return "neutral";

@@ -15,7 +15,7 @@ export function CampaignKpis({ campaign, prev, loading }: CampaignKpisProps) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
         {Array.from({ length: 6 }, (_, index) => (
-          <div key={index} className="h-[76px] animate-pulse rounded-[10px] bg-volt-surface-2" />
+          <div key={index} className="h-[76px] animate-pulse rounded-wk bg-volt-surface-2" />
         ))}
       </div>
     );
@@ -37,7 +37,7 @@ export function CampaignKpis({ campaign, prev, loading }: CampaignKpisProps) {
         value={formatMoney(campaign.revenue, campaign.currency)}
         chip={chip(campaign.revenue, prev?.revenue ?? null, true)}
       />
-      <div className="rounded-[10px] border border-volt-border bg-volt-surface px-5 py-4">
+      <div className="rounded-wk border border-volt-border bg-volt-surface px-5 py-4">
         <p className="text-xs font-medium uppercase tracking-wider text-volt-text-3">ROAS</p>
         <div className="mt-2 flex items-baseline gap-2">
           <p className={cn("tabular text-3xl font-semibold", roasTone(campaign.roas))}>

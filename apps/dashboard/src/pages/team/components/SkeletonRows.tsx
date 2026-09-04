@@ -2,7 +2,7 @@ import { cn } from "@/lib/cn";
 
 export function SkeletonRows({ rows = 6, columns = 6 }: { rows?: number; columns?: number }) {
   return (
-    <div className="overflow-x-auto rounded-[10px] border border-volt-border bg-volt-surface">
+    <div className="overflow-x-auto rounded-wk border border-volt-border bg-volt-surface">
       <div className="flex flex-col">
         {Array.from({ length: rows }).map((_, rowIndex) => (
           <div

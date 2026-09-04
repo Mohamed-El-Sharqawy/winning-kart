@@ -4,10 +4,10 @@ import { CodeBlock } from "./CodeBlock";
 
 const FIELDS: Array<[string, string, string]> = [
   ["source_order_id", "yes", "Your store's order id, 1-200 characters. Unique per source — used for deduplication."],
-  ["timestamp", "yes", "ISO 8601 date string — the order time."],
-  ["value", "yes", "Number greater than 0. The order amount."],
+  ["timestamp", "yes", "ISO 8601 date string — the order time. Must not be more than 24 hours in the future."],
+  ["value", "yes", "Number greater than 0 and at most 999999999999. The order amount."],
   ["currency", "no", "Three-letter code. Defaults to AED."],
-  ["status", "no", "paid, refunded, or cancelled. Stored as-is; it does not adjust totals."],
+  ["status", "no", "paid, refunded, or cancelled. Accepted; it does not adjust totals."],
   ["customer_ref", "no", "Up to 200 characters — for example an email hash."],
   ["click_id", "no", "Object with any of fbclid, _fbp, _fbc, gclid. Any one of them gives tier A."],
   ["utm", "no", "Object with source, medium, campaign, content, term. A matching campaign gives tier B."],

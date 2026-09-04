@@ -31,7 +31,7 @@ export function PortalShell({ clientName, days, onDaysChange, children }: Portal
               aria-label="Date range"
               value={days}
               onChange={(event) => onDaysChange(Number(event.target.value))}
-              className="rounded-[10px] border border-volt-border bg-volt-surface px-3 py-1.5 text-sm text-volt-text-2"
+              className="rounded-wk border border-volt-border bg-volt-surface px-3 py-1.5 text-sm text-volt-text-2"
             >
               {DAY_OPTIONS.map((option) => (
                 <option key={option} value={option}>

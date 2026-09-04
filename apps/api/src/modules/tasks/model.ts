@@ -70,7 +70,8 @@ export class TasksModel {
       .leftJoin(users, eq(tasks.assigneeUserId, users.id))
       .leftJoin(clients, eq(tasks.clientId, clients.id))
       .where(and(...conditions))
-      .orderBy(desc(tasks.createdAt));
+      .orderBy(desc(tasks.createdAt))
+      .limit(500);
   }
 
   async findById(id: string): Promise<Task | null> {

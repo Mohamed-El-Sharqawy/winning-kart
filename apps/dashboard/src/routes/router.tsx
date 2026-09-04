@@ -74,6 +74,8 @@ export interface CampaignDetailSearch {
 
 export type AlertsTab = "alerts" | "tasks" | "recommendations";
 
+const MAX_RANGE_DAYS = 365;
+
 export interface AlertsSearch {
   tab: AlertsTab;
 }
@@ -99,13 +101,15 @@ function readTab(value: unknown): WorkspaceTab {
 
 function readDays(value: unknown): number {
   const parsed = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 30;
+  if (!Number.isFinite(parsed) || parsed <= 0) return 30;
+  return Math.min(Math.floor(parsed), MAX_RANGE_DAYS);
 }
 
 function readOptionalNumber(value: unknown): number | undefined {
   if (value === undefined || value === null || value === "") return undefined;
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : undefined;
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return Math.min(Math.floor(parsed), MAX_RANGE_DAYS);
 }
 
 function readOptionalString(value: unknown): string | undefined {

@@ -33,7 +33,7 @@ export function Modal({ title, onClose, width = "md", children }: ModalProps) {
     >
       <div
         className={cn(
-          "max-h-[85vh] w-full overflow-y-auto rounded-[10px] border border-volt-border bg-volt-surface p-6",
+          "max-h-[85vh] w-full overflow-y-auto rounded-wk border border-volt-border bg-volt-surface p-6",
           WIDTH_CLASSES[width],
         )}
         onClick={(event) => event.stopPropagation()}

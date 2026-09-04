@@ -61,8 +61,8 @@ Fields:
 | Field | Required | Notes |
 | ----- | -------- | ----- |
 | `source_order_id` | yes | Your store's order id, 1-200 characters. Unique per source — used for deduplication. |
-| `timestamp` | yes | ISO 8601 date string, the order time. |
-| `value` | yes | Number greater than 0. The order amount. |
+| `timestamp` | yes | ISO 8601 date string, the order time. Must not be more than 24 hours in the future. |
+| `value` | yes | Number greater than 0 and at most 999999999999. The order amount. |
 | `currency` | no | Three-letter code. Defaults to `AED`. |
 | `click_id` | no | Object with any of `fbclid`, `_fbp`, `_fbc`, `gclid`. Presence of any one gives the event tier A. |
 | `utm` | no | Object with `source`, `medium`, `campaign`, `content`, `term`. A matching `campaign` gives tier B. |
@@ -155,7 +155,7 @@ Be aware of what the ledger does and does not do:
 
 - Sending a negative `value` with the same `source_order_id` is not supported — `value` must be greater than 0, and such calls are rejected with HTTP 422.
 - The ledger records what you send. There is no netting, recalculation, or reversal logic on the Winning Kart side: totals are the sum of the positive event values you sent.
-- The optional `status` field (`paid`, `refunded`, `cancelled`) is accepted and stored as-is. It does not adjust totals, and replaying the same `source_order_id` with a different `status` is deduplicated like any other replay.
+- The optional `status` field (`paid`, `refunded`, `cancelled`) is accepted. It does not adjust totals, and replaying the same `source_order_id` with a different `status` is deduplicated like any other replay.
 - If you need refunds visible in your own reporting, send the events that represent your reality — for example, stop sending orders that are later refunded, or export refund-adjusted figures from your store and reconcile there.
 
 ## Security notes

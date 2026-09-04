@@ -8,7 +8,7 @@ export function RateLimitBanner({ accountId }: { accountId: string }) {
   return (
     <div
       data-testid="rate-limit-banner"
-      className="rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-4 py-3 text-sm text-volt-text-2"
+      className="rounded-wk border border-volt-border-2 bg-volt-surface-2 px-4 py-3 text-sm text-volt-text-2"
     >
       {data.blocked ? (
         <span>

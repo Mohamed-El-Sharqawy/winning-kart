@@ -20,7 +20,7 @@ export function Select({ label, value, options, onChange, className }: SelectPro
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-[10px] border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none"
+        className="rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

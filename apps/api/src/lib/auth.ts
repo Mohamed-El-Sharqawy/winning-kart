@@ -1,6 +1,10 @@
 import { jwtVerify, SignJWT } from "jose";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? "dev-secret");
+const rawSecret = process.env.JWT_SECRET;
+if (rawSecret === undefined || rawSecret.length < 16) {
+  throw new Error("JWT_SECRET must be set to at least 16 characters");
+}
+const secret = new TextEncoder().encode(rawSecret);
 
 export const SESSION_COOKIE = "wk_session";
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;

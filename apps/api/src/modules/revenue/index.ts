@@ -111,7 +111,7 @@ export const revenueModule = new Elysia()
   .get(
     "/clients/:clientId/revenue-sources",
     async ({ params, headers }) => {
-      await requireUser(headers);
+      await requireAgency(headers);
       return { data: await service.listSources(params.clientId) };
     },
     { params: clientIdParamsDto }

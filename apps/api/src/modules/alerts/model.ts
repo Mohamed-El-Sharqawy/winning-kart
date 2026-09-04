@@ -84,7 +84,8 @@ export class AlertsModel {
       .from(alerts)
       .innerJoin(clients, eq(alerts.clientId, clients.id))
       .where(and(...conditions))
-      .orderBy(desc(alerts.priorityScore), desc(alerts.lastSeenAt));
+      .orderBy(desc(alerts.priorityScore), desc(alerts.lastSeenAt))
+      .limit(500);
   }
 
   async bellCount(): Promise<number> {
