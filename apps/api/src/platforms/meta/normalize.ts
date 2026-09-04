@@ -1,14 +1,16 @@
+import { ENTITY_STATUSES } from "@wk/db";
+import type { AdFormat, EntityStatus } from "@wk/db";
 import type {
   MetaAccountInfo,
   MetaActionMetric,
   MetaAdRow,
   MetaAdSetRow,
   MetaCampaignRow,
-  MetaCreativeDetailRow,
   MetaInsightRow,
 } from "./client";
 
-export type EntityStatus = "ACTIVE" | "PAUSED" | "ARCHIVED" | "DELETED";
+export { ENTITY_STATUSES } from "@wk/db";
+export type { AdFormat, EntityStatus } from "@wk/db";
 
 export interface CampaignRecord {
   platformCampaignId: string;
@@ -40,7 +42,7 @@ export interface AdRecord {
   adSetPlatformId: string;
   name: string;
   status: EntityStatus;
-  format: string | null;
+  format: AdFormat | null;
   creativeId: string | null;
   platformUpdatedAt: Date | null;
 }
@@ -117,20 +119,16 @@ export function parsePlatformTime(value: string | undefined): Date | null {
 
 export function mapEntityStatus(
   effectiveStatus: string | undefined,
-  rawStatus: string | undefined
+  rawStatus?: string | undefined
 ): EntityStatus {
   const value = effectiveStatus ?? rawStatus;
-  switch (value) {
-    case "ACTIVE":
-    case "ADD_REPORTS_RUNNING":
-      return "ACTIVE";
-    case "ARCHIVED":
-      return "ARCHIVED";
-    case "DELETED":
-      return "DELETED";
-    default:
-      return "PAUSED";
+  if (value === "ADD_REPORTS_RUNNING") {
+    return "ACTIVE";
   }
+  if (value !== undefined && (ENTITY_STATUSES as readonly string[]).includes(value)) {
+    return value as EntityStatus;
+  }
+  return "UNKNOWN";
 }
 
 function isPurchaseType(actionType: string): boolean {
@@ -218,36 +216,6 @@ export function normalizeAd(row: MetaAdRow): AdRecord {
     format: null,
     creativeId: row.creative?.id ?? null,
     platformUpdatedAt: parseMetaTime(row.updated_time),
-  };
-}
-
-export interface CreativeDetailRecord {
-  creativeId: string | null;
-  thumbnailUrl: string | null;
-  previewImageUrl: string | null;
-  bodyCopy: string | null;
-  format: string | null;
-}
-
-export function normalizeCreativeDetail(
-  row: MetaCreativeDetailRow | null | undefined
-): CreativeDetailRecord {
-  if (row === null || row === undefined) {
-    return {
-      creativeId: null,
-      thumbnailUrl: null,
-      previewImageUrl: null,
-      bodyCopy: null,
-      format: null,
-    };
-  }
-  const hasImage = (row.image_url ?? row.effective_object_store_url ?? null) !== null;
-  return {
-    creativeId: row.id ?? null,
-    thumbnailUrl: row.thumbnail_url ?? row.image_url ?? null,
-    previewImageUrl: row.image_url ?? row.effective_object_store_url ?? null,
-    bodyCopy: row.body ?? row.title ?? null,
-    format: hasImage ? "IMAGE" : null,
   };
 }
 

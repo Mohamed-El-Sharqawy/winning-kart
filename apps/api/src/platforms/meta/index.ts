@@ -1,6 +1,5 @@
 import { MetaClient } from "./client";
 import type {
-  CreativeDetailMap,
   InsightLevel,
   MetaAccountInfo,
   MetaAdLightRow,
@@ -19,7 +18,6 @@ export { AD_FIELDS, AD_SET_FIELDS, CAMPAIGN_FIELDS } from "./client";
 export { RateGuard } from "./rate-limit";
 export type { RateSnapshot, RateUsage } from "./rate-limit";
 export type {
-  CreativeDetailMap,
   InsightLevel,
   MetaAccountInfo,
   MetaActionMetric,
@@ -30,29 +28,28 @@ export type {
   MetaAdSetRow,
   MetaCampaignLightRow,
   MetaCampaignRow,
-  MetaCreativeDetailRow,
   MetaErrorClass,
   MetaInsightRow,
   TimeRange,
 } from "./client";
 export {
   aggregateInsightsByDate,
+  ENTITY_STATUSES,
   mapEntityStatus,
   normalizeAccountInfo,
   normalizeAd,
   normalizeAdSet,
   normalizeCampaign,
-  normalizeCreativeDetail,
   normalizeInsight,
   parsePlatformTime,
   round2,
 } from "./normalize";
 export type {
   AccountInfoSnapshot,
+  AdFormat,
   AdRecord,
   AdSetRecord,
   CampaignRecord,
-  CreativeDetailRecord,
   EntityStatus,
   InsightRecord,
 } from "./normalize";
@@ -68,7 +65,6 @@ export interface AdPlatformAdapter {
   getAds(actId: string): Promise<MetaAdRow[]>;
   getAdIds(actId: string): Promise<MetaAdLightRow[]>;
   getEntityById<T>(id: string, fields: string): Promise<T | null>;
-  getCreativeDetails(actId: string): Promise<CreativeDetailMap>;
   getInsights(actId: string, level: InsightLevel, timeRange: TimeRange): Promise<MetaInsightRow[]>;
 }
 

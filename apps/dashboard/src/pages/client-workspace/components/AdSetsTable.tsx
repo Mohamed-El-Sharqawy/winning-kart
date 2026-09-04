@@ -4,25 +4,15 @@ import { cn } from "@/lib/cn";
 import { campaignRowTone, formatDecimal, formatMoney, formatNumber, formatPct, formatRoas, roasTone } from "@/lib/format";
 import { DataTable } from "@/shared/components/DataTable";
 import type { DataTableColumn } from "@/shared/components/DataTable";
-import { StatusDot } from "@/shared/components/StatusDot";
-import type { StatusDotVariant } from "@/shared/components/StatusDot";
+import { StatusDot, entityStatusVariant, statusWords } from "@/shared/components/StatusDot";
 import type { AdSet } from "../types/ad-sets.types";
 import { nextSortState, sortHeaderCell, sortRows } from "./SortHeader";
 import type { SortDirection, SortState } from "./SortHeader";
 import { TablePager } from "./TablePager";
 
 const DASH = "—";
-const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
-  active: "up", paused: "neutral", archived: "neutral",
-  pending: "warning", in_review: "warning", with_issues: "down",
-};
 const GHOST_ACTION_CLASS =
   "inline-flex cursor-pointer items-center rounded-wk border border-transparent bg-transparent px-3 py-1 text-xs font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text";
-
-function statusVariant(status: string | null | undefined): StatusDotVariant {
-  if (status === null || status === undefined) return "neutral";
-  return STATUS_VARIANTS[status.toLowerCase()] ?? "neutral";
-}
 
 function humanize(value: string | null | undefined): string {
   if (value === null || value === undefined) return DASH;
@@ -86,7 +76,7 @@ export function AdSetsTable({ adSets, selectedIds, onToggle, clientSlug }: AdSet
     {
       key: "status",
       header: "Status",
-      render: (row) => <StatusDot variant={statusVariant(row.status)}>{humanize(row.status)}</StatusDot>,
+      render: (row) => <StatusDot variant={entityStatusVariant(row.status)}>{statusWords(row.status)}</StatusDot>,
     },
     {
       key: "optimizationGoal",

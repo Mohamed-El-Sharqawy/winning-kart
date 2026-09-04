@@ -11,26 +11,8 @@ import {
 import { DataTable } from "@/shared/components/DataTable";
 import type { DataTableColumn } from "@/shared/components/DataTable";
 import { EmptyState } from "@/shared/components/EmptyState";
-import { StatusDot } from "@/shared/components/StatusDot";
-import type { StatusDotVariant } from "@/shared/components/StatusDot";
+import { StatusDot, entityStatusVariant, statusWords } from "@/shared/components/StatusDot";
 import type { CampaignAdSet } from "../types/campaign-detail.types";
-
-const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
-  active: "up",
-  paused: "neutral",
-  archived: "neutral",
-  pending: "warning",
-  in_review: "warning",
-  with_issues: "down",
-};
-
-function statusVariant(status: string): StatusDotVariant {
-  return STATUS_VARIANTS[status.toLowerCase()] ?? "neutral";
-}
-
-function toWords(value: string): string {
-  return value.toLowerCase().replace(/_/g, " ");
-}
 
 export function AdSetsTable({ adSets }: { adSets: CampaignAdSet[] }) {
   if (adSets.length === 0) {
@@ -44,14 +26,14 @@ export function AdSetsTable({ adSets }: { adSets: CampaignAdSet[] }) {
       render: (row) => (
         <div className="flex flex-col items-start gap-1">
           <span className="font-medium text-volt-text">{row.name}</span>
-          <StatusDot variant={statusVariant(row.status)}>{toWords(row.status)}</StatusDot>
+          <StatusDot variant={entityStatusVariant(row.status)}>{statusWords(row.status)}</StatusDot>
         </div>
       ),
     },
     {
       key: "optimizationGoal",
       header: "Optimization goal",
-      render: (row) => <span className="capitalize text-volt-text-3">{toWords(row.optimizationGoal)}</span>,
+      render: (row) => <span className="capitalize text-volt-text-3">{statusWords(row.optimizationGoal)}</span>,
     },
     {
       key: "dailyBudget",

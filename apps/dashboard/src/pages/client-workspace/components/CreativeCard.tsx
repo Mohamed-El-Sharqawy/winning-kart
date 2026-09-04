@@ -2,23 +2,9 @@ import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { formatAed, formatDecimal, formatNumber, formatPct, formatRoas, roasTone } from "@/lib/format";
 import { Badge } from "@/shared/components/Badge";
-import { StatusDot } from "@/shared/components/StatusDot";
-import type { StatusDotVariant } from "@/shared/components/StatusDot";
+import { StatusDot, entityStatusVariant } from "@/shared/components/StatusDot";
 import { FATIGUE_FLAG_COPY } from "../data/gallery-copy.data";
 import type { Creative } from "../types/creatives.types";
-
-const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
-  active: "up",
-  paused: "neutral",
-  archived: "neutral",
-  pending: "warning",
-  in_review: "warning",
-  with_issues: "down",
-};
-
-function statusVariant(status: string): StatusDotVariant {
-  return STATUS_VARIANTS[status.toLowerCase()] ?? "neutral";
-}
 
 function MetricLabel({ children }: { children: string }) {
   return <dt className="text-[11px] uppercase tracking-wider text-volt-text-3">{children}</dt>;
@@ -48,7 +34,7 @@ export function CreativeCard({ creative, onSelect }: { creative: Creative; onSel
         onSelect && "cursor-pointer",
       )}
     >
-      <div className="relative aspect-[4/5]">
+      <div className="relative aspect-4/5">
         {showImage ? (
           <img
             src={creative.thumbnailUrl ?? undefined}
@@ -66,7 +52,7 @@ export function CreativeCard({ creative, onSelect }: { creative: Creative; onSel
           <Badge>{formatLabel}</Badge>
         </span>
         <span className="absolute right-3 top-3">
-          <StatusDot variant={statusVariant(creative.status)} />
+          <StatusDot variant={entityStatusVariant(creative.status)} />
         </span>
       </div>
       <div className="flex flex-1 flex-col gap-3 p-4">

@@ -3,26 +3,8 @@ import { formatAed, formatRoas, roasTone } from "@/lib/format";
 import { DataTable } from "@/shared/components/DataTable";
 import type { DataTableColumn } from "@/shared/components/DataTable";
 import { EmptyState } from "@/shared/components/EmptyState";
-import { StatusDot } from "@/shared/components/StatusDot";
-import type { StatusDotVariant } from "@/shared/components/StatusDot";
+import { StatusDot, entityStatusVariant, statusWords } from "@/shared/components/StatusDot";
 import type { PortalCampaign } from "../types/portal.types";
-
-const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
-  active: "up",
-  paused: "neutral",
-  archived: "neutral",
-  pending: "warning",
-  in_review: "warning",
-  with_issues: "down",
-};
-
-function statusVariant(status: string): StatusDotVariant {
-  return STATUS_VARIANTS[status.toLowerCase()] ?? "neutral";
-}
-
-function toWords(value: string): string {
-  return value.toLowerCase().replace(/_/g, " ");
-}
 
 export interface CampaignsSectionProps {
   campaigns: PortalCampaign[];
@@ -39,7 +21,7 @@ export function CampaignsSection({ campaigns }: CampaignsSectionProps) {
     {
       key: "status",
       header: "Status",
-      render: (row) => <StatusDot variant={statusVariant(row.status)}>{toWords(row.status)}</StatusDot>,
+      render: (row) => <StatusDot variant={entityStatusVariant(row.status)}>{statusWords(row.status)}</StatusDot>,
     },
     {
       key: "spend",

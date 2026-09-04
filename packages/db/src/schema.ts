@@ -10,7 +10,35 @@ import {
   bigint,
   date,
   integer,
+  check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import type { AnyColumn } from "drizzle-orm";
+
+export const ENTITY_STATUSES = [
+  "ACTIVE",
+  "PAUSED",
+  "CAMPAIGN_PAUSED",
+  "ADSET_PAUSED",
+  "PENDING_REVIEW",
+  "DISAPPROVED",
+  "PREAPPROVED",
+  "PENDING_BILLING_INFO",
+  "WITH_ISSUES",
+  "IN_PROCESS",
+  "UNKNOWN",
+] as const;
+
+export type EntityStatus = (typeof ENTITY_STATUSES)[number];
+
+export const AD_FORMATS = ["IMAGE", "VIDEO", "CAROUSEL"] as const;
+
+export type AdFormat = (typeof AD_FORMATS)[number];
+
+const statusListSql = sql.raw(ENTITY_STATUSES.map((value) => `'${value}'`).join(", "));
+
+const entityStatusCheck = (name: string, column: AnyColumn) =>
+  check(name, sql`${column} in (${statusListSql})`);
 
 export const users = pgTable(
   "users",
@@ -125,9 +153,7 @@ export const campaigns = pgTable(
       .references(() => adAccounts.id, { onDelete: "cascade" }),
     platformCampaignId: text("platform_campaign_id").notNull(),
     name: text("name").notNull(),
-    status: text("status", {
-      enum: ["ACTIVE", "PAUSED", "ARCHIVED", "DELETED"],
-    }).notNull(),
+    status: text("status", { enum: ENTITY_STATUSES }).notNull(),
     objective: text("objective"),
     buyingType: text("buying_type"),
     dailyBudget: numeric("daily_budget", { precision: 14, scale: 2 }),
@@ -144,6 +170,7 @@ export const campaigns = pgTable(
       t.adAccountId,
       t.platformCampaignId
     ),
+    entityStatusCheck("campaigns_status_check", t.status),
   ]
 );
 
@@ -156,9 +183,7 @@ export const adSets = pgTable(
       .references(() => campaigns.id, { onDelete: "cascade" }),
     platformAdsetId: text("platform_adset_id").notNull(),
     name: text("name").notNull(),
-    status: text("status", {
-      enum: ["ACTIVE", "PAUSED", "ARCHIVED", "DELETED"],
-    }).notNull(),
+    status: text("status", { enum: ENTITY_STATUSES }).notNull(),
     optimizationGoal: text("optimization_goal"),
     bidStrategy: text("bid_strategy"),
     dailyBudget: numeric("daily_budget", { precision: 14, scale: 2 }),
@@ -169,6 +194,7 @@ export const adSets = pgTable(
   },
   (t) => [
     uniqueIndex("ad_sets_campaign_platform_uq").on(t.campaignId, t.platformAdsetId),
+    entityStatusCheck("ad_sets_status_check", t.status),
   ]
 );
 
@@ -181,19 +207,31 @@ export const ads = pgTable(
       .references(() => adSets.id, { onDelete: "cascade" }),
     platformAdId: text("platform_ad_id").notNull(),
     name: text("name").notNull(),
-    status: text("status", {
-      enum: ["ACTIVE", "PAUSED", "ARCHIVED", "DELETED"],
-    }).notNull(),
-    format: text("format"),
+    status: text("status", { enum: ENTITY_STATUSES }).notNull(),
+    format: text("format", { enum: AD_FORMATS }),
     creativeId: text("creative_id"),
     thumbnailUrl: text("thumbnail_url"),
-    previewImageUrl: text("preview_image_url"),
     bodyCopy: text("body_copy"),
+    videoId: text("video_id"),
+    effectiveStoryId: text("effective_story_id"),
+    carouselCount: integer("carousel_count"),
+    thumbnailResolvedAt: timestamp("thumbnail_resolved_at", { withTimezone: true }),
+    posterUrl: text("poster_url"),
+    posterResolvedAt: timestamp("poster_resolved_at", { withTimezone: true }),
+    sourceUrl: text("source_url"),
+    sourceResolvedAt: timestamp("source_resolved_at", { withTimezone: true }),
     platformUpdatedAt: timestamp("platform_updated_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("ads_ad_set_platform_uq").on(t.adSetId, t.platformAdId)]
+  (t) => [
+    uniqueIndex("ads_ad_set_platform_uq").on(t.adSetId, t.platformAdId),
+    entityStatusCheck("ads_status_check", t.status),
+    check(
+      "ads_format_check",
+      sql`${t.format} in (${sql.raw(AD_FORMATS.map((value) => `'${value}'`).join(", "))})`
+    ),
+  ]
 );
 
 export const dailyInsights = pgTable(
@@ -232,6 +270,7 @@ export const dailyInsights = pgTable(
     ),
     index("daily_insights_entity_idx").on(t.entityLevel, t.entityId),
     index("daily_insights_account_date_idx").on(t.adAccountId, t.date),
+    index("daily_insights_window_idx").on(t.adAccountId, t.entityLevel, t.date),
   ]
 );
 

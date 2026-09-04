@@ -54,7 +54,7 @@ export interface MetaCampaignRow {
 
 export interface MetaCampaignLightRow {
   id: string;
-  status?: string;
+  effective_status?: string;
   updated_time?: string;
 }
 
@@ -74,7 +74,7 @@ export interface MetaAdSetRow {
 export interface MetaAdSetLightRow {
   id: string;
   campaign_id: string;
-  status?: string;
+  effective_status?: string;
   updated_time?: string;
 }
 
@@ -96,22 +96,10 @@ export interface MetaAdRow {
 export interface MetaAdLightRow {
   id: string;
   adset_id: string;
-  status?: string;
+  effective_status?: string;
   updated_time?: string;
   creative?: MetaAdCreativeRef;
 }
-
-export interface MetaCreativeDetailRow {
-  id?: string | null;
-  name?: string | null;
-  thumbnail_url?: string | null;
-  image_url?: string | null;
-  effective_object_store_url?: string | null;
-  title?: string | null;
-  body?: string | null;
-}
-
-export type CreativeDetailMap = Record<string, MetaCreativeDetailRow>;
 
 export interface MetaInsightRow {
   date_start: string;
@@ -256,7 +244,7 @@ export class MetaClient {
 
   getCampaignIds(actId: string): Promise<MetaCampaignLightRow[]> {
     return this.requestAll(`${actId}/campaigns`, {
-      fields: "id,updated_time,status",
+      fields: "id,updated_time,effective_status",
     });
   }
 
@@ -266,7 +254,7 @@ export class MetaClient {
 
   getAdSetIds(actId: string): Promise<MetaAdSetLightRow[]> {
     return this.requestAll(`${actId}/adsets`, {
-      fields: "id,campaign_id,updated_time,status",
+      fields: "id,campaign_id,updated_time,effective_status",
     });
   }
 
@@ -276,7 +264,7 @@ export class MetaClient {
 
   getAdIds(actId: string): Promise<MetaAdLightRow[]> {
     return this.requestAll(`${actId}/ads`, {
-      fields: "id,adset_id,updated_time,status,creative{id}",
+      fields: "id,adset_id,updated_time,effective_status,creative{id}",
     });
   }
 
@@ -291,19 +279,6 @@ export class MetaClient {
       }
       throw error;
     }
-  }
-
-  async getCreativeDetails(actId: string): Promise<CreativeDetailMap> {
-    const map: CreativeDetailMap = {};
-    const rows = await this.requestAll(`${actId}/adcreatives`, {
-      fields: "id,name,thumbnail_url,image_url,effective_object_store_url,title,body",
-    });
-    for (const row of rows as Array<MetaCreativeDetailRow>) {
-      if (row && typeof row.id === "string") {
-        map[row.id] = row;
-      }
-    }
-    return map;
   }
 
   getInsights(actId: string, level: InsightLevel, timeRange: TimeRange): Promise<MetaInsightRow[]> {

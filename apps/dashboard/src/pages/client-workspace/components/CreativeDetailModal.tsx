@@ -3,8 +3,7 @@ import { cn } from "@/lib/cn";
 import { formatAed, formatDecimal, formatNumber, formatPct, formatRoas, roasTone } from "@/lib/format";
 import { Badge } from "@/shared/components/Badge";
 import { Modal } from "@/shared/components/Modal";
-import { StatusDot } from "@/shared/components/StatusDot";
-import type { StatusDotVariant } from "@/shared/components/StatusDot";
+import { StatusDot, entityStatusVariant, statusWords } from "@/shared/components/StatusDot";
 import { FATIGUE_FLAG_COPY } from "../data/gallery-copy.data";
 import type { Creative } from "../types/creatives.types";
 
@@ -12,23 +11,6 @@ const DASH = "—";
 
 const GHOST_ANCHOR_CLASS =
   "inline-flex cursor-pointer items-center justify-center gap-2 rounded-wk border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text";
-
-const STATUS_VARIANTS: Record<string, StatusDotVariant> = {
-  active: "up",
-  paused: "neutral",
-  archived: "neutral",
-  deleted: "neutral",
-};
-
-function statusVariant(status: string | null | undefined): StatusDotVariant {
-  if (status === null || status === undefined) return "neutral";
-  return STATUS_VARIANTS[status.toLowerCase()] ?? "neutral";
-}
-
-function humanize(value: string | null | undefined): string {
-  if (value === null || value === undefined) return DASH;
-  return value.toLowerCase().replace(/_/g, " ");
-}
 
 function MetricCell({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
@@ -47,9 +29,7 @@ export interface CreativeDetailModalProps {
 
 export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetailModalProps) {
   const [imageFailed, setImageFailed] = useState(false);
-  const showPreviewImage = creative.previewImageUrl !== null && !imageFailed;
-  const showLegacyImage =
-    creative.previewImageUrl === null && creative.thumbnailUrl !== null && !imageFailed;
+  const showImage = creative.thumbnailUrl !== null && !imageFailed;
   const format = creative.format ?? "";
   const formatLabel = format === "" ? "CREATIVE" : format;
   const share = creative.spendShare === null ? null : `${Math.round(creative.spendShare * 100)}%`;
@@ -63,14 +43,7 @@ export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetail
     <Modal title={creative.name} onClose={onClose} width="lg">
       <div className="flex flex-col gap-4">
         <div className="relative flex items-center justify-center overflow-hidden rounded-wk border border-volt-border bg-volt-surface-2">
-          {showPreviewImage ? (
-            <img
-              src={creative.previewImageUrl ?? undefined}
-              alt=""
-              onError={() => setImageFailed(true)}
-              className="max-h-[60vh] w-full object-contain"
-            />
-          ) : showLegacyImage ? (
+          {showImage ? (
             <img
               src={creative.thumbnailUrl ?? undefined}
               alt=""
@@ -86,7 +59,7 @@ export function CreativeDetailModal({ creative, actId, onClose }: CreativeDetail
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-volt-text">{creative.name}</span>
-            <StatusDot variant={statusVariant(creative.status)}>{humanize(creative.status)}</StatusDot>
+            <StatusDot variant={entityStatusVariant(creative.status)}>{statusWords(creative.status)}</StatusDot>
             <Badge>{formatLabel}</Badge>
           </div>
           <p className="truncate text-xs text-volt-text-3">

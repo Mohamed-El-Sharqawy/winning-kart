@@ -5,10 +5,10 @@ import {
   AD_FIELDS,
   AD_SET_FIELDS,
   CAMPAIGN_FIELDS,
+  mapEntityStatus,
   normalizeAd,
   normalizeAdSet,
   normalizeCampaign,
-  normalizeCreativeDetail,
   parsePlatformTime,
 } from "../../platforms/meta";
 import type {
@@ -17,9 +17,9 @@ import type {
   MetaCampaignRow,
 } from "../../platforms/meta";
 import type {
-  AdRow,
   AdUpsertRow,
   AdSetUpsertRow,
+  EntityStatusPatch,
   PlatformEntityState,
 } from "./model";
 import type { AdAccountsModel } from "./model";
@@ -71,7 +71,6 @@ export interface StageRunner {
   run(stage: JobStage, fn: () => Promise<unknown>): Promise<boolean>;
 }
 
-const DECORATE_MAX = Math.max(1, envInt("WK_DECORATE_MAX", 200));
 const DELTA_PER_ENTITY_MAX_DEFAULT = 25;
 
 function envInt(key: string, fallback: number): number {
@@ -117,6 +116,12 @@ function idsToRefetch<T extends { id: string; updated_time?: string }>(
   return lightRows
     .filter((row) => needsRefetch(stored.get(row.id), row.updated_time))
     .map((row) => row.id);
+}
+
+function toStatusPatches(rows: { id: string; effective_status?: string }[]): EntityStatusPatch[] {
+  return rows
+    .filter((row) => row.effective_status !== undefined)
+    .map((row) => ({ platformId: row.id, status: mapEntityStatus(row.effective_status) }));
 }
 
 async function fullRowsOrEdgeFallback<T>(
@@ -224,6 +229,7 @@ export async function runStructureStages(
 
   const campaignsOk = await runner.run("campaigns", async () => {
     const lightRows = await meta.getCampaignIds(account.adAccountId);
+    await model.updateCampaignStatuses(account.id, toStatusPatches(lightRows));
     const states = await model.campaignStates(account.id);
     for (const [platformId, state] of states) {
       campaignIdByPlatform.set(platformId, state.id);
@@ -250,6 +256,7 @@ export async function runStructureStages(
 
   const adSetsOk = await runner.run("ad_sets", async () => {
     const lightRows = await meta.getAdSetIds(account.adAccountId);
+    await model.updateAdSetStatuses(account.id, toStatusPatches(lightRows));
     const states = await model.adSetStates(account.id);
     for (const [platformId, state] of states) {
       adSetIdByPlatform.set(platformId, state.id);
@@ -294,6 +301,7 @@ export async function runStructureStages(
 
   const adsOk = await runner.run("ads", async () => {
     const lightRows = await meta.getAdIds(account.adAccountId);
+    await model.updateAdStatuses(account.id, toStatusPatches(lightRows));
     const states = await model.adStates(account.id);
     for (const [platformId, state] of states) {
       adIdByPlatform.set(platformId, state.id);
@@ -328,13 +336,10 @@ export async function runStructureStages(
     for (const row of upserted) {
       adIdByPlatform.set(row.platformAdId, row.id);
     }
-    const allAdRows = await model.listAdsByAccount(account.id);
-    const decorated = await decorateAdCreatives(model, meta, account, allAdRows);
     return {
       total: lightRows.length,
       changed: changedIds.length,
       upserted: upserted.length,
-      ...decorated,
     };
   });
 
@@ -344,81 +349,4 @@ export async function runStructureStages(
     adSetIdByPlatform,
     adIdByPlatform,
   };
-}
-
-async function decorateAdCreatives(
-  model: AdAccountsModel,
-  meta: AdPlatformAdapter,
-  account: { id: string; adAccountId: string },
-  adRows: AdRow[]
-): Promise<{ decorated: number; remaining: number }> {
-  const candidates = adRows
-    .filter(
-      (row): row is AdRow & { creativeId: string } =>
-        row.creativeId !== null &&
-        (row.thumbnailUrl === null ||
-          row.bodyCopy === null ||
-          row.format === null ||
-          row.previewImageUrl === null)
-    )
-    .sort((a, b) => a.updatedAt.getTime() - b.updatedAt.getTime());
-  const capped = candidates.slice(0, DECORATE_MAX);
-  const remaining = candidates.length - capped.length;
-  if (capped.length === 0) {
-    return { decorated: 0, remaining: 0 };
-  }
-  const rowsByCreative = new Map<string, AdRow[]>();
-  for (const row of capped) {
-    const rows = rowsByCreative.get(row.creativeId);
-    if (rows === undefined) {
-      rowsByCreative.set(row.creativeId, [row]);
-    } else {
-      rows.push(row);
-    }
-  }
-  let decorated = 0;
-  try {
-    const details = await meta.getCreativeDetails(account.adAccountId);
-    for (const [creativeId, detail] of Object.entries(details)) {
-      const rows = rowsByCreative.get(creativeId);
-      if (rows === undefined) {
-        continue;
-      }
-      const record = normalizeCreativeDetail(detail);
-      for (const row of rows) {
-        const patch: {
-          thumbnailUrl?: string;
-          previewImageUrl?: string;
-          bodyCopy?: string;
-          format?: string;
-        } = {};
-        if (row.thumbnailUrl === null && record.thumbnailUrl !== null) {
-          patch.thumbnailUrl = record.thumbnailUrl;
-        }
-        if (row.previewImageUrl === null && record.previewImageUrl !== null) {
-          patch.previewImageUrl = record.previewImageUrl;
-        }
-        if (row.bodyCopy === null && record.bodyCopy !== null) {
-          patch.bodyCopy = record.bodyCopy;
-        }
-        if (row.format === null && record.format !== null) {
-          patch.format = record.format;
-        }
-        if (
-          patch.thumbnailUrl === undefined &&
-          patch.previewImageUrl === undefined &&
-          patch.bodyCopy === undefined &&
-          patch.format === undefined
-        ) {
-          continue;
-        }
-        await model.updateAdCreative(account.id, row.platformAdId, patch);
-        decorated += 1;
-      }
-    }
-  } catch (error) {
-    const metaError = toMetaError(error);
-    console.warn(`creative details fetch failed: ${metaError.errorClass}`);
-  }
-  return { decorated, remaining };
 }
