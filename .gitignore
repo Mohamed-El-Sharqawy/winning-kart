@@ -18,3 +18,4 @@ drizzle/meta/_journal.json.bak
 apps/dashboard/cypress/screenshots
 apps/dashboard/cypress/videos
 apps/dashboard/cypress/downloads
+.opencode/
