@@ -48,6 +48,12 @@ export interface PlatformEntityState {
   platformUpdatedAt: Date | null;
 }
 
+export interface RemovalPlan {
+  campaigns: { id: string; platformId: string }[];
+  adSets: { id: string; platformId: string }[];
+  ads: { id: string; platformId: string }[];
+}
+
 export interface EntityStatusPatch {
   platformId: string;
   status: EntityStatus;
@@ -572,6 +578,102 @@ export class AdAccountsModel {
       .where(eq(campaigns.adAccountId, adAccountId));
     return new Map(rows.map((row) => [row.platformId, toState(row)]));
   }
+
+  async applyAbsenceCleanup(
+    adAccountId: string,
+    plan: RemovalPlan,
+    purgeEntityIds: string[]
+  ): Promise<number> {
+    return db.transaction(async (tx) => {
+      const removedCampaignIds = plan.campaigns.map((entity) => entity.id);
+      const removedAdSetIds = plan.adSets.map((entity) => entity.id);
+      const cascadeAdSets =
+        removedCampaignIds.length > 0
+          ? await tx
+              .select({ id: adSets.id })
+              .from(adSets)
+              .where(inArray(adSets.campaignId, removedCampaignIds))
+          : [];
+      const cascadeAdSetIds = cascadeAdSets.map((row) => row.id);
+      const cascadeAdParents = [...removedAdSetIds, ...cascadeAdSetIds];
+      const cascadeAds =
+        cascadeAdParents.length > 0
+          ? await tx.select({ id: ads.id }).from(ads).where(inArray(ads.adSetId, cascadeAdParents))
+          : [];
+      const purgeIds = dedupeIds([
+        ...purgeEntityIds,
+        ...cascadeAdSetIds,
+        ...cascadeAds.map((row) => row.id),
+      ]);
+      let purgedInsightRows = 0;
+      for (let index = 0; index < purgeIds.length; index += DELETE_CHUNK) {
+        const rows = await tx
+          .delete(dailyInsights)
+          .where(
+            and(
+              eq(dailyInsights.adAccountId, adAccountId),
+              ne(dailyInsights.entityLevel, "account"),
+              inArray(dailyInsights.entityId, purgeIds.slice(index, index + DELETE_CHUNK))
+            )
+          )
+          .returning({ id: dailyInsights.id });
+        purgedInsightRows += rows.length;
+      }
+      await deleteInChunks(
+        plan.campaigns.map((entity) => entity.platformId),
+        (chunk) =>
+          tx
+            .delete(campaigns)
+            .where(
+              and(
+                eq(campaigns.adAccountId, adAccountId),
+                inArray(campaigns.platformCampaignId, chunk)
+              )
+            )
+            .returning({ id: campaigns.id })
+      );
+      await deleteInChunks(
+        plan.adSets.map((entity) => entity.platformId),
+        (chunk) =>
+          tx
+            .delete(adSets)
+            .where(
+              and(
+                inArray(adSets.platformAdsetId, chunk),
+                inArray(
+                  adSets.campaignId,
+                  tx
+                    .select({ id: campaigns.id })
+                    .from(campaigns)
+                    .where(eq(campaigns.adAccountId, adAccountId))
+                )
+              )
+            )
+            .returning({ id: adSets.id })
+      );
+      await deleteInChunks(
+        plan.ads.map((entity) => entity.platformId),
+        (chunk) =>
+          tx
+            .delete(ads)
+            .where(
+              and(
+                inArray(ads.platformAdId, chunk),
+                inArray(
+                  ads.adSetId,
+                  tx
+                    .select({ id: adSets.id })
+                    .from(adSets)
+                    .innerJoin(campaigns, eq(adSets.campaignId, campaigns.id))
+                    .where(eq(campaigns.adAccountId, adAccountId))
+                )
+              )
+            )
+            .returning({ id: ads.id })
+      );
+      return purgedInsightRows;
+    });
+  }
 }
 
 function toState(row: {
@@ -582,6 +684,24 @@ function toState(row: {
 }
 
 const STATUS_PATCH_CHUNK = 1000;
+const DELETE_CHUNK = 1000;
+
+async function deleteInChunks(
+  ids: string[],
+  statement: (chunk: string[]) => Promise<{ id: string }[]>
+): Promise<string[]> {
+  const deleted: string[] = [];
+  for (let index = 0; index < ids.length; index += DELETE_CHUNK) {
+    const chunk = ids.slice(index, index + DELETE_CHUNK);
+    const rows = await statement(chunk);
+    deleted.push(...rows.map((row) => row.id));
+  }
+  return deleted;
+}
+
+function dedupeIds(ids: string[]): string[] {
+  return [...new Set(ids)];
+}
 
 async function applyStatusPatches(
   patches: EntityStatusPatch[],
