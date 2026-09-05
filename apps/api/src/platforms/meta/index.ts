@@ -9,12 +9,20 @@ import type {
   MetaCampaignLightRow,
   MetaCampaignRow,
   MetaInsightRow,
+  MetaVideoMedia,
   TimeRange,
 } from "./client";
 import type { RateGuard, RateSnapshot } from "./rate-limit";
 
 export { MetaClient, MetaError } from "./client";
-export { AD_FIELDS, AD_SET_FIELDS, CAMPAIGN_FIELDS } from "./client";
+export {
+  AD_FIELDS,
+  AD_SET_FIELDS,
+  CAMPAIGN_FIELDS,
+  MEDIA_IDS_BATCH_MAX,
+  RESOLVE_AD_FIELDS,
+  VIDEO_MEDIA_FIELDS,
+} from "./client";
 export { RateGuard } from "./rate-limit";
 export type { RateSnapshot, RateUsage } from "./rate-limit";
 export type {
@@ -30,6 +38,7 @@ export type {
   MetaCampaignRow,
   MetaErrorClass,
   MetaInsightRow,
+  MetaVideoMedia,
   TimeRange,
 } from "./client";
 export {
@@ -64,6 +73,8 @@ export interface AdPlatformAdapter {
   getAdSetIds(actId: string): Promise<MetaAdSetLightRow[]>;
   getAds(actId: string): Promise<MetaAdRow[]>;
   getAdIds(actId: string): Promise<MetaAdLightRow[]>;
+  getAdsByIds(ids: string[]): Promise<MetaAdRow[]>;
+  getVideoMedia(videoId: string): Promise<MetaVideoMedia | null>;
   getEntityById<T>(id: string, fields: string): Promise<T | null>;
   getInsights(actId: string, level: InsightLevel, timeRange: TimeRange): Promise<MetaInsightRow[]>;
 }

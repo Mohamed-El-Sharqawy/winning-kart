@@ -1,8 +1,4 @@
-import { decrypt } from "../../lib/crypto";
-import { problem } from "../../lib/problem";
 import { shiftDate } from "../../lib/window";
-import { getMetaAdapter, MetaError } from "../../platforms/meta";
-import { storedRateLimitBlocked } from "../../platforms/meta/rate-limit";
 import type {
   AdPlatformAdapter,
   InsightRecord,
@@ -19,6 +15,7 @@ import {
 } from "./stages";
 import { SyncCancelledError } from "./stages";
 import type { RemovedSummary, SyncRunHooks, SyncStage, SyncSummary } from "./stages";
+import { adapterOrNull, ensureNotRateLimited, pendingTokenError } from "./account-access";
 
 export const BACKFILL_MIN_MONTHS = 1;
 export const BACKFILL_MAX_MONTHS = 24;
@@ -142,31 +139,15 @@ export async function backfillAccount(
   if ((await hooks.shouldCancel?.()) === true) {
     throw new SyncCancelledError();
   }
-  const storedBlock = storedRateLimitBlocked(account.platformPayload);
-  if (storedBlock.blocked) {
-    const estimate = storedBlock.estClearMin !== null ? ` ~${storedBlock.estClearMin} min` : "";
-    throw problem(
-      429,
-      "RATE_LIMITED",
-      `Meta rate limit active; do not retry until the window clears.${estimate}`,
-      "rate_limited"
-    );
-  }
+  ensureNotRateLimited(account);
 
   const runner = createStageRunner(model, account, hooks);
   const summary: SyncSummary = createEmptySummary();
 
-  let meta: AdPlatformAdapter | null = null;
-  if (!account.accessTokenEncrypted.startsWith("pending-oauth")) {
-    try {
-      meta = getMetaAdapter(decrypt(account.accessTokenEncrypted));
-    } catch {
-      meta = null;
-    }
-  }
+  const meta: AdPlatformAdapter | null = adapterOrNull(account);
   if (meta === null) {
     await runner.run("account_info", async () => {
-      throw new MetaError("invalid_token", "access token is pending oauth connection");
+      throw pendingTokenError();
     });
     return {
       ok: false,

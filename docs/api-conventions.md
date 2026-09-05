@@ -84,6 +84,8 @@ Notes:
 
 List endpoints return `200` with `data: []` when there is nothing to return. An unknown parent id on a list endpoint also returns an empty list, not a 404. Only detail-style endpoints addressed by a resource id return `RESOURCE_NOT_FOUND` for unknown ids.
 
+`POST /ad-accounts/:id/ads/media/resolve` applies the same principle to its body id collection: ids that match no ad in the account (unknown or out-of-account) are dropped from the returned `data.items` rather than rejected with a 404 or 422. The empty case is `{ "data": { "items": [] } }` with HTTP 200.
+
 ## Token lifetime
 
 Ad accounts carry `tokenType` (`system_user` or `user_60d`, default `system_user`) and `tokenExpiresAt` (null for `system_user`, creation/reconnection time plus 60 days for `user_60d`). Create and reconnect accept an optional `tokenType`. When a `user_60d` token is within 7 days of expiry the account enters `warning` health state; past expiry it enters `error`. Overview issue entries override their `errorHint` with `Token expires in N day(s) — reconnect` or `Token expired — reconnect` accordingly.

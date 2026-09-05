@@ -170,6 +170,16 @@ export const AD_SET_FIELDS =
   "id,campaign_id,name,status,effective_status,optimization_goal,bid_strategy,daily_budget,lifetime_budget,updated_time";
 export const AD_FIELDS =
   "id,adset_id,name,status,effective_status,updated_time,creative{id,thumbnail_url,video_id,effective_object_story_id,object_story_spec{link_data{child_attachments{id}},template_data}}";
+export const RESOLVE_AD_FIELDS =
+  "id,creative{id,thumbnail_url,video_id,effective_object_story_id,object_story_spec{link_data{child_attachments{id}},template_data}}";
+export const VIDEO_MEDIA_FIELDS = "source,picture";
+
+export const MEDIA_IDS_BATCH_MAX = 50;
+
+export interface MetaVideoMedia {
+  source?: string;
+  picture?: string;
+}
 
 export const THUMBNAIL_WIDTH = "512";
 export const THUMBNAIL_HEIGHT = "640";
@@ -292,6 +302,22 @@ export class MetaClient {
     return this.requestAll(`${actId}/ads`, {
       fields: "id,adset_id,updated_time,effective_status,creative{id}",
     });
+  }
+
+  async getAdsByIds(ids: string[]): Promise<MetaAdRow[]> {
+    const body = await this.request("", {
+      ids: ids.join(","),
+      fields: RESOLVE_AD_FIELDS,
+    });
+    return flattenIdedBody<MetaAdRow>(body);
+  }
+
+  async getVideoMedia(videoId: string): Promise<MetaVideoMedia | null> {
+    const body = await this.request(videoId, { fields: VIDEO_MEDIA_FIELDS });
+    if (typeof body !== "object" || body === null) {
+      return null;
+    }
+    return body as MetaVideoMedia;
   }
 
   async getEntityById<T>(id: string, fields: string): Promise<T | null> {

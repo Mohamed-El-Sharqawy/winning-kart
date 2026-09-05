@@ -1,10 +1,9 @@
 import type { AdAccount } from "@wk/db";
-import { decrypt, encrypt } from "../../lib/crypto";
+import { encrypt } from "../../lib/crypto";
 import { problem } from "../../lib/problem";
 import type { ProblemError, ProblemErrorClass } from "../../lib/problem";
 import { runDetectionForAccount } from "../../detection/engine";
 import { getMetaAdapter, MetaError } from "../../platforms/meta";
-import { storedRateLimitBlocked } from "../../platforms/meta/rate-limit";
 import type {
   AdPlatformAdapter,
   InsightLevel,
@@ -29,7 +28,15 @@ import type { BackfillOutcome } from "./backfill";
 import { createEmptySummary, createStageRunner, runStructureStages } from "./stages";
 import { isRecord, SyncCancelledError } from "./stages";
 import type { SyncStage, StageResult, SyncSummary, SyncRunHooks } from "./stages";
+import { resolveAdMedia } from "./media-resolver";
+import type { ResolvedMediaItem } from "./media-resolver";
 import { resolveInsightWindow, utcToday } from "./sync-window";
+import {
+  adapterOrNull,
+  ensureNotRateLimited,
+  pendingTokenError,
+  pendingTokenProblem,
+} from "./account-access";
 
 export { SyncCancelledError } from "./stages";
 export type { SyncStage, StageResult, SyncSummary, SyncRunHooks } from "./stages";
@@ -348,16 +355,7 @@ export class AdAccountsService {
       : {};
     let meta: AdPlatformAdapter | null = null;
 
-    const storedBlock = storedRateLimitBlocked(account.platformPayload);
-    if (storedBlock.blocked) {
-      const estimate = storedBlock.estClearMin !== null ? ` ~${storedBlock.estClearMin} min` : "";
-      throw problem(
-        429,
-        "RATE_LIMITED",
-        `Meta rate limit active; do not retry until the window clears.${estimate}`,
-        "rate_limited"
-      );
-    }
+    ensureNotRateLimited(account);
 
     const finalize = async (ok: boolean): Promise<SyncOutcome> => {
       summary.graphCalls = meta !== null ? meta.graphCallCount() : 0;
@@ -387,18 +385,11 @@ export class AdAccountsService {
       };
     };
 
-    let adapter: AdPlatformAdapter | null = null;
-    if (!account.accessTokenEncrypted.startsWith("pending-oauth")) {
-      try {
-        adapter = getMetaAdapter(decrypt(account.accessTokenEncrypted));
-      } catch {
-        adapter = null;
-      }
-    }
+    let adapter: AdPlatformAdapter | null = adapterOrNull(account);
 
     if (adapter === null) {
       await runner.run("account_info", async () => {
-        throw new MetaError("invalid_token", "access token is pending oauth connection");
+        throw pendingTokenError();
       });
       return finalize(false);
     }
@@ -516,6 +507,31 @@ export class AdAccountsService {
       await this.model.updateAdAccount(account.id, { insightsSyncedThrough: utcToday() });
     }
     return outcome;
+  }
+
+  async resolveMedia(id: string, ids: string[], force: boolean): Promise<ResolvedMediaItem[]> {
+    const account = await this.model.findById(id);
+    if (!account) {
+      throw accountNotFound(id);
+    }
+    ensureNotRateLimited(account);
+    const adapter = adapterOrNull(account);
+    if (adapter === null) {
+      throw pendingTokenProblem();
+    }
+    try {
+      const items = await resolveAdMedia(this.model, account, adapter, ids, force);
+      if (adapter.graphCallCount() > 0) {
+        const platformPayload = isRecord(account.platformPayload)
+          ? { ...account.platformPayload }
+          : {};
+        platformPayload.rateLimit = adapter.rateGuard.snapshot();
+        await this.model.updateAdAccount(account.id, { platformPayload });
+      }
+      return items;
+    } catch (error) {
+      throw toProblemError(error);
+    }
   }
 
   async reconnect(id: string, accessToken: string, tokenType?: TokenType): Promise<void> {

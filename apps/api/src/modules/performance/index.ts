@@ -9,12 +9,16 @@ import {
   performanceCampaignDto,
   performanceWindowQueryDto,
 } from "../../dto/performance";
+import { mediaResolveBodyDto, mediaResolveResponseDto } from "../../dto/media";
 import { resolveWindow } from "../../lib/window";
+import { AdAccountsService } from "../ad-accounts/service";
+import { AdAccountsModel } from "../ad-accounts/model";
 import { PerformanceModel } from "./model";
 import { PerformanceService } from "./service";
 import type { SafeUser } from "../auth/model";
 
 const service = new PerformanceService(new PerformanceModel());
+const adAccounts = new AdAccountsService(new AdAccountsModel());
 
 async function requireUser(headers: Record<string, string | undefined>): Promise<SafeUser> {
   const user = await resolveSessionUser({ cookie: headers.cookie, headers });
@@ -51,6 +55,16 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
       return { data: await service.listAds(params.id, resolveWindow(query), query.adSetId) };
     },
     { params: idParamsDto, query: performanceAdsQueryDto, response: { 200: performanceAdsDto } }
+  )
+  .post(
+    "/:id/ads/media/resolve",
+    async ({ params, body, headers }) => {
+      await requireAgency(headers);
+      return {
+        data: { items: await adAccounts.resolveMedia(params.id, body.ids, body.force ?? false) },
+      };
+    },
+    { params: idParamsDto, body: mediaResolveBodyDto, response: { 200: mediaResolveResponseDto } }
   )
   .get(
     "/:id/campaigns/:campaignId",
