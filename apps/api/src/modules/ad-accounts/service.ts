@@ -26,7 +26,7 @@ import type {
 import type { AdAccountsModel } from "./model";
 import { backfillAccount } from "./backfill";
 import type { BackfillOutcome } from "./backfill";
-import { createStageRunner, runStructureStages } from "./stages";
+import { createEmptySummary, createStageRunner, runStructureStages } from "./stages";
 import { isRecord, SyncCancelledError } from "./stages";
 import type { SyncStage, StageResult, SyncSummary, SyncRunHooks } from "./stages";
 import { resolveInsightWindow, utcToday } from "./sync-window";
@@ -341,7 +341,7 @@ export class AdAccountsService {
     }
 
     const runner = createStageRunner(this.model, account, hooks);
-    const summary: SyncSummary = { campaigns: 0, adSets: 0, ads: 0, insightDays: 0, graphCalls: 0 };
+    const summary: SyncSummary = createEmptySummary();
     let currency = account.currency;
     let platformPayload = isRecord(account.platformPayload)
       ? { ...account.platformPayload }

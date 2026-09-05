@@ -11,9 +11,14 @@ import type {
 import { aggregateInsightsByDate, normalizeInsight } from "../../platforms/meta";
 import type { AdAccount } from "@wk/db";
 import type { AdAccountsModel, InsightUpsertRow } from "./model";
-import { createStageRunner, runStructureStages, toMetaError } from "./stages";
+import {
+  createEmptySummary,
+  createStageRunner,
+  runStructureStages,
+  toMetaError,
+} from "./stages";
 import { SyncCancelledError } from "./stages";
-import type { SyncRunHooks, SyncStage, SyncSummary } from "./stages";
+import type { RemovedSummary, SyncRunHooks, SyncStage, SyncSummary } from "./stages";
 
 export const BACKFILL_MIN_MONTHS = 1;
 export const BACKFILL_MAX_MONTHS = 24;
@@ -25,6 +30,7 @@ export interface BackfillSummary {
   chunksTotal: number;
   chunksDone: number;
   structure: { campaigns: number; adSets: number; ads: number };
+  removed: RemovedSummary;
   graphCalls: number;
 }
 
@@ -148,7 +154,7 @@ export async function backfillAccount(
   }
 
   const runner = createStageRunner(model, account, hooks);
-  const summary: SyncSummary = { campaigns: 0, adSets: 0, ads: 0, insightDays: 0, graphCalls: 0 };
+  const summary: SyncSummary = createEmptySummary();
 
   let meta: AdPlatformAdapter | null = null;
   if (!account.accessTokenEncrypted.startsWith("pending-oauth")) {
@@ -227,6 +233,7 @@ export async function backfillAccount(
       chunksTotal: windows.length,
       chunksDone,
       structure: { campaigns: summary.campaigns, adSets: summary.adSets, ads: summary.ads },
+      removed: summary.removed,
       graphCalls: meta.graphCallCount(),
     },
   };

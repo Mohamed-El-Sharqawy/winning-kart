@@ -23,6 +23,8 @@ import type {
   PlatformEntityState,
 } from "./model";
 import type { AdAccountsModel } from "./model";
+import { cleanupRemovedEntities, collectLightIds, pruneEntities } from "./cleanup";
+import type { LightListing } from "./cleanup";
 
 export type JobStage =
   | "account_info"
@@ -40,12 +42,31 @@ export interface StageResult {
   errorClass?: string;
 }
 
+export interface RemovedSummary {
+  campaigns: number;
+  adSets: number;
+  ads: number;
+  insightRows: number;
+}
+
 export interface SyncSummary {
   campaigns: number;
   adSets: number;
   ads: number;
   insightDays: number;
   graphCalls: number;
+  removed: RemovedSummary;
+}
+
+export function createEmptySummary(): SyncSummary {
+  return {
+    campaigns: 0,
+    adSets: 0,
+    ads: 0,
+    insightDays: 0,
+    graphCalls: 0,
+    removed: { campaigns: 0, adSets: 0, ads: 0, insightRows: 0 },
+  };
 }
 
 export class SyncCancelledError extends Error {
@@ -226,9 +247,15 @@ export async function runStructureStages(
   const campaignIdByPlatform = new Map<string, string>();
   const adSetIdByPlatform = new Map<string, string>();
   const adIdByPlatform = new Map<string, string>();
+  const listing: LightListing = {
+    campaignIds: new Set<string>(),
+    adSetIds: new Set<string>(),
+    adIds: new Set<string>(),
+  };
 
   const campaignsOk = await runner.run("campaigns", async () => {
     const lightRows = await meta.getCampaignIds(account.adAccountId);
+    collectLightIds(listing.campaignIds, lightRows);
     await model.updateCampaignStatuses(account.id, toStatusPatches(lightRows));
     const states = await model.campaignStates(account.id);
     for (const [platformId, state] of states) {
@@ -256,6 +283,7 @@ export async function runStructureStages(
 
   const adSetsOk = await runner.run("ad_sets", async () => {
     const lightRows = await meta.getAdSetIds(account.adAccountId);
+    collectLightIds(listing.adSetIds, lightRows);
     await model.updateAdSetStatuses(account.id, toStatusPatches(lightRows));
     const states = await model.adSetStates(account.id);
     for (const [platformId, state] of states) {
@@ -301,6 +329,7 @@ export async function runStructureStages(
 
   const adsOk = await runner.run("ads", async () => {
     const lightRows = await meta.getAdIds(account.adAccountId);
+    collectLightIds(listing.adIds, lightRows);
     await model.updateAdStatuses(account.id, toStatusPatches(lightRows));
     const states = await model.adStates(account.id);
     for (const [platformId, state] of states) {
@@ -348,8 +377,23 @@ export async function runStructureStages(
     };
   });
 
+  if (!adsOk) {
+    return { ok: false, campaignIdByPlatform, adSetIdByPlatform, adIdByPlatform };
+  }
+
+  const cleanup = await cleanupRemovedEntities(model, account, listing);
+  summary.removed = {
+    campaigns: cleanup.removed.campaigns.length,
+    adSets: cleanup.removed.adSets.length,
+    ads: cleanup.removed.ads.length,
+    insightRows: cleanup.purgedInsightRows,
+  };
+  pruneEntities(campaignIdByPlatform, cleanup.removed.campaigns);
+  pruneEntities(adSetIdByPlatform, cleanup.removed.adSets);
+  pruneEntities(adIdByPlatform, cleanup.removed.ads);
+
   return {
-    ok: adsOk,
+    ok: true,
     campaignIdByPlatform,
     adSetIdByPlatform,
     adIdByPlatform,
