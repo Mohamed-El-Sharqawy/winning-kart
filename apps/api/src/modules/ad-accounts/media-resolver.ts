@@ -1,6 +1,6 @@
 import type { AdFormat } from "@wk/db";
-import { MEDIA_IDS_BATCH_MAX } from "../../platforms/meta";
-import type { AdPlatformAdapter } from "../../platforms/meta";
+import { MEDIA_IDS_BATCH_MAX, MetaError } from "../../platforms/meta";
+import type { AdPlatformAdapter, MetaVideoMedia } from "../../platforms/meta";
 import type { AdAccountsModel, AdMediaPatch } from "./model";
 
 const DAY_MS = 86400000;
@@ -81,7 +81,15 @@ export async function resolveAdMedia(
   );
   const videoIds = [...new Set(staleVideos.map((row) => row.videoId as string))];
   for (const videoId of videoIds) {
-    const media = await adapter.getVideoMedia(videoId);
+    let media: MetaVideoMedia | null;
+    try {
+      media = await adapter.getVideoMedia(videoId);
+    } catch (error) {
+      if (error instanceof MetaError && error.errorClass === "not_found") {
+        continue;
+      }
+      throw error;
+    }
     if (media === null) {
       continue;
     }
