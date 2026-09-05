@@ -12,6 +12,8 @@ import { AlertsModel } from "../alerts/model";
 import { TasksModel } from "../tasks/model";
 import { TasksService } from "../tasks/service";
 import { McpService } from "./service";
+import { listAdsPage } from "../performance/ads-list";
+import { adsListDeps } from "../performance/ads-deps";
 import type { McpModels } from "./tools";
 
 const models: McpModels = {
@@ -21,6 +23,7 @@ const models: McpModels = {
   portal: new PortalModel(),
   alerts: new AlertsModel(),
   tasks: new TasksService(new TasksModel()),
+  adsList: (accountId, query) => listAdsPage(adsListDeps(accountId), accountId, query),
 };
 
 const service = new McpService();

@@ -26,7 +26,7 @@ const adSetItemDto = t.Object({
   reach: nullableNumber,
 });
 
-const fatigueDto = t.Object({
+export const fatigueDto = t.Object({
   flag: t.Union([
     t.Literal("fatiguing"),
     t.Literal("bleeding"),
@@ -61,20 +61,13 @@ const adItemDto = t.Object({
 
 export const performanceAdSetsDto = t.Object({ data: t.Array(adSetItemDto) });
 
-export const performanceAdsDto = t.Object({ data: t.Array(adItemDto) });
-
-const windowQueryFields = {
+export const windowQueryFields = {
   days: t.Optional(t.String({ pattern: "^[0-9]+$" })),
   from: t.Optional(t.String()),
   to: t.Optional(t.String()),
 };
 
 export const performanceWindowQueryDto = t.Object(windowQueryFields);
-
-export const performanceAdsQueryDto = t.Object({
-  ...windowQueryFields,
-  adSetId: t.Optional(t.String()),
-});
 
 const campaignPrevDto = t.Object({
   spend: nullableNumber,

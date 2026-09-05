@@ -4,17 +4,18 @@ import { problem } from "../../lib/problem";
 import {
   fatigueSummaryDto,
   performanceAdSetsDto,
-  performanceAdsDto,
-  performanceAdsQueryDto,
   performanceCampaignDto,
   performanceWindowQueryDto,
 } from "../../dto/performance";
+import { adsListPageDto, adsListQueryDto } from "../../dto/ads-list";
 import { mediaResolveBodyDto, mediaResolveResponseDto } from "../../dto/media";
 import { resolveWindow } from "../../lib/window";
 import { AdAccountsService } from "../ad-accounts/service";
 import { AdAccountsModel } from "../ad-accounts/model";
 import { PerformanceModel } from "./model";
 import { PerformanceService } from "./service";
+import { listAdsPage } from "./ads-list";
+import { adsListDeps } from "./ads-deps";
 import type { SafeUser } from "../auth/model";
 
 const service = new PerformanceService(new PerformanceModel());
@@ -52,9 +53,11 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
     "/:id/ads",
     async ({ params, query, headers }) => {
       await requireAgency(headers);
-      return { data: await service.listAds(params.id, resolveWindow(query), query.adSetId) };
+      return {
+        data: await listAdsPage(adsListDeps(params.id), params.id, query),
+      };
     },
-    { params: idParamsDto, query: performanceAdsQueryDto, response: { 200: performanceAdsDto } }
+    { params: idParamsDto, query: adsListQueryDto, response: { 200: adsListPageDto } }
   )
   .post(
     "/:id/ads/media/resolve",
