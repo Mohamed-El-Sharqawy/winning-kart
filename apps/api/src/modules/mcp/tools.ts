@@ -5,6 +5,7 @@ import type { OverviewService } from "../overview/service";
 import type { PortalModel } from "../portal/model";
 import type { AlertsModel } from "../alerts/model";
 import type { TasksService } from "../tasks/service";
+import type { AdsListPage, AdsListQuery } from "../performance/ads-list";
 import { readTools } from "./tools-read";
 import { metricsTools } from "./tools-metrics";
 import { writeTools } from "./tools-write";
@@ -16,6 +17,7 @@ export interface McpModels {
   portal: PortalModel;
   alerts: AlertsModel;
   tasks: TasksService;
+  adsList: (accountId: string, query: AdsListQuery) => Promise<AdsListPage>;
 }
 
 export interface ToolContext {

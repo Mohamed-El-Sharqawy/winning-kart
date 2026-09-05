@@ -15,6 +15,13 @@ Every successful (`2xx`) response body is a JSON object with a `data` key:
 - An empty collection is `{ "data": [] }` with HTTP 200. Collections are never 404.
 - A `meta` key may be added alongside `data` only when it carries applicable metadata (for example future pagination). No endpoint uses `meta` today.
 
+### Pagination envelopes
+
+Two pagination shapes exist; both wrap in the standard `data` envelope:
+
+- Keyset (infinite scroll) - `{ "data": { "items": [ ... ], "nextCursor": string | null } }`. `nextCursor` is an opaque base64url token carrying the position (`{ v, id }`) bound to the full filter/window/sort/order context; clients repeat every context param on the next request. `nextCursor: null` means the collection is exhausted. There is no `total`. Used by the ads list, whose backing sets reach ~100k rows per account (ADR 0003).
+- Numbered (offset) - `{ "data": { "items": [ ... ], "page": number, "pageSize": number, "total": number } }`. A page beyond range returns empty `items` with `total` intact. Used by lists whose counts stay in the hundreds to thousands.
+
 Examples:
 
 ```json
@@ -63,6 +70,8 @@ Implementation: handlers and services throw `ProblemError` from `apps/api/src/li
 | Wrong role | 403 | `FORBIDDEN` | - |
 | Bad login credentials | 401 | `INVALID_CREDENTIALS` | - |
 | Body validation failure | 422 | `VALIDATION` | - |
+| Undecodable pagination cursor | 422 | `CURSOR_INVALID` | - |
+| Cursor context mismatch (filters, window, sort, or order changed mid-scroll) | 422 | `CURSOR_MISMATCH` | - |
 | Malformed JSON body | 400 | `VALIDATION` | - |
 | Duplicate user email | 409 | `EMAIL_TAKEN` | - |
 | Duplicate slug (client, ad account) | 409 | `SLUG_TAKEN` | - |
@@ -77,6 +86,7 @@ Implementation: handlers and services throw `ProblemError` from `apps/api/src/li
 Notes:
 
 - The 404 for unknown routes uses `detail: "Route not found"`; the 404 for unknown resource ids uses a detail naming the resource and id, for example `No ad account with id 999`.
+- `CURSOR_INVALID` covers tokens that are not decodable base64url JSON of the expected shape; `CURSOR_MISMATCH` covers decodable tokens whose context hash does not match the request's filters, window, sort, and order.
 - The 500 `detail` is generic (`Unexpected server error`) in production; the underlying error message is included only outside production.
 - An ad account sync of an existing account reports per-stage results in a `200` envelope body (`data.ok` false with failed stage details); only a nonexistent ad account id produces a 404 problem.
 

@@ -195,6 +195,40 @@ export function withThumbnailDimensions(params: Record<string, string>): Record<
   return params;
 }
 
+export const GRAPH_BATCH_URL = "https://graph.facebook.com/";
+
+export function adResolveBatchEntries(ids: string[]): string[] {
+  const query = new URLSearchParams(withThumbnailDimensions({ fields: RESOLVE_AD_FIELDS })).toString();
+  return ids.map((id) => `${id}?${query}`);
+}
+
+interface BatchSubResponse {
+  code?: number;
+  body?: string;
+}
+
+export function flattenBatchBody<T>(body: unknown): T[] {
+  if (!Array.isArray(body)) {
+    return [];
+  }
+  return body
+    .map((entry) => {
+      if (typeof entry !== "object" || entry === null) {
+        return null;
+      }
+      const sub = entry as BatchSubResponse;
+      if (sub.code !== 200 || typeof sub.body !== "string") {
+        return null;
+      }
+      try {
+        return JSON.parse(sub.body) as unknown;
+      } catch {
+        return null;
+      }
+    })
+    .filter(hasStringId) as T[];
+}
+
 const BASE_INSIGHT_FIELDS =
   "spend,impressions,reach,clicks,ctr,cpc,cpm,frequency,actions,action_values";
 
@@ -305,11 +339,8 @@ export class MetaClient {
   }
 
   async getAdsByIds(ids: string[]): Promise<MetaAdRow[]> {
-    const body = await this.request("", {
-      ids: ids.join(","),
-      fields: RESOLVE_AD_FIELDS,
-    });
-    return flattenIdedBody<MetaAdRow>(body);
+    const body = await this.batchRequest(adResolveBatchEntries(ids));
+    return flattenBatchBody<MetaAdRow>(body);
   }
 
   async getVideoMedia(videoId: string): Promise<MetaVideoMedia | null> {
@@ -358,7 +389,19 @@ export class MetaClient {
     }
   }
 
-  private async rawRequest(path: string, params: Record<string, string>): Promise<unknown> {
+  private async batchRequest(relativeUrls: string[]): Promise<unknown> {
+    try {
+      return await this.rawBatchRequest(relativeUrls);
+    } catch (error) {
+      if (error instanceof MetaError && error.retryable) {
+        await delay(RETRY_DELAY_MS);
+        return this.rawBatchRequest(relativeUrls);
+      }
+      throw error;
+    }
+  }
+
+  private async beginCall(): Promise<void> {
     this.graphCalls += 1;
     await this.rateGuard.pace();
     const sinceLastCall = Date.now() - this.lastCallAt;
@@ -366,6 +409,47 @@ export class MetaClient {
       await delay(MIN_CALL_INTERVAL_MS - sinceLastCall);
     }
     this.lastCallAt = Date.now();
+  }
+
+  private async rawBatchRequest(relativeUrls: string[]): Promise<unknown> {
+    await this.beginCall();
+    const version = this.baseUrl.split("/").pop() ?? "v21.0";
+    const batch = relativeUrls.map((relativeUrl) => ({
+      method: "GET",
+      relative_url: `${version}/${relativeUrl}`,
+    }));
+    let response: Response;
+    try {
+      response = await fetch(GRAPH_BATCH_URL, {
+        method: "POST",
+        body: new URLSearchParams({
+          access_token: this.token,
+          include_headers: "false",
+          batch: JSON.stringify(batch),
+        }),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+    } catch (error) {
+      throw new MetaError(
+        "network_error",
+        error instanceof Error ? error.message : "network request failed"
+      );
+    }
+    this.rateGuard.observe(response.headers);
+    let body: unknown = null;
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+    if (!response.ok) {
+      throw classifyGraphError(response.status, body);
+    }
+    return body;
+  }
+
+  private async rawRequest(path: string, params: Record<string, string>): Promise<unknown> {
+    await this.beginCall();
     const url = new URL(`${this.baseUrl}/${path}`);
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, value);
