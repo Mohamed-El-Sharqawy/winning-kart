@@ -43,6 +43,30 @@ export interface AdUpsertRow {
   platformUpdatedAt: Date | null;
 }
 
+export type AdMediaRow = Pick<
+  typeof ads.$inferSelect,
+  | "id"
+  | "platformAdId"
+  | "format"
+  | "videoId"
+  | "carouselCount"
+  | "thumbnailUrl"
+  | "thumbnailResolvedAt"
+  | "posterUrl"
+  | "posterResolvedAt"
+  | "sourceUrl"
+  | "sourceResolvedAt"
+>;
+
+export interface AdMediaPatch {
+  thumbnailUrl?: string | null;
+  thumbnailResolvedAt?: Date | null;
+  posterUrl?: string | null;
+  posterResolvedAt?: Date | null;
+  sourceUrl?: string | null;
+  sourceResolvedAt?: Date | null;
+}
+
 export interface PlatformEntityState {
   id: string;
   platformUpdatedAt: Date | null;
@@ -577,6 +601,37 @@ export class AdAccountsModel {
       .innerJoin(campaigns, eq(adSets.campaignId, campaigns.id))
       .where(eq(campaigns.adAccountId, adAccountId));
     return new Map(rows.map((row) => [row.platformId, toState(row)]));
+  }
+
+  async findAdsMediaByIds(adAccountId: string, ids: string[]): Promise<AdMediaRow[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    return db
+      .select({
+        id: ads.id,
+        platformAdId: ads.platformAdId,
+        format: ads.format,
+        videoId: ads.videoId,
+        carouselCount: ads.carouselCount,
+        thumbnailUrl: ads.thumbnailUrl,
+        thumbnailResolvedAt: ads.thumbnailResolvedAt,
+        posterUrl: ads.posterUrl,
+        posterResolvedAt: ads.posterResolvedAt,
+        sourceUrl: ads.sourceUrl,
+        sourceResolvedAt: ads.sourceResolvedAt,
+      })
+      .from(ads)
+      .innerJoin(adSets, eq(ads.adSetId, adSets.id))
+      .innerJoin(campaigns, eq(adSets.campaignId, campaigns.id))
+      .where(and(eq(campaigns.adAccountId, adAccountId), inArray(ads.id, ids)));
+  }
+
+  async updateAdMedia(id: string, patch: AdMediaPatch): Promise<void> {
+    await db
+      .update(ads)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(eq(ads.id, id));
   }
 
   async applyAbsenceCleanup(

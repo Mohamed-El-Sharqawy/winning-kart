@@ -29,6 +29,8 @@ import type { BackfillOutcome } from "./backfill";
 import { createEmptySummary, createStageRunner, runStructureStages } from "./stages";
 import { isRecord, SyncCancelledError } from "./stages";
 import type { SyncStage, StageResult, SyncSummary, SyncRunHooks } from "./stages";
+import { resolveAdMedia } from "./media-resolver";
+import type { ResolvedMediaItem } from "./media-resolver";
 import { resolveInsightWindow, utcToday } from "./sync-window";
 
 export { SyncCancelledError } from "./stages";
@@ -516,6 +518,47 @@ export class AdAccountsService {
       await this.model.updateAdAccount(account.id, { insightsSyncedThrough: utcToday() });
     }
     return outcome;
+  }
+
+  async resolveMedia(id: string, ids: string[], force: boolean): Promise<ResolvedMediaItem[]> {
+    const account = await this.model.findById(id);
+    if (!account) {
+      throw accountNotFound(id);
+    }
+    const storedBlock = storedRateLimitBlocked(account.platformPayload);
+    if (storedBlock.blocked) {
+      const estimate = storedBlock.estClearMin !== null ? ` ~${storedBlock.estClearMin} min` : "";
+      throw problem(
+        429,
+        "RATE_LIMITED",
+        `Meta rate limit active; do not retry until the window clears.${estimate}`,
+        "rate_limited"
+      );
+    }
+    let adapter: AdPlatformAdapter;
+    try {
+      adapter = getMetaAdapter(decrypt(account.accessTokenEncrypted));
+    } catch {
+      throw problem(
+        422,
+        "INVALID_TOKEN",
+        "access token is pending oauth connection",
+        "invalid_token"
+      );
+    }
+    try {
+      const items = await resolveAdMedia(this.model, account, adapter, ids, force);
+      if (adapter.graphCallCount() > 0) {
+        const platformPayload = isRecord(account.platformPayload)
+          ? { ...account.platformPayload }
+          : {};
+        platformPayload.rateLimit = adapter.rateGuard.snapshot();
+        await this.model.updateAdAccount(account.id, { platformPayload });
+      }
+      return items;
+    } catch (error) {
+      throw toProblemError(error);
+    }
   }
 
   async reconnect(id: string, accessToken: string, tokenType?: TokenType): Promise<void> {
