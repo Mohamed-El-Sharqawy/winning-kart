@@ -4,7 +4,7 @@
 
 Variant B (ticket #24): dense media table, inline 4:5 thumbnails, sortable metric columns; right-side detail drawer. Infinite scroll over the cursor pages: every fetch repeats the full filter/window/sort/order context; duplicate or skipped rows at page boundaries during a sync are accepted (ADR 0003).
 
-- Video rows: black placeholder + play button; click loads poster/source (the detail fetch) and plays in place with controls. No hover preview, no colorful poster.
+- Video rows: black placeholder + play button; click opens the drawer fetch (poster + `embedUrl`) and plays through the Facebook player iframe (`embedUrl`). No hover preview, no colorful poster.
 - Carousel rows: lead-card thumbnail + "1/N" count chip.
 - Status dropdown: All / Active / Inactive plus an "Exact status" optgroup (the ten values + Unknown); default Active; drives the `status` param. No Scheduled state - dropped (ticket #29).
 - Filters: fatigue flag, format, `q`. Sort headers: spend / roas / ctr / frequency.
