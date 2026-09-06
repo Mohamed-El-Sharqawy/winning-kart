@@ -499,7 +499,11 @@ export class AdAccountsModel {
       .where(and(eq(adAccounts.id, id), ne(adAccounts.healthState, "error")));
   }
 
-  async campaignMetricsWindow(since: string, until: string): Promise<CampaignWindowMetrics[]> {
+  async campaignMetricsWindow(
+    adAccountId: string,
+    since: string,
+    until: string
+  ): Promise<CampaignWindowMetrics[]> {
     const rows = await db
       .select({
         entityId: dailyInsights.entityId,
@@ -513,6 +517,7 @@ export class AdAccountsModel {
       .from(dailyInsights)
       .where(
         and(
+          eq(dailyInsights.adAccountId, adAccountId),
           eq(dailyInsights.entityLevel, "campaign"),
           gte(dailyInsights.date, since),
           lte(dailyInsights.date, until)

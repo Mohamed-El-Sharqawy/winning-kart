@@ -13,14 +13,16 @@ Every successful (`2xx`) response body is a JSON object with a `data` key:
 - A single resource: `{ "data": { ... } }`.
 - A collection: `{ "data": [ ... ] }`.
 - An empty collection is `{ "data": [] }` with HTTP 200. Collections are never 404.
-- A `meta` key may be added alongside `data` only when it carries applicable metadata (for example future pagination). No endpoint uses `meta` today.
+- Paginated list endpoints add a `meta` key alongside `data`; `meta` carries only response chrome (pagination position) and never part of the resource.
 
 ### Pagination envelopes
 
-Two pagination shapes exist; both wrap in the standard `data` envelope:
+Two pagination shapes exist; both serve the items as the `data` array with pagination chrome under `meta`:
 
-- Keyset (infinite scroll) - `{ "data": { "items": [ ... ], "nextCursor": string | null } }`. `nextCursor` is an opaque base64url token carrying the position (`{ v, id }`) bound to the full filter/window/sort/order context; clients repeat every context param on the next request. `nextCursor: null` means the collection is exhausted. There is no `total`. Used by the ads list, whose backing sets reach ~100k rows per account (ADR 0003).
-- Numbered (offset) - `{ "data": { "items": [ ... ], "page": number, "pageSize": number, "total": number } }`. A page beyond range returns empty `items` with `total` intact. Used by lists whose counts stay in the hundreds to thousands.
+- Keyset (infinite scroll) - `{ "data": [ ... ], "meta": { "nextCursor": string | null } }`. `nextCursor` is an opaque base64url token carrying the position (`{ v, id }`) bound to the full filter/window/sort/order context; clients repeat every context param on the next request. `nextCursor: null` means the collection is exhausted. There is no `total`. Used by the ads list, whose backing sets reach ~100k rows per account (ADR 0003).
+- Numbered (offset) - `{ "data": [ ... ], "meta": { "page": number, "pageSize": number, "total": number } }`. A page beyond range returns empty `data` with `meta.total` intact; only `page` values beyond 1,000,000 are rejected with 422 `VALIDATION` (guard against absurd offsets). Used by the campaigns and ad sets lists, whose counts stay in the hundreds to thousands (ADR 0003).
+
+List endpoints use one of these two shapes; no list nests paging fields inside `data`, and no non-list endpoint carries `meta`.
 
 Examples:
 
@@ -29,6 +31,8 @@ POST /api/auth/login   -> 200 { "data": { "role": "admin" } }
 GET  /api/clients      -> 200 { "data": [ { "id": "...", "name": "...", "slug": "..." } ] }
 GET  /api/overview     -> 200 { "data": { "spend": 1234.5, "...": "..." } }
 POST /api/users        -> 201 { "data": { "id": "...", "email": "..." } }
+GET  /api/ad-accounts/:id/campaigns -> 200 { "data": [ ... ], "meta": { "page": 1, "pageSize": 25, "total": 132 } }
+GET  /api/ad-accounts/:id/ads       -> 200 { "data": [ ... ], "meta": { "nextCursor": "eyJ2IjoxfQ" } }
 ```
 
 ## Error format

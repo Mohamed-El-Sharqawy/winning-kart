@@ -3,10 +3,18 @@ import { resolveSessionUser } from "../../lib/session";
 import { problem } from "../../lib/problem";
 import {
   fatigueSummaryDto,
-  performanceAdSetsDto,
   performanceCampaignDto,
   performanceWindowQueryDto,
 } from "../../dto/performance";
+import {
+  adSetsListQueryDto,
+  adSetsPageDto,
+  adSetsSummaryQueryDto,
+  campaignsListQueryDto,
+  campaignsPageDto,
+  campaignsSummaryQueryDto,
+  kpiSummaryDto,
+} from "../../dto/list-pages";
 import { adsListPageDto, adsListQueryDto, adDetailDto } from "../../dto/ads-list";
 import { mediaResolveBodyDto, mediaResolveResponseDto } from "../../dto/media";
 import { toMediaResolveItem } from "../ad-accounts/media-resolver";
@@ -17,7 +25,8 @@ import { PerformanceModel } from "./model";
 import { PerformanceService } from "./service";
 import { listAdsPage } from "./ads-list";
 import { adDetail } from "./ads-detail";
-import { adsListDeps, adDetailDeps } from "./ads-deps";
+import { adsListDeps, adDetailDeps, listDeps } from "./ads-deps";
+import { adSetsPage, adSetsSummary, campaignsPage, campaignsSummary } from "./list-service";
 import type { SafeUser } from "../auth/model";
 
 const service = new PerformanceService(new PerformanceModel());
@@ -45,20 +54,42 @@ const campaignParamsDto = t.Object({ id: t.String(), campaignId: t.String() });
 
 export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
+    "/:id/campaigns/summary",
+    async ({ params, query, headers }) => {
+      await requireAgency(headers);
+      return { data: await campaignsSummary(listDeps(), params.id, query) };
+    },
+    { params: idParamsDto, query: campaignsSummaryQueryDto, response: { 200: kpiSummaryDto } }
+  )
+  .get(
+    "/:id/ad-sets/summary",
+    async ({ params, query, headers }) => {
+      await requireAgency(headers);
+      return { data: await adSetsSummary(listDeps(), params.id, query) };
+    },
+    { params: idParamsDto, query: adSetsSummaryQueryDto, response: { 200: kpiSummaryDto } }
+  )
+  .get(
+    "/:id/campaigns",
+    async ({ params, query, headers }) => {
+      await requireAgency(headers);
+      return await campaignsPage(listDeps(), params.id, query);
+    },
+    { params: idParamsDto, query: campaignsListQueryDto, response: { 200: campaignsPageDto } }
+  )
+  .get(
     "/:id/ad-sets",
     async ({ params, query, headers }) => {
       await requireAgency(headers);
-      return { data: await service.listAdSets(params.id, resolveWindow(query)) };
+      return await adSetsPage(listDeps(), params.id, query);
     },
-    { params: idParamsDto, query: performanceWindowQueryDto, response: { 200: performanceAdSetsDto } }
+    { params: idParamsDto, query: adSetsListQueryDto, response: { 200: adSetsPageDto } }
   )
   .get(
     "/:id/ads",
     async ({ params, query, headers }) => {
       await requireAgency(headers);
-      return {
-        data: await listAdsPage(adsListDeps(params.id), params.id, query),
-      };
+      return await listAdsPage(adsListDeps(params.id), params.id, query);
     },
     { params: idParamsDto, query: adsListQueryDto, response: { 200: adsListPageDto } }
   )

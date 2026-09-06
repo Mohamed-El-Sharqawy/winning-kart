@@ -14,15 +14,14 @@ import {
   aggregateInsightsByDate,
   normalizeAccountInfo,
   normalizeInsight,
-  round2,
 } from "../../platforms/meta";
 import type {
-  CampaignRow,
-  CampaignWindowMetrics,
   InsightUpsertRow,
   SyncJobRow,
 } from "./model";
 import type { AdAccountsModel } from "./model";
+import { mergeCampaignMetrics } from "./campaign-views";
+import type { CampaignWithMetrics } from "./campaign-views";
 import { backfillAccount } from "./backfill";
 import type { BackfillOutcome } from "./backfill";
 import { createEmptySummary, createStageRunner, runStructureStages } from "./stages";
@@ -71,26 +70,6 @@ export interface CreateAdAccountInput {
   adAccountId: string;
   accessToken: string;
   tokenType?: TokenType;
-}
-
-export interface CampaignWithMetrics {
-  id: string;
-  name: string;
-  status: string;
-  objective: string | null;
-  buyingType: string | null;
-  currency: string;
-  dailyBudget: string | null;
-  lifetimeBudget: string | null;
-  scheduleStart: Date | null;
-  scheduleEnd: Date | null;
-  spend: number | null;
-  revenue: number | null;
-  purchases: number | null;
-  roas: number | null;
-  cpa: number | null;
-  ctr: number | null;
-  frequency: number | null;
 }
 
 const RECENT_JOBS_LIMIT = 12;
@@ -201,44 +180,6 @@ function toAccountView(account: AdAccount): AdAccountView {
     tokenExpiresAt: account.tokenExpiresAt,
     currency: account.currency,
     timezone: account.timezone,
-  };
-}
-
-function toCampaignWithMetrics(
-  row: CampaignRow,
-  metrics: CampaignWindowMetrics | null
-): CampaignWithMetrics {
-  const spend = metrics === null ? null : round2(metrics.spend);
-  const revenue = metrics === null ? null : round2(metrics.revenue);
-  const purchases = metrics === null ? null : metrics.purchases;
-  return {
-    id: row.id,
-    name: row.name,
-    status: row.status,
-    objective: row.objective,
-    buyingType: row.buyingType,
-    currency: row.currency,
-    dailyBudget: row.dailyBudget,
-    lifetimeBudget: row.lifetimeBudget,
-    scheduleStart: row.scheduleStart,
-    scheduleEnd: row.scheduleEnd,
-    spend,
-    revenue,
-    purchases,
-    roas: metrics !== null && spend !== null && spend > 0 && revenue !== null
-      ? round2(revenue / spend)
-      : null,
-    cpa: metrics !== null && purchases !== null && purchases > 0 && spend !== null
-      ? round2(spend / purchases)
-      : null,
-    ctr:
-      metrics !== null && metrics.impressions > 0
-        ? round2((metrics.clicks / metrics.impressions) * 100)
-        : null,
-    frequency:
-      metrics !== null && metrics.reach > 0
-        ? round2(metrics.impressions / metrics.reach)
-        : null,
   };
 }
 
@@ -575,21 +516,10 @@ export class AdAccountsService {
     if (!account) {
       return [];
     }
-    const campaignRows = await this.model.listCampaignsByAccount(id);
-    const metricsRows = await this.model.campaignMetricsWindow(window.since, window.until);
-    const metricsByEntity = new Map(metricsRows.map((row) => [row.entityId, row]));
-    if (metricsByEntity.size === 0) {
-      return campaignRows.map((row) => toCampaignWithMetrics(row, null));
-    }
-    const views: CampaignWithMetrics[] = [];
-    for (const row of campaignRows) {
-      const metrics = metricsByEntity.get(row.id);
-      if (metrics === undefined) {
-        continue;
-      }
-      views.push(toCampaignWithMetrics(row, metrics));
-    }
-    views.sort((a, b) => (b.spend ?? 0) - (a.spend ?? 0));
-    return views;
+    const [campaignRows, metricsRows] = await Promise.all([
+      this.model.listCampaignsByAccount(id),
+      this.model.campaignMetricsWindow(id, window.since, window.until),
+    ]);
+    return mergeCampaignMetrics(campaignRows, metricsRows);
   }
 }

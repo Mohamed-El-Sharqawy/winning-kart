@@ -20,12 +20,6 @@ export const deleteAdAccountDto = t.Object({
   confirmSlug: t.String({ minLength: 1 }),
 });
 
-export const adAccountCampaignsQueryDto = t.Object({
-  days: t.Optional(t.String({ pattern: "^[0-9]+$" })),
-  from: t.Optional(t.String()),
-  to: t.Optional(t.String()),
-});
-
 export const adAccountBackfillDto = t.Object({
   months: t.Optional(t.Number({ default: 12 })),
 });

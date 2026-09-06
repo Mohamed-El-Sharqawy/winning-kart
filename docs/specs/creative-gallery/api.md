@@ -1,6 +1,6 @@
 # API contracts
 
-All list endpoints consolidate under the performance module (the campaigns list moves from the ad-accounts module; paths unchanged). Auth `requireAgency` everywhere; success envelope `{ "data": ... }`; RFC 9457 errors (`docs/api-conventions.md`). Window params `days`/`from`/`to` resolve as today (`lib/window.ts`, 422 `INVALID_WINDOW`).
+All list endpoints consolidate under the performance module (the campaigns list moves from the ad-accounts module; paths unchanged). Auth `requireAgency` everywhere; success envelope `{ "data": ... }` with list pagination chrome under `meta` (`docs/api-conventions.md`); RFC 9457 errors (`docs/api-conventions.md`). Window params `days`/`from`/`to` resolve as today (`lib/window.ts`, 422 `INVALID_WINDOW`).
 
 ## Shared list semantics
 
@@ -15,7 +15,7 @@ All list endpoints consolidate under the performance module (the campaigns list 
 
 - `limit` default 50, max 100. `flag`: `bleeding | fatiguing | status_anomaly | scale`. `format`: `IMAGE | VIDEO | CAROUSEL`.
 - `cursor`: opaque base64url `{ v, id }` bound to the full filter/window/sort/order context; cursor requests repeat every context param. Undecodable: 422 `CURSOR_INVALID`. Context mismatch: 422 `CURSOR_MISMATCH`.
-- 200 `{ "data": { "items": AdItem[], "nextCursor": string | null } }`; `nextCursor: null` means exhausted; no `total`.
+- 200 `{ "data": AdItem[], "meta": { "nextCursor": string | null } }`; `meta.nextCursor: null` means exhausted; no `total`.
 - AdItem: `id, name, status, format, adSetId, adSetName, campaignId, campaignName, thumbnailUrl | null, videoId | null, carouselCount | null, bodyCopy, metrics { spend, revenue, purchases, roas, cpa, ctr, frequency } | null, spendShare, trend { spend, ctr }, fatigue { flag, reason } | null`. Zero-insights ads always listed (metrics null, nulls last).
 - Decoration per ADR 0003: SQL computes window sums, trend sums (`FILTER`), spendShare, per-ad-set cohort medians (`percentile_cont`, account-wide so pages are independent); `classifyAd` runs TypeScript over page rows only.
 - Inline stale-thumbnail refresh before responding (data-and-sync.md).
@@ -30,7 +30,7 @@ All list endpoints consolidate under the performance module (the campaigns list 
 
 ## Campaigns - numbered pages
 
-`GET /api/ad-accounts/:id/campaigns?status&q&sort&order&page&pageSize` - 200 `{ "data": { "items": CampaignItem[], "page": number, "pageSize": number, "total": number } }`; `pageSize` default 25, max 100; a page beyond range returns empty items with `total` intact. Zero-metric campaigns always listed: LEFT JOIN, nulls last; the silent drop (`ad-accounts/service.ts:571`) dies and `campaignMetricsWindow` gains its missing adAccountId predicate.
+`GET /api/ad-accounts/:id/campaigns?status&q&sort&order&page&pageSize` - 200 `{ "data": CampaignItem[], "meta": { "page": number, "pageSize": number, "total": number } }`; `pageSize` default 25, max 100; a page beyond range returns empty `data` with `meta.total` intact. Zero-metric campaigns always listed: LEFT JOIN, nulls last; the silent drop (`ad-accounts/service.ts:571`) dies and `campaignMetricsWindow` gains its missing adAccountId predicate.
 
 `GET /api/ad-accounts/:id/campaigns/summary?status&q` - 200 `{ "data": { spend, revenue, purchases, roas, cpa, ctr, frequency } }`; same filters, no paging/sort, SQL aggregates over the filtered set.
 

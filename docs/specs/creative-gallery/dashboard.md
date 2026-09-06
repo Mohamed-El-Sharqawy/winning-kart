@@ -39,4 +39,4 @@ Campaign rows deleted by absence cleanup can leave `revenue_events.resolvedEntit
 
 ## Walker (e2e)
 
-No new routes. Walker fixtures update to the new envelopes (`{ data: { items, ... } }` for ads, campaigns, ad sets) and stub the new summary GETs per `docs/qa-gate.md`.
+No new routes. Walker fixtures update to the new envelopes (`{ data: [ ... ], meta: { ... } }` for ads, campaigns, ad sets) and stub the new summary GETs per `docs/qa-gate.md`.
