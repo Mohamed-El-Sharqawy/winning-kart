@@ -22,7 +22,6 @@ import type {
 import type { AdAccountsModel } from "./model";
 import { mergeCampaignMetrics } from "./campaign-views";
 import type { CampaignWithMetrics } from "./campaign-views";
-export type { CampaignWithMetrics } from "./campaign-views";
 import { backfillAccount } from "./backfill";
 import type { BackfillOutcome } from "./backfill";
 import { createEmptySummary, createStageRunner, runStructureStages } from "./stages";

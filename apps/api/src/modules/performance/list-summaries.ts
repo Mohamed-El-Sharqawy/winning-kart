@@ -15,11 +15,6 @@ function summarySelect(): SQL {
     coalesce(sum(w.reach), 0)::float8 as reach`;
 }
 
-function toSums(row: Record<string, unknown>): AdsSums {
-  const sums = row as unknown as AdsSums;
-  return sums;
-}
-
 export class ListSummaryRepository {
   async campaignSummary(input: SummaryInput): Promise<AdsSums> {
     const where = campaignWhere(input.accountId, input);
@@ -30,7 +25,7 @@ export class ListSummaryRepository {
       left join win w on w.entity_id = c.id
       where ${where}
     `);
-    return toSums(rows[0] ?? {});
+    return rows[0] as unknown as AdsSums;
   }
 
   async adSetSummary(input: SummaryInput): Promise<AdsSums> {
@@ -43,7 +38,7 @@ export class ListSummaryRepository {
       left join win w on w.entity_id = s.id
       where ${where}
     `);
-    return toSums(rows[0] ?? {});
+    return rows[0] as unknown as AdsSums;
   }
 
   private async run(query: SQL): Promise<Record<string, unknown>[]> {

@@ -20,7 +20,7 @@ Every successful (`2xx`) response body is a JSON object with a `data` key:
 Two pagination shapes exist; both serve the items as the `data` array with pagination chrome under `meta`:
 
 - Keyset (infinite scroll) - `{ "data": [ ... ], "meta": { "nextCursor": string | null } }`. `nextCursor` is an opaque base64url token carrying the position (`{ v, id }`) bound to the full filter/window/sort/order context; clients repeat every context param on the next request. `nextCursor: null` means the collection is exhausted. There is no `total`. Used by the ads list, whose backing sets reach ~100k rows per account (ADR 0003).
-- Numbered (offset) - `{ "data": [ ... ], "meta": { "page": number, "pageSize": number, "total": number } }`. A page beyond range returns empty `data` with `meta.total` intact. Used by the campaigns and ad sets lists, whose counts stay in the hundreds to thousands (ADR 0003).
+- Numbered (offset) - `{ "data": [ ... ], "meta": { "page": number, "pageSize": number, "total": number } }`. A page beyond range returns empty `data` with `meta.total` intact; only `page` values beyond 1,000,000 are rejected with 422 `VALIDATION` (guard against absurd offsets). Used by the campaigns and ad sets lists, whose counts stay in the hundreds to thousands (ADR 0003).
 
 List endpoints use one of these two shapes; no list nests paging fields inside `data`, and no non-list endpoint carries `meta`.
 
