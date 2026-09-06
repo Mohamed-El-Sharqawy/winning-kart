@@ -52,6 +52,48 @@ describe("resolveAdMedia video poster and source", () => {
     expect(items[0]?.sourceUrl).toBe("https://cdn/new-source.mp4");
   });
 
+  test("a node read stamps both attempts even when source is absent", async () => {
+    const neverResolved = videoRow({
+      posterUrl: null,
+      posterResolvedAt: null,
+      sourceUrl: null,
+      sourceResolvedAt: null,
+    });
+    const model = new FakeModel([neverResolved]);
+    const adapter = new FakeAdapter();
+    adapter.videoResponse.set("vid-1", { picture: "https://cdn/poster.jpg" });
+    const items = await resolveAdMedia(model, ACCOUNT, adapter, ["ad-video"], false);
+    expect(adapter.videoCalls).toEqual(["vid-1"]);
+    expect(model.calls).toEqual([
+      {
+        adId: "ad-video",
+        patch: {
+          posterUrl: "https://cdn/poster.jpg",
+          posterResolvedAt: expect.any(Date),
+          sourceResolvedAt: expect.any(Date),
+        },
+      },
+    ]);
+    expect(items[0]?.posterUrl).toBe("https://cdn/poster.jpg");
+    expect(items[0]?.sourceUrl).toBeNull();
+  });
+
+  test("a picture-only node with fresh stamps is warm and keeps stored urls", async () => {
+    const attempted = videoRow({
+      posterUrl: "https://cdn/poster.jpg",
+      posterResolvedAt: new Date(Date.now() - DAY_MS),
+      sourceUrl: null,
+      sourceResolvedAt: new Date(Date.now() - DAY_MS),
+    });
+    const model = new FakeModel([attempted]);
+    const adapter = new FakeAdapter();
+    const items = await resolveAdMedia(model, ACCOUNT, adapter, ["ad-video"], false);
+    expect(adapter.videoCalls).toEqual([]);
+    expect(model.calls).toEqual([]);
+    expect(items[0]?.posterUrl).toBe("https://cdn/poster.jpg");
+    expect(items[0]?.sourceUrl).toBeNull();
+  });
+
   test("fresh video media makes no video-node calls", async () => {
     const fresh = videoRow({
       posterUrl: "https://cdn/poster.jpg",

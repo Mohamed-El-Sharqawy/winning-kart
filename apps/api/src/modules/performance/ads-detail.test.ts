@@ -134,6 +134,22 @@ describe("adDetail", () => {
     expect(detail.posterUrl).toBeNull();
   });
 
+  test("a video ad with fresh attempt stamps and absent media is warm", async () => {
+    const row = adRow({
+      format: "VIDEO",
+      videoId: "vid-1",
+      posterUrl: null,
+      posterResolvedAt: new Date(Date.now() - 86400000),
+      sourceUrl: null,
+      sourceResolvedAt: new Date(Date.now() - 86400000),
+    });
+    const deps = detailDeps({ id: "acc-1", adAccountId: "act_1" }, row);
+    const detail = await adDetail(deps, "acc-1", "ad-1");
+    expect(deps.resolveCalls).toHaveLength(0);
+    expect(detail.posterUrl).toBeNull();
+    expect(detail.sourceUrl).toBeNull();
+  });
+
   test("resolves the window from query params", async () => {
     const deps = detailDeps({ id: "acc-1", adAccountId: "act_1" }, adRow());
     await adDetail(deps, "acc-1", "ad-1");

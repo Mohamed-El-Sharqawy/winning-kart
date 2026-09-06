@@ -2,7 +2,7 @@ import type { AdFormat } from "@wk/db";
 import { MEDIA_IDS_BATCH_MAX, MetaError } from "../../platforms/meta";
 import type { AdPlatformAdapter, MetaVideoMedia } from "../../platforms/meta";
 import type { AdAccountsModel, AdMediaPatch } from "./model";
-import { isMediaStale, mediaUrlTtlDays } from "./media-freshness";
+import { isAttemptStale, isMediaStale, mediaUrlTtlDays } from "./media-freshness";
 
 export type MediaResolverModel = Pick<AdAccountsModel, "findAdsMediaByIds" | "updateAdMedia">;
 
@@ -71,8 +71,8 @@ export async function resolveAdMedia(
     (row) =>
       row.videoId !== null &&
       (force ||
-        isMediaStale(row.posterUrl, row.posterResolvedAt, now, ttlDays) ||
-        isMediaStale(row.sourceUrl, row.sourceResolvedAt, now, ttlDays))
+        isAttemptStale(row.posterResolvedAt, now, ttlDays) ||
+        isAttemptStale(row.sourceResolvedAt, now, ttlDays))
   );
   const videoIds = [...new Set(staleVideos.map((row) => row.videoId as string))];
   for (const videoId of videoIds) {
@@ -95,12 +95,12 @@ export async function resolveAdMedia(
       const patch: AdMediaPatch = { ...patches.get(row.id) };
       if (media.picture !== undefined) {
         patch.posterUrl = media.picture;
-        patch.posterResolvedAt = now;
       }
       if (media.source !== undefined) {
         patch.sourceUrl = media.source;
-        patch.sourceResolvedAt = now;
       }
+      patch.posterResolvedAt = now;
+      patch.sourceResolvedAt = now;
       patches.set(row.id, patch);
     }
   }

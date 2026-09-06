@@ -21,6 +21,10 @@ export function isMediaStale(
   return now.getTime() - resolvedAt.getTime() >= ttlDays * DAY_MS;
 }
 
+export function isAttemptStale(resolvedAt: Date | null, now: Date, ttlDays: number): boolean {
+  return resolvedAt === null || now.getTime() - resolvedAt.getTime() >= ttlDays * DAY_MS;
+}
+
 export interface MediaFreshnessFields {
   videoId: string | null;
   thumbnailUrl: string | null;
@@ -39,7 +43,7 @@ export function anyMediaStale(row: MediaFreshnessFields, now: Date, ttlDays: num
     return false;
   }
   return (
-    isMediaStale(row.posterUrl, row.posterResolvedAt, now, ttlDays) ||
-    isMediaStale(row.sourceUrl, row.sourceResolvedAt, now, ttlDays)
+    isAttemptStale(row.posterResolvedAt, now, ttlDays) ||
+    isAttemptStale(row.sourceResolvedAt, now, ttlDays)
   );
 }
