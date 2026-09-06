@@ -10,7 +10,7 @@ Delivery workflow: each unit of work (ticket, docs change, feature) lands as its
 - No emojis.
 - Keep files under 150 lines; split before growing past that.
 - Page-locality: a page owns its components, services, DTOs, transformers, and types under `src/pages/<page>/`; shared code goes under `src/shared/`.
-- API success envelope is always `{ "data": ... }` (see [docs/api-conventions.md](docs/api-conventions.md)).
+- API success envelope is always `{ "data": ... }`; paginated lists add `meta` for paging chrome (`{ "data": [...], "meta": { ... } }`, see [docs/api-conventions.md](docs/api-conventions.md)).
 - API errors are RFC 9457 problem+json, never plain text or `{ "error": ... }`.
 
 ## Agent skills

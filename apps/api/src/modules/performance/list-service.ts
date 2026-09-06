@@ -16,10 +16,8 @@ export interface ListsDeps {
 }
 
 export interface ListPageEnvelope<Item> {
-  items: Item[];
-  page: number;
-  pageSize: number;
-  total: number;
+  data: Item[];
+  meta: { page: number; pageSize: number; total: number };
 }
 
 export type CampaignsPage = ListPageEnvelope<CampaignItem>;
@@ -66,7 +64,10 @@ export async function campaignsPage(
   await requireAccount(deps, accountId);
   const input = listInput(accountId, query);
   const { rows, total } = await deps.pageCampaigns(input);
-  return { items: rows.map(toCampaignItem), page: input.page, pageSize: input.pageSize, total };
+  return {
+    data: rows.map(toCampaignItem),
+    meta: { page: input.page, pageSize: input.pageSize, total },
+  };
 }
 
 export async function adSetsPage(
@@ -77,7 +78,10 @@ export async function adSetsPage(
   await requireAccount(deps, accountId);
   const input = listInput(accountId, query);
   const { rows, total } = await deps.pageAdSets(input);
-  return { items: rows.map(toAdSetItem), page: input.page, pageSize: input.pageSize, total };
+  return {
+    data: rows.map(toAdSetItem),
+    meta: { page: input.page, pageSize: input.pageSize, total },
+  };
 }
 
 export async function campaignsSummary(

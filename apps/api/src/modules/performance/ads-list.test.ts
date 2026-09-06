@@ -30,8 +30,8 @@ describe("listAdsPage", () => {
     const deps = depsWith(memoryPageAds(rows, recorder));
     const result = await listAdsPage(deps, "acc-1", { limit: "2" });
     expect(recorder[0].limit).toBe(3);
-    expect(result.items.map((item) => item.id)).toEqual(["a", "b"]);
-    expect(result.items[0].metrics).toEqual({
+    expect(result.data.map((item) => item.id)).toEqual(["a", "b"]);
+    expect(result.data[0].metrics).toEqual({
       spend: 100,
       revenue: 300,
       purchases: 2,
@@ -40,7 +40,7 @@ describe("listAdsPage", () => {
       ctr: 1,
       frequency: 2,
     });
-    const decoded = decodeAdsCursor(result.nextCursor as string, adsListContext({ limit: "2" }));
+    const decoded = decodeAdsCursor(result.meta.nextCursor as string, adsListContext({ limit: "2" }));
     expect(decoded.id).toBe("b");
     expect(decoded.sortValue).toBe(20);
   });
@@ -50,9 +50,9 @@ describe("listAdsPage", () => {
     const rows = [adRow({ id: "a", sortValue: 30 }), adRow({ id: "b", sortValue: 20 }), adRow({ id: "c", sortValue: 10 })];
     const deps = depsWith(memoryPageAds(rows, recorder));
     const first = await listAdsPage(deps, "acc-1", { limit: "2" });
-    const second = await listAdsPage(deps, "acc-1", { limit: "2", cursor: first.nextCursor as string });
-    expect(second.items.map((item) => item.id)).toEqual(["c"]);
-    expect(second.nextCursor).toBeNull();
+    const second = await listAdsPage(deps, "acc-1", { limit: "2", cursor: first.meta.nextCursor as string });
+    expect(second.data.map((item) => item.id)).toEqual(["c"]);
+    expect(second.meta.nextCursor).toBeNull();
     expect(recorder[1].cursor).toEqual({ id: "b", sortValue: 20 });
     expect(recorder[1].limit).toBe(3);
   });
@@ -61,9 +61,9 @@ describe("listAdsPage", () => {
     const recorder: AdsPageInput[] = [];
     const deps = depsWith(memoryPageAds([adRow({ id: "e", sortValue: null, sums: null, spendShare: null })], recorder));
     const first = await listAdsPage(deps, "acc-1", { limit: "2" });
-    expect(first.items.map((item) => item.id)).toEqual(["e"]);
-    expect(first.items[0].metrics).toBeNull();
-    expect(first.nextCursor).toBeNull();
+    expect(first.data.map((item) => item.id)).toEqual(["e"]);
+    expect(first.data[0].metrics).toBeNull();
+    expect(first.meta.nextCursor).toBeNull();
     expect(recorder[0].cursor).toBeNull();
   });
 
@@ -73,7 +73,7 @@ describe("listAdsPage", () => {
     const deps = depsWith(memoryPageAds(rows, recorder));
     const first = await listAdsPage(deps, "acc-1", { limit: "2" });
     await expectProblem(
-      () => listAdsPage(deps, "acc-1", { limit: "2", cursor: first.nextCursor as string, sort: "roas" }),
+      () => listAdsPage(deps, "acc-1", { limit: "2", cursor: first.meta.nextCursor as string, sort: "roas" }),
       422,
       "CURSOR_MISMATCH"
     );
@@ -117,7 +117,7 @@ describe("listAdsPage", () => {
     const deps = depsWith(memoryPageAds(rows, recorder));
     const result = await listAdsPage(deps, "acc-1", { limit: "2" });
     expect(deps.refresherCalls).toEqual([["stale"]]);
-    const byId = new Map(result.items.map((item) => [item.id, item.thumbnailUrl]));
+    const byId = new Map(result.data.map((item) => [item.id, item.thumbnailUrl]));
     expect(byId.get("stale")).toBe("https://cdn/fresh-stale.jpg");
     expect(byId.get("warm")).toBe("https://cdn/warm.jpg");
   });

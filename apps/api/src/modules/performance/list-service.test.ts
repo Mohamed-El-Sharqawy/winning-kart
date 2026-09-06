@@ -13,10 +13,10 @@ describe("campaignsPage", () => {
   test("serves a numbered page with the full envelope", async () => {
     const deps = memoryListDeps({ campaigns: [campaignDbRow()], campaignTotal: 3 });
     const result = await campaignsPage(deps, "acc-1", { page: "2", pageSize: "1", status: "all", q: "eid" });
-    expect(result.page).toBe(2);
-    expect(result.pageSize).toBe(1);
-    expect(result.total).toBe(3);
-    expect(result.items.map((item) => item.id)).toEqual(["cmp-1"]);
+    expect(result.meta.page).toBe(2);
+    expect(result.meta.pageSize).toBe(1);
+    expect(result.meta.total).toBe(3);
+    expect(result.data.map((item) => item.id)).toEqual(["cmp-1"]);
     const input = deps.calls.campaigns[0];
     expect(input.page).toBe(2);
     expect(input.pageSize).toBe(1);
@@ -29,9 +29,9 @@ describe("campaignsPage", () => {
   test("a page beyond range returns empty items with total intact", async () => {
     const deps = memoryListDeps({ campaigns: [], campaignTotal: 7 });
     const result = await campaignsPage(deps, "acc-1", { page: "9", pageSize: "25" });
-    expect(result.items).toEqual([]);
-    expect(result.total).toBe(7);
-    expect(result.page).toBe(9);
+    expect(result.data).toEqual([]);
+    expect(result.meta.total).toBe(7);
+    expect(result.meta.page).toBe(9);
   });
 
   test("resolves the default window to the last 30 days", async () => {
@@ -68,7 +68,7 @@ describe("adSetsPage", () => {
   test("forwards the campaignId filter and serves the same envelope", async () => {
     const deps = memoryListDeps({ adSets: [adSetDbRow()], adSetTotal: 1 });
     const result = await adSetsPage(deps, "acc-1", { campaignId: "cmp-9", sort: "roas", order: "asc" });
-    expect(result.items.map((item) => item.id)).toEqual(["set-1"]);
+    expect(result.data.map((item) => item.id)).toEqual(["set-1"]);
     const input = deps.calls.adSets[0];
     expect(input.campaignId).toBe("cmp-9");
     expect(input.sort).toBe("roas");

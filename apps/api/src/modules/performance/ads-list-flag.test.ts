@@ -25,23 +25,23 @@ describe("listAdsPage flag scan", () => {
     expect(recorder).toHaveLength(2);
     expect(recorder[0].limit).toBe(500);
     expect(recorder[1].cursor).toEqual({ id: "active-497", sortValue: 1 });
-    expect(result.items.map((item) => item.id)).toEqual(["paused-0", "paused-1", "paused-tail"]);
-    expect(result.items.every((item) => item.fatigue?.flag === "status_anomaly")).toBe(true);
-    expect(result.nextCursor).toBeNull();
+    expect(result.data.map((item) => item.id)).toEqual(["paused-0", "paused-1", "paused-tail"]);
+    expect(result.data.every((item) => item.fatigue?.flag === "status_anomaly")).toBe(true);
+    expect(result.meta.nextCursor).toBeNull();
   });
 
   test("a full flag page reports continuation from the last match", async () => {
     const recorder: AdsPageInput[] = [];
     const deps = depsWith(memoryPageAds(dataset(3, 497, false), recorder));
     const first = await listAdsPage(deps, "acc-1", { flag: "status_anomaly", limit: "2" });
-    expect(first.items.map((item) => item.id)).toEqual(["paused-0", "paused-1"]);
+    expect(first.data.map((item) => item.id)).toEqual(["paused-0", "paused-1"]);
     const second = await listAdsPage(deps, "acc-1", {
       flag: "status_anomaly",
       limit: "2",
-      cursor: first.nextCursor as string,
+      cursor: first.meta.nextCursor as string,
     });
-    expect(second.items.map((item) => item.id)).toEqual(["paused-2"]);
-    expect(second.nextCursor).toBeNull();
+    expect(second.data.map((item) => item.id)).toEqual(["paused-2"]);
+    expect(second.meta.nextCursor).toBeNull();
     expect(recorder[1].cursor).toEqual({ id: "paused-1", sortValue: 499 });
   });
 });

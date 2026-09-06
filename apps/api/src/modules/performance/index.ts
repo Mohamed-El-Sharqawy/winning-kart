@@ -73,7 +73,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
     "/:id/campaigns",
     async ({ params, query, headers }) => {
       await requireAgency(headers);
-      return { data: await campaignsPage(listDeps(), params.id, query) };
+      return await campaignsPage(listDeps(), params.id, query);
     },
     { params: idParamsDto, query: campaignsListQueryDto, response: { 200: campaignsPageDto } }
   )
@@ -81,7 +81,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
     "/:id/ad-sets",
     async ({ params, query, headers }) => {
       await requireAgency(headers);
-      return { data: await adSetsPage(listDeps(), params.id, query) };
+      return await adSetsPage(listDeps(), params.id, query);
     },
     { params: idParamsDto, query: adSetsListQueryDto, response: { 200: adSetsPageDto } }
   )
@@ -89,9 +89,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
     "/:id/ads",
     async ({ params, query, headers }) => {
       await requireAgency(headers);
-      return {
-        data: await listAdsPage(adsListDeps(params.id), params.id, query),
-      };
+      return await listAdsPage(adsListDeps(params.id), params.id, query);
     },
     { params: idParamsDto, query: adsListQueryDto, response: { 200: adsListPageDto } }
   )

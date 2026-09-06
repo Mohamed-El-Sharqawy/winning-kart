@@ -53,8 +53,8 @@ export const adsListQueryDto = t.Object({
 });
 
 export const adsListPageDto = t.Object({
-  data: t.Object({
-    items: t.Array(galleryAdItemDto),
+  data: t.Array(galleryAdItemDto),
+  meta: t.Object({
     nextCursor: t.Union([t.String(), t.Null()]),
   }),
 });

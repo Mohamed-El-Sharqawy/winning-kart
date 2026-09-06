@@ -35,8 +35,8 @@ export const adSetsSummaryQueryDto = t.Object({
 
 function pageEnvelope(items: TSchema) {
   return t.Object({
-    data: t.Object({
-      items: t.Array(items),
+    data: t.Array(items),
+    meta: t.Object({
       page: t.Number(),
       pageSize: t.Number(),
       total: t.Number(),

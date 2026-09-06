@@ -34,8 +34,8 @@ export interface AdsListDeps {
 }
 
 export interface AdsListPage {
-  items: AdItem[];
-  nextCursor: string | null;
+  data: AdItem[];
+  meta: { nextCursor: string | null };
 }
 
 const SCAN_CHUNK = 500;
@@ -137,7 +137,9 @@ export async function listAdsPage(
   const refresh = await refreshPageThumbnails(deps.refresher, page, new Date());
   const last = page[page.length - 1];
   return {
-    items: applyThumbnailRefresh(decorateAdsPage(page), refresh),
-    nextCursor: hasMore && last !== undefined ? encodeAdsCursor(last.id, last.sortValue, ctx) : null,
+    data: applyThumbnailRefresh(decorateAdsPage(page), refresh),
+    meta: {
+      nextCursor: hasMore && last !== undefined ? encodeAdsCursor(last.id, last.sortValue, ctx) : null,
+    },
   };
 }
