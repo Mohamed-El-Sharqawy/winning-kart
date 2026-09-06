@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { adsManagerUrl, adDetail } from "./ads-detail";
+import { adsManagerUrl, adDetail, videoEmbedUrl } from "./ads-detail";
 import type { AdDetailDeps } from "./ads-detail";
 import type { ResolvedWindow } from "../../lib/window";
 import type { AdsRow } from "./ads-decoration";
@@ -57,6 +57,14 @@ describe("adsManagerUrl", () => {
   });
 });
 
+describe("videoEmbedUrl", () => {
+  test("builds the public player embed from the stored video id", () => {
+    expect(videoEmbedUrl("4489160867997724")).toBe(
+      "https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fwatch%2F%3Fv%3D4489160867997724&show_text=false"
+    );
+  });
+});
+
 describe("adDetail", () => {
   test("404s for an unknown account or ad id without resolving media", async () => {
     const accountless = detailDeps(undefined, adRow());
@@ -67,6 +75,17 @@ describe("adDetail", () => {
     await expectProblem(() => adDetail(deps, "acc-1", "ad-missing"), 404, "RESOURCE_NOT_FOUND");
     expect(deps.findCalls).toEqual([["acc-1", "ad-missing"]]);
     expect(deps.resolveCalls).toHaveLength(0);
+  });
+
+  test("serves the embed url for video ads and null for image ads", async () => {
+    const videoDeps = detailDeps({ id: "acc-1", adAccountId: "act_1" }, adRow({ format: "VIDEO", videoId: "vid-1" }));
+    const videoDetail = await adDetail(videoDeps, "acc-1", "ad-1");
+    expect(videoDetail.embedUrl).toBe(
+      "https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fwatch%2F%3Fv%3Dvid-1&show_text=false"
+    );
+    const imageDeps = detailDeps({ id: "acc-1", adAccountId: "act_1" }, adRow({ format: "IMAGE" }));
+    const imageDetail = await adDetail(imageDeps, "acc-1", "ad-1");
+    expect(imageDetail.embedUrl).toBeNull();
   });
 
   test("serves the decorated AdItem with context and the Ads Manager deep link", async () => {

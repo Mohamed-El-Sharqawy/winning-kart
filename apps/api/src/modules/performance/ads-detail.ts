@@ -17,11 +17,17 @@ export interface AdDetailItem extends AdItem {
   posterUrl: string | null;
   sourceUrl: string | null;
   adsManagerUrl: string;
+  embedUrl: string | null;
 }
 
 export function adsManagerUrl(accountPlatformId: string, platformAdId: string): string {
   const act = accountPlatformId.replace(/^act_/, "");
   return `https://www.facebook.com/adsmanager/manage/campaigns?act=${act}&selected_ad_ids=${platformAdId}`;
+}
+
+export function videoEmbedUrl(videoId: string): string {
+  const href = `https://www.facebook.com/watch/?v=${videoId}`;
+  return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(href)}&show_text=false`;
 }
 
 export async function adDetail(
@@ -50,5 +56,6 @@ export async function adDetail(
     posterUrl: resolved?.posterUrl ?? row.posterUrl,
     sourceUrl: resolved?.sourceUrl ?? row.sourceUrl,
     adsManagerUrl: adsManagerUrl(account.adAccountId, row.platformAdId),
+    embedUrl: row.videoId === null ? null : videoEmbedUrl(row.videoId),
   };
 }

@@ -38,4 +38,4 @@ Refresh paths, all lazy:
 - On-failure: the client reports dead media (image error event) via `POST /ad-accounts/:id/ads/media/resolve` with `force` (api.md); force bypasses the TTL check.
 - Piggyback: changed and new ads refresh their URLs free via field expansion on the full pass.
 
-Video: click-to-play. Poster and source resolve at the drawer/detail fetch; the `<video>` element plays direct from the Meta CDN. No proxy, no byte storage (ADR 0001).
+Video: click-to-play. Poster resolves at the drawer/detail fetch via the video-node read. Graph v21.0 no longer returns the video `source` field (verified live against a real account: 200 with `picture` present, `source` absent), so playback uses the public `https://www.facebook.com/plugins/video.php?href=<watch url>` embed built from the stored `videoId` - no extra Graph calls, no persistence. No proxy, no byte storage (ADR 0001).

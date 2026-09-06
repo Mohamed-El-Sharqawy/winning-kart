@@ -65,5 +65,6 @@ export const adDetailDto = t.Object({
     posterUrl: nullableString,
     sourceUrl: nullableString,
     adsManagerUrl: t.String(),
+    embedUrl: nullableString,
   }),
 });
