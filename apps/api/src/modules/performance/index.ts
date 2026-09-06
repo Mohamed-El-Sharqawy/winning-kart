@@ -7,15 +7,17 @@ import {
   performanceCampaignDto,
   performanceWindowQueryDto,
 } from "../../dto/performance";
-import { adsListPageDto, adsListQueryDto } from "../../dto/ads-list";
+import { adsListPageDto, adsListQueryDto, adDetailDto } from "../../dto/ads-list";
 import { mediaResolveBodyDto, mediaResolveResponseDto } from "../../dto/media";
+import { toMediaResolveItem } from "../ad-accounts/media-resolver";
 import { resolveWindow } from "../../lib/window";
 import { AdAccountsService } from "../ad-accounts/service";
 import { AdAccountsModel } from "../ad-accounts/model";
 import { PerformanceModel } from "./model";
 import { PerformanceService } from "./service";
 import { listAdsPage } from "./ads-list";
-import { adsListDeps } from "./ads-deps";
+import { adDetail } from "./ads-detail";
+import { adsListDeps, adDetailDeps } from "./ads-deps";
 import type { SafeUser } from "../auth/model";
 
 const service = new PerformanceService(new PerformanceModel());
@@ -38,6 +40,7 @@ async function requireAgency(headers: Record<string, string | undefined>): Promi
 }
 
 const idParamsDto = t.Object({ id: t.String() });
+const adParamsDto = t.Object({ id: t.String(), adId: t.String() });
 const campaignParamsDto = t.Object({ id: t.String(), campaignId: t.String() });
 
 export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
@@ -59,13 +62,20 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
     },
     { params: idParamsDto, query: adsListQueryDto, response: { 200: adsListPageDto } }
   )
+  .get(
+    "/:id/ads/:adId",
+    async ({ params, query, headers }) => {
+      await requireAgency(headers);
+      return { data: await adDetail(adDetailDeps(params.id), params.id, params.adId, query) };
+    },
+    { params: adParamsDto, query: performanceWindowQueryDto, response: { 200: adDetailDto } }
+  )
   .post(
     "/:id/ads/media/resolve",
     async ({ params, body, headers }) => {
       await requireAgency(headers);
-      return {
-        data: { items: await adAccounts.resolveMedia(params.id, body.ids, body.force ?? false) },
-      };
+      const items = await adAccounts.resolveMedia(params.id, body.ids, body.force ?? false);
+      return { data: { items: items.map(toMediaResolveItem) } };
     },
     { params: idParamsDto, body: mediaResolveBodyDto, response: { 200: mediaResolveResponseDto } }
   )

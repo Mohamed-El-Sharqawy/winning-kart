@@ -26,6 +26,8 @@ describe("resolveAdMedia thumbnails", () => {
         thumbnailUrl: "https://cdn/fresh.jpg",
         videoId: null,
         carouselCount: null,
+        posterUrl: null,
+        sourceUrl: null,
       },
     ]);
   });

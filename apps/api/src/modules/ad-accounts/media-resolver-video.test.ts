@@ -48,6 +48,8 @@ describe("resolveAdMedia video poster and source", () => {
       },
     ]);
     expect(items[0]?.videoId).toBe("vid-1");
+    expect(items[0]?.posterUrl).toBe("https://cdn/new-poster.jpg");
+    expect(items[0]?.sourceUrl).toBe("https://cdn/new-source.mp4");
   });
 
   test("fresh video media makes no video-node calls", async () => {
@@ -59,9 +61,11 @@ describe("resolveAdMedia video poster and source", () => {
     });
     const model = new FakeModel([fresh]);
     const adapter = new FakeAdapter();
-    await resolveAdMedia(model, ACCOUNT, adapter, ["ad-video"], false);
+    const items = await resolveAdMedia(model, ACCOUNT, adapter, ["ad-video"], false);
     expect(adapter.videoCalls).toEqual([]);
     expect(model.calls).toEqual([]);
+    expect(items[0]?.posterUrl).toBe("https://cdn/poster.jpg");
+    expect(items[0]?.sourceUrl).toBe("https://cdn/source.mp4");
   });
 
   test("ads sharing one video resolve it with a single video-node call", async () => {
@@ -103,6 +107,8 @@ describe("resolveAdMedia video poster and source", () => {
     expect(adapter.videoCalls).toEqual(["vid-1"]);
     expect(model.calls).toEqual([]);
     expect(items[0]?.adId).toBe("ad-video");
+    expect(items[0]?.posterUrl).toBeNull();
+    expect(items[0]?.sourceUrl).toBeNull();
   });
 
   test("video node upstream failure propagates to the caller", async () => {

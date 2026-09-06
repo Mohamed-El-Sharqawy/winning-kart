@@ -1,4 +1,4 @@
-import { isMediaStale, mediaUrlTtlDays } from "../ad-accounts/media-resolver";
+import { isMediaStale, mediaUrlTtlDays } from "../ad-accounts/media-freshness";
 import type { ResolvedMediaItem } from "../ad-accounts/media-resolver";
 import type { AdItem } from "./ads-decoration";
 

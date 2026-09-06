@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { isMediaStale, mediaUrlTtlDays } from "./media-resolver";
+import { isMediaStale, mediaUrlTtlDays } from "./media-freshness";
 
 const DAY_MS = 86400000;
 
