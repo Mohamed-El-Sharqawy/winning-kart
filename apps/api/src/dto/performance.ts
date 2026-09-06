@@ -3,7 +3,7 @@ import { t } from "elysia";
 const nullableNumber = t.Union([t.Number(), t.Null()]);
 const nullableString = t.Union([t.String(), t.Null()]);
 
-const adSetItemDto = t.Object({
+export const adSetItemDto = t.Object({
   id: t.String(),
   campaignId: t.String(),
   campaignName: t.String(),
@@ -58,8 +58,6 @@ const adItemDto = t.Object({
   spendShare: nullableNumber,
   fatigue: t.Union([fatigueDto, t.Null()]),
 });
-
-export const performanceAdSetsDto = t.Object({ data: t.Array(adSetItemDto) });
 
 export const windowQueryFields = {
   days: t.Optional(t.String({ pattern: "^[0-9]+$" })),

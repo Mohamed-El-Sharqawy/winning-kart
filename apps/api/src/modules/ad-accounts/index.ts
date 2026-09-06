@@ -4,7 +4,6 @@ import { problem } from "../../lib/problem";
 import { clientIp, recordAudit } from "../../lib/audit";
 import {
   adAccountBackfillDto,
-  adAccountCampaignsQueryDto,
   createAdAccountDto,
   deleteAdAccountDto,
   reconnectAdAccountDto,
@@ -18,7 +17,6 @@ import {
   latestRun,
   recoverInterruptedRuns,
 } from "./queue";
-import { resolveWindow } from "../../lib/window";
 import type { SafeUser } from "../auth/model";
 
 const service = new AdAccountsService(new AdAccountsModel());
@@ -155,14 +153,4 @@ export const adAccountsModule = new Elysia()
       return { data: result };
     },
     { params: idParamsDto, body: adAccountBackfillDto }
-  )
-  .get(
-    "/ad-accounts/:id/campaigns",
-    async ({ params, query, headers }) => {
-      await requireAdmin(headers);
-      return {
-        data: await service.campaignsWithMetrics(params.id, resolveWindow(query)),
-      };
-    },
-    { params: idParamsDto, query: adAccountCampaignsQueryDto }
   );

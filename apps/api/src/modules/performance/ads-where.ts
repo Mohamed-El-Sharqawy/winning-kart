@@ -3,12 +3,28 @@ import type { SQL } from "drizzle-orm";
 import type { AdsCursor } from "./ads-cursor";
 import type { AdsFilters, AdsOrder, AdsSort } from "./ads-query";
 
-export const SORT_EXPRS: Record<AdsSort, SQL> = {
-  spend: sql`p.spend`,
-  roas: sql`case when p.spend > 0 then p.revenue / p.spend end`,
-  ctr: sql`case when p.impressions > 0 then p.clicks * 100.0 / p.impressions end`,
-  frequency: sql`case when p.reach > 0 then p.impressions / p.reach end`,
-};
+export function sortExprs(
+  spend: SQL,
+  revenue: SQL,
+  clicks: SQL,
+  impressions: SQL,
+  reach: SQL
+): Record<AdsSort, SQL> {
+  return {
+    spend,
+    roas: sql`case when ${spend} > 0 then ${revenue} / ${spend} end`,
+    ctr: sql`case when ${impressions} > 0 then ${clicks} * 100.0 / ${impressions} end`,
+    frequency: sql`case when ${reach} > 0 then ${impressions} / ${reach} end`,
+  };
+}
+
+export const SORT_EXPRS: Record<AdsSort, SQL> = sortExprs(
+  sql`p.spend`,
+  sql`p.revenue`,
+  sql`p.clicks`,
+  sql`p.impressions`,
+  sql`p.reach`
+);
 
 export function escapeLikePattern(value: string): string {
   return value.replace(/([\\%_])/g, "\\$1");

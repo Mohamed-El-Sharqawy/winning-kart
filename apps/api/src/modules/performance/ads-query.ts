@@ -36,7 +36,7 @@ export interface AdsFilters {
 export const ADS_LIMIT_DEFAULT = 50;
 export const ADS_LIMIT_MAX = 100;
 
-function validation(detail: string): never {
+export function validation(detail: string): never {
   throw problem(422, "VALIDATION", detail);
 }
 

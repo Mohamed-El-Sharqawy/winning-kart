@@ -2,6 +2,7 @@ import { classifyAd, cohortStats } from "../../detection/fatigue";
 import type { CohortAdRow, FatigueFinding } from "../../detection/fatigue";
 import { problem } from "../../lib/problem";
 import { round2 } from "../../platforms/meta";
+import { deriveWindowMetrics } from "./ads-metrics";
 import { shiftDate } from "../../lib/window";
 import type { ResolvedWindow } from "../../lib/window";
 import type {
@@ -138,35 +139,6 @@ function ctrRate(clicks: number, impressions: number): number | null {
   return impressions > 0 ? (clicks / impressions) * 100 : null;
 }
 
-function deriveMetrics(sums: WindowSums | undefined) {
-  if (sums === undefined) {
-    return {
-      spend: null,
-      revenue: null,
-      purchases: null,
-      roas: null,
-      cpa: null,
-      ctr: null,
-      cpc: null,
-      cpm: null,
-      frequency: null,
-      reach: null,
-    };
-  }
-  return {
-    spend: round2(sums.spend),
-    revenue: round2(sums.revenue),
-    purchases: sums.purchases,
-    roas: sums.spend > 0 ? round2(sums.revenue / sums.spend) : null,
-    cpa: sums.purchases > 0 ? round2(sums.spend / sums.purchases) : null,
-    ctr: sums.impressions > 0 ? round2((sums.clicks / sums.impressions) * 100) : null,
-    cpc: sums.clicks > 0 ? round2(sums.spend / sums.clicks) : null,
-    cpm: sums.impressions > 0 ? round2((sums.spend / sums.impressions) * 1000) : null,
-    frequency: sums.reach > 0 ? round2(sums.impressions / sums.reach) : null,
-    reach: sums.reach,
-  };
-}
-
 function toAdSetItem(row: AdSetEntityRow, sums: WindowSums | undefined): AdSetPerformance {
   return {
     id: row.id,
@@ -179,7 +151,7 @@ function toAdSetItem(row: AdSetEntityRow, sums: WindowSums | undefined): AdSetPe
     bidStrategy: row.bidStrategy,
     dailyBudget: row.dailyBudget,
     currency: row.currency,
-    ...deriveMetrics(sums),
+    ...deriveWindowMetrics(sums),
   };
 }
 
@@ -250,7 +222,7 @@ export class PerformanceService {
     const cohortRows: CohortAdRow[] = [];
     const prepared = rows.map((row) => {
       const sums = adSumsById.get(row.id);
-      const metrics = deriveMetrics(sums);
+      const metrics = deriveWindowMetrics(sums);
       const cohortSpend = cohortSpendById.get(row.adSetId) ?? 0;
       const spendShare = cohortSpend > 0 ? (sums?.spend ?? 0) / cohortSpend : null;
       const trend = trendById.get(row.id);
@@ -321,8 +293,8 @@ export class PerformanceService {
     ]);
     const sums = sumsRows.find((row) => row.entityId === campaignId);
     const prevSums = prevSumsRows.find((row) => row.entityId === campaignId);
-    const metrics = deriveMetrics(sums);
-    const prevMetrics = deriveMetrics(prevSums);
+    const metrics = deriveWindowMetrics(sums);
+    const prevMetrics = deriveWindowMetrics(prevSums);
     return {
       adAccountId: campaign.adAccountId,
       adAccountPlatformId: campaign.adAccountPlatformId,
