@@ -14,6 +14,10 @@ export interface AdsPageDbRow {
   carouselCount: number | null;
   thumbnailUrl: string | null;
   thumbnailResolvedAt: string | Date | null;
+  posterUrl: string | null;
+  posterResolvedAt: string | Date | null;
+  sourceUrl: string | null;
+  sourceResolvedAt: string | Date | null;
   bodyCopy: string | null;
   parentAdSetStatus: string;
   spend: number | null;
@@ -62,6 +66,10 @@ export function toAdsRow(row: AdsPageDbRow): AdsRow {
     carouselCount: row.carouselCount,
     thumbnailUrl: row.thumbnailUrl,
     thumbnailResolvedAt: toTimestamp(row.thumbnailResolvedAt),
+    posterUrl: row.posterUrl,
+    posterResolvedAt: toTimestamp(row.posterResolvedAt),
+    sourceUrl: row.sourceUrl,
+    sourceResolvedAt: toTimestamp(row.sourceResolvedAt),
     bodyCopy: row.bodyCopy,
     parentAdSetStatus: row.parentAdSetStatus,
     sums:

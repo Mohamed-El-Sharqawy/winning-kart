@@ -36,6 +36,10 @@ export interface AdsRow {
   carouselCount: number | null;
   thumbnailUrl: string | null;
   thumbnailResolvedAt: Date | null;
+  posterUrl: string | null;
+  posterResolvedAt: Date | null;
+  sourceUrl: string | null;
+  sourceResolvedAt: Date | null;
   bodyCopy: string | null;
   parentAdSetStatus: string;
   sums: AdsSums | null;

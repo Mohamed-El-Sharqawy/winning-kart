@@ -58,3 +58,13 @@ export const adsListPageDto = t.Object({
     nextCursor: t.Union([t.String(), t.Null()]),
   }),
 });
+
+export const adDetailDto = t.Object({
+  data: t.Object({
+    ...galleryAdItemDto.properties,
+    posterUrl: nullableString,
+    sourceUrl: nullableString,
+    adsManagerUrl: t.String(),
+    embedUrl: nullableString,
+  }),
+});

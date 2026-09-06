@@ -22,7 +22,7 @@ All list endpoints consolidate under the performance module (the campaigns list 
 
 ## Ad detail (drawer)
 
-`GET /api/ad-accounts/:id/ads/:adId` - id-addressed: 404 `NOT_FOUND` unknown id. 200 `{ "data": AdItem & { posterUrl | null, sourceUrl | null, adsManagerUrl } }`. Stale or missing thumbnail, poster, and source are re-resolved inline. `adsManagerUrl` = `https://www.facebook.com/adsmanager/manage/campaigns?act=<accountId-without-act_>&selected_ad_ids=<platformAdId>`; params are undocumented (research fact sheet) - verify against a live account before relying on selection.
+`GET /api/ad-accounts/:id/ads/:adId` - id-addressed: 404 `NOT_FOUND` unknown id. 200 `{ "data": AdItem & { posterUrl | null, sourceUrl | null, adsManagerUrl, embedUrl | null } }`. Stale or missing thumbnail, poster, and source are re-resolved inline. `adsManagerUrl` = `https://www.facebook.com/adsmanager/manage/campaigns?act=<accountId-without-act_>&selected_ad_ids=<platformAdId>`; params are undocumented (research fact sheet) - verified live: `selected_ad_ids` pre-selects the ad. `embedUrl` (video ads only) is the public `plugins/video.php` player built from the stored `videoId` - Graph v21.0 no longer returns the video `source` field, so the drawer plays video through this embed instead of a raw CDN url.
 
 ## Media repair
 

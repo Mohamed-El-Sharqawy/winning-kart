@@ -87,9 +87,9 @@ function toCount(value: string | null): number {
 }
 
 export class PerformanceModel {
-  async findAccount(id: string): Promise<{ id: string } | undefined> {
+  async findAccount(id: string): Promise<{ id: string; adAccountId: string } | undefined> {
     const rows = await db
-      .select({ id: adAccounts.id })
+      .select({ id: adAccounts.id, adAccountId: adAccounts.adAccountId })
       .from(adAccounts)
       .where(eq(adAccounts.id, id))
       .limit(1);

@@ -2,29 +2,7 @@ import type { AdFormat } from "@wk/db";
 import { MEDIA_IDS_BATCH_MAX, MetaError } from "../../platforms/meta";
 import type { AdPlatformAdapter, MetaVideoMedia } from "../../platforms/meta";
 import type { AdAccountsModel, AdMediaPatch } from "./model";
-
-const DAY_MS = 86400000;
-const TTL_DAYS_DEFAULT = 7;
-const TTL_DAYS_MIN = 1;
-const TTL_DAYS_MAX = 30;
-
-export function mediaUrlTtlDays(): number {
-  const parsed = Number.parseInt(process.env.WK_MEDIA_URL_TTL_DAYS ?? "", 10);
-  const value = Number.isFinite(parsed) ? parsed : TTL_DAYS_DEFAULT;
-  return Math.min(Math.max(value, TTL_DAYS_MIN), TTL_DAYS_MAX);
-}
-
-export function isMediaStale(
-  url: string | null,
-  resolvedAt: Date | null,
-  now: Date,
-  ttlDays: number
-): boolean {
-  if (url === null || resolvedAt === null) {
-    return true;
-  }
-  return now.getTime() - resolvedAt.getTime() >= ttlDays * DAY_MS;
-}
+import { isAttemptStale, isMediaStale, mediaUrlTtlDays } from "./media-freshness";
 
 export type MediaResolverModel = Pick<AdAccountsModel, "findAdsMediaByIds" | "updateAdMedia">;
 
@@ -36,6 +14,23 @@ export interface ResolvedMediaItem {
   thumbnailUrl: string | null;
   videoId: string | null;
   carouselCount: number | null;
+  posterUrl: string | null;
+  sourceUrl: string | null;
+}
+
+export type MediaResolveItem = Pick<
+  ResolvedMediaItem,
+  "adId" | "format" | "thumbnailUrl" | "videoId" | "carouselCount"
+>;
+
+export function toMediaResolveItem(item: ResolvedMediaItem): MediaResolveItem {
+  return {
+    adId: item.adId,
+    format: item.format,
+    thumbnailUrl: item.thumbnailUrl,
+    videoId: item.videoId,
+    carouselCount: item.carouselCount,
+  };
 }
 
 export async function resolveAdMedia(
@@ -76,8 +71,8 @@ export async function resolveAdMedia(
     (row) =>
       row.videoId !== null &&
       (force ||
-        isMediaStale(row.posterUrl, row.posterResolvedAt, now, ttlDays) ||
-        isMediaStale(row.sourceUrl, row.sourceResolvedAt, now, ttlDays))
+        isAttemptStale(row.posterResolvedAt, now, ttlDays) ||
+        isAttemptStale(row.sourceResolvedAt, now, ttlDays))
   );
   const videoIds = [...new Set(staleVideos.map((row) => row.videoId as string))];
   for (const videoId of videoIds) {
@@ -100,12 +95,12 @@ export async function resolveAdMedia(
       const patch: AdMediaPatch = { ...patches.get(row.id) };
       if (media.picture !== undefined) {
         patch.posterUrl = media.picture;
-        patch.posterResolvedAt = now;
       }
       if (media.source !== undefined) {
         patch.sourceUrl = media.source;
-        patch.sourceResolvedAt = now;
       }
+      patch.posterResolvedAt = now;
+      patch.sourceResolvedAt = now;
       patches.set(row.id, patch);
     }
   }
@@ -129,6 +124,8 @@ export async function resolveAdMedia(
         thumbnailUrl: patch?.thumbnailUrl ?? row.thumbnailUrl,
         videoId: row.videoId,
         carouselCount: row.carouselCount,
+        posterUrl: patch?.posterUrl ?? row.posterUrl,
+        sourceUrl: patch?.sourceUrl ?? row.sourceUrl,
       },
     ];
   });
