@@ -1,7 +1,8 @@
 import { expect } from "bun:test";
 import { ProblemError } from "../../lib/problem";
 import type { AdsSums } from "./ads-decoration";
-import type { AdSetDbRow, CampaignDbRow } from "./list-items";
+import type { AdSetDbRow } from "./ad-set-items";
+import type { CampaignDbRow } from "./campaign-items";
 import type { PagedListInput, SummaryInput } from "./list-repository";
 import type { ListsDeps } from "./list-service";
 

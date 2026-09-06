@@ -32,6 +32,7 @@ export interface AdsRow {
   name: string;
   status: string;
   format: string | null;
+  creativeId: string | null;
   videoId: string | null;
   carouselCount: number | null;
   thumbnailUrl: string | null;

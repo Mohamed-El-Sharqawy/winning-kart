@@ -3,8 +3,10 @@ import { resolveWindow } from "../../lib/window";
 import type { AdsSums } from "./ads-decoration";
 import { parseListFilters, parseListOrder, parseListPage, parseListSort } from "./list-query";
 import type { ListPageQuery } from "./list-query";
-import { toAdSetItem, toCampaignItem, toSummary } from "./list-items";
-import type { AdSetDbRow, AdSetItem, CampaignDbRow, CampaignItem, KpiSummary } from "./list-items";
+import { toAdSetItem } from "./ad-set-items";
+import { toCampaignItem, toSummary } from "./campaign-items";
+import type { AdSetDbRow, AdSetItem } from "./ad-set-items";
+import type { CampaignDbRow, CampaignItem, KpiSummary } from "./campaign-items";
 import type { PagedListInput, SummaryInput } from "./list-repository";
 
 export interface ListsDeps {

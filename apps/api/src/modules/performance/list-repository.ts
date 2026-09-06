@@ -7,7 +7,8 @@ import {
   toAdSetDbRow,
   toCampaignDbRow,
 } from "./list-rows";
-import type { AdSetDbRow, CampaignDbRow } from "./list-items";
+import type { AdSetDbRow } from "./ad-set-items";
+import type { CampaignDbRow } from "./campaign-items";
 import { WIN_SORT_EXPRS, adSetWhere, campaignWhere, winCte } from "./list-where";
 
 export interface PagedListInput extends ListFilters {

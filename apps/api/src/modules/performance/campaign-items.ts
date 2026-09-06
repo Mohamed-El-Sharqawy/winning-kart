@@ -1,7 +1,6 @@
 import { deriveAdMetrics, deriveWindowMetrics } from "./ads-metrics";
-import type { AdItemMetrics, WindowMetrics } from "./ads-metrics";
+import type { AdItemMetrics } from "./ads-metrics";
 import type { AdsSums } from "./ads-decoration";
-import type { AdSetPerformance } from "./service";
 
 export interface CampaignDbRow {
   id: string;
@@ -17,20 +16,6 @@ export interface CampaignDbRow {
   sums: AdsSums | null;
 }
 
-export interface AdSetDbRow {
-  id: string;
-  campaignId: string;
-  campaignName: string;
-  platformAdsetId: string;
-  name: string;
-  status: string;
-  optimizationGoal: string | null;
-  bidStrategy: string | null;
-  dailyBudget: string | null;
-  currency: string;
-  sums: AdsSums | null;
-}
-
 export interface CampaignItem extends AdItemMetrics {
   id: string;
   name: string;
@@ -43,8 +28,6 @@ export interface CampaignItem extends AdItemMetrics {
   scheduleStart: string | null;
   scheduleEnd: string | null;
 }
-
-export type AdSetItem = AdSetPerformance;
 
 export interface KpiSummary {
   spend: number;
@@ -92,32 +75,6 @@ export function toCampaignItem(row: CampaignDbRow): CampaignItem {
     scheduleStart: toIso(row.scheduleStart),
     scheduleEnd: toIso(row.scheduleEnd),
     ...(deriveAdMetrics(row.sums) ?? NULL_METRICS),
-  };
-}
-
-export function toAdSetItem(row: AdSetDbRow): AdSetItem {
-  const metrics: WindowMetrics = deriveWindowMetrics(row.sums);
-  return {
-    id: row.id,
-    campaignId: row.campaignId,
-    campaignName: row.campaignName,
-    platformAdsetId: row.platformAdsetId,
-    name: row.name,
-    status: row.status,
-    optimizationGoal: row.optimizationGoal,
-    bidStrategy: row.bidStrategy,
-    dailyBudget: row.dailyBudget,
-    currency: row.currency,
-    spend: metrics.spend,
-    revenue: metrics.revenue,
-    purchases: metrics.purchases,
-    roas: metrics.roas,
-    cpa: metrics.cpa,
-    ctr: metrics.ctr,
-    cpc: metrics.cpc,
-    cpm: metrics.cpm,
-    frequency: metrics.frequency,
-    reach: metrics.reach,
   };
 }
 

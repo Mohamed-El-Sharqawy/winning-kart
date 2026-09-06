@@ -135,3 +135,13 @@ export const fatigueSummaryDto = t.Object({
     }),
   }),
 });
+
+export const fatigueSummaryQueryDto = t.Object({
+  ...windowQueryFields,
+  status: t.Optional(t.String()),
+  adSetId: t.Optional(t.String()),
+  campaignId: t.Optional(t.String()),
+  flag: t.Optional(t.String()),
+  format: t.Optional(t.String()),
+  q: t.Optional(t.String()),
+});

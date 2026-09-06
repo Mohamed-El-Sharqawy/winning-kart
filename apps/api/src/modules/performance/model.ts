@@ -3,19 +3,6 @@ import { adAccounts, ads, adSets, campaigns, dailyInsights, db } from "@wk/db";
 
 type EntityLevel = (typeof dailyInsights.$inferSelect)["entityLevel"];
 
-export interface AdSetEntityRow {
-  id: string;
-  campaignId: string;
-  campaignName: string;
-  platformAdsetId: string;
-  name: string;
-  status: string;
-  optimizationGoal: string | null;
-  bidStrategy: string | null;
-  dailyBudget: string | null;
-  currency: string;
-}
-
 export interface AdEntityRow {
   id: string;
   adSetId: string;
@@ -115,26 +102,6 @@ export class PerformanceModel {
       .where(eq(campaigns.id, id))
       .limit(1);
     return rows[0];
-  }
-
-  listAdSets(adAccountId: string): Promise<AdSetEntityRow[]> {
-    return db
-      .select({
-        id: adSets.id,
-        campaignId: adSets.campaignId,
-        campaignName: campaigns.name,
-        platformAdsetId: adSets.platformAdsetId,
-        name: adSets.name,
-        status: adSets.status,
-        optimizationGoal: adSets.optimizationGoal,
-        bidStrategy: adSets.bidStrategy,
-        dailyBudget: adSets.dailyBudget,
-        currency: campaigns.currency,
-      })
-      .from(adSets)
-      .innerJoin(campaigns, eq(adSets.campaignId, campaigns.id))
-      .where(eq(campaigns.adAccountId, adAccountId))
-      .orderBy(adSets.name);
   }
 
   listAds(adAccountId: string, adSetId?: string): Promise<AdEntityRow[]> {

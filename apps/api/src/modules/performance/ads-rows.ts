@@ -10,6 +10,7 @@ export interface AdsPageDbRow {
   name: string;
   status: string;
   format: string | null;
+  creativeId: string | null;
   videoId: string | null;
   carouselCount: number | null;
   thumbnailUrl: string | null;
@@ -62,6 +63,7 @@ export function toAdsRow(row: AdsPageDbRow): AdsRow {
     name: row.name,
     status: row.status,
     format: row.format,
+    creativeId: row.creativeId,
     videoId: row.videoId,
     carouselCount: row.carouselCount,
     thumbnailUrl: row.thumbnailUrl,
