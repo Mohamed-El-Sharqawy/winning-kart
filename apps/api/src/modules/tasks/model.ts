@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
-import { alerts, clients, db, tasks, users } from "@wk/db";
+import { alerts, clients, db, insights, tasks, users } from "@wk/db";
 import type { Alert, Task } from "@wk/db";
 
 export interface TaskListFilter {
@@ -25,6 +25,8 @@ export interface TaskCreateValues {
 }
 
 export interface TaskUpdatePatch {
+  title?: string;
+  description?: string | null;
   status?: Task["status"];
   priority?: Task["priority"];
   assigneeUserId?: string | null;
@@ -113,5 +115,31 @@ export class TasksModel {
 
   async setAlertStatus(alertId: string, status: Alert["status"]): Promise<void> {
     await db.update(alerts).set({ status }).where(eq(alerts.id, alertId));
+  }
+
+  async unsuppressAlert(alertId: string): Promise<void> {
+    await db
+      .update(alerts)
+      .set({ status: "open", suppressedByTaskId: null })
+      .where(and(eq(alerts.id, alertId), eq(alerts.status, "suppressed")));
+  }
+
+  async unlinkInsight(insightId: string): Promise<void> {
+    await db.update(insights).set({ acceptedAsTaskId: null }).where(eq(insights.id, insightId));
+  }
+
+  async unlinkAlertFromTasks(alertId: string): Promise<void> {
+    await db.update(tasks).set({ linkedAlertId: null }).where(eq(tasks.linkedAlertId, alertId));
+  }
+
+  async unlinkInsightFromTasks(insightId: string): Promise<void> {
+    await db
+      .update(tasks)
+      .set({ linkedInsightId: null })
+      .where(eq(tasks.linkedInsightId, insightId));
+  }
+
+  async remove(id: string): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
   }
 }

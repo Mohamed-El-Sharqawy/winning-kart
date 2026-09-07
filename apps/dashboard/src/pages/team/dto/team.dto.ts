@@ -20,3 +20,11 @@ export interface CreateUserDto {
   agencyRole?: AgencyRole;
   clientRoleTier?: ClientTier;
 }
+
+export interface UpdateUserDto {
+  displayName?: string;
+  role?: "admin" | "client";
+  agencyRole?: AgencyRole | null;
+  clientRoleTier?: ClientTier | null;
+  status?: "active" | "invited" | "suspended";
+}

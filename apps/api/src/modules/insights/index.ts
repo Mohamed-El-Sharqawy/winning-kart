@@ -65,4 +65,22 @@ export const insightsModule = new Elysia({ prefix: "/insights" })
       return { data: { ok: true } };
     },
     { params: idParamsDto, response: { 200: okDto } }
+  )
+  .post(
+    "/:id/dismiss",
+    async ({ params, headers }) => {
+      await requireAdmin(headers);
+      await service.dismiss(params.id);
+      return { data: { ok: true } };
+    },
+    { params: idParamsDto, response: { 200: okDto } }
+  )
+  .delete(
+    "/:id",
+    async ({ params, headers }) => {
+      await requireAdmin(headers);
+      await service.remove(params.id);
+      return { data: { ok: true } };
+    },
+    { params: idParamsDto, response: { 200: okDto } }
   );

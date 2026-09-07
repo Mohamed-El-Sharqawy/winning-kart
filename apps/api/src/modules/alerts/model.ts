@@ -106,6 +106,10 @@ export class AlertsModel {
     return rows[0] ?? null;
   }
 
+  async remove(id: string): Promise<void> {
+    await db.delete(alerts).where(eq(alerts.id, id));
+  }
+
   async adAccountExists(id: string): Promise<boolean> {
     const rows = await db
       .select({ id: adAccounts.id })

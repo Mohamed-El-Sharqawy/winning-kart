@@ -3,31 +3,9 @@ import { Button } from "@/shared/components/Button";
 import { Input } from "@/shared/components/Input";
 import { memberFormError } from "../services/api-call-error";
 import { useCreateMember } from "../services/team.service";
-import type { CreateUserDto } from "../dto/team.dto";
 import type { MemberRoleSelection } from "../types/team.types";
+import { ROLE_OPTIONS, SELECTION_BODY } from "./role-options";
 import { Select } from "./Select";
-
-const ROLE_OPTIONS = [
-  { value: "owner", label: "Agency — Owner" },
-  { value: "admin", label: "Agency — Admin" },
-  { value: "account_manager", label: "Agency — Account manager" },
-  { value: "marketer", label: "Agency — Marketer" },
-  { value: "analyst", label: "Agency — Analyst" },
-  { value: "client_admin", label: "Client — Admin" },
-  { value: "client_viewer", label: "Client — Viewer" },
-];
-
-type RoleBody = Omit<CreateUserDto, "email" | "password" | "displayName">;
-
-const SELECTION_BODY: Record<MemberRoleSelection, RoleBody> = {
-  owner: { role: "admin", agencyRole: "owner" },
-  admin: { role: "admin", agencyRole: "admin" },
-  account_manager: { role: "admin", agencyRole: "account_manager" },
-  marketer: { role: "admin", agencyRole: "marketer" },
-  analyst: { role: "admin", agencyRole: "analyst" },
-  client_admin: { role: "client", clientRoleTier: "admin" },
-  client_viewer: { role: "client", clientRoleTier: "viewer" },
-};
 
 export function AddMemberModal({ onClose }: { onClose: () => void }) {
   const [displayName, setDisplayName] = useState("");

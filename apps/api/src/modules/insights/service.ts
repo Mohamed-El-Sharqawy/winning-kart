@@ -51,6 +51,17 @@ export class InsightsService {
     await this.model.incrementNotUseful(id);
   }
 
+  async dismiss(id: string): Promise<void> {
+    await this.requireInsight(id);
+    await this.model.dismiss(id);
+  }
+
+  async remove(id: string): Promise<void> {
+    const insight = await this.requireInsight(id);
+    await this.tasks.unlinkInsightFromTasks(insight.id);
+    await this.model.remove(id);
+  }
+
   private async requireInsight(id: string): Promise<Insight> {
     const insight = await this.model.findById(id);
     if (!insight) {

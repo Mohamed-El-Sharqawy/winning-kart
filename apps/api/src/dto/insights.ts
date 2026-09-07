@@ -24,6 +24,7 @@ const insightDto = t.Object({
   ctaTarget: t.Union([t.String(), t.Null()]),
   acceptedAsTaskId: t.Union([t.String(), t.Null()]),
   notUsefulCount: t.Number(),
+  dismissedAt: t.Union([t.Date(), t.Null()]),
   priorityScore: t.Number(),
   detectedAt: t.Date(),
   lastSeenAt: t.Date(),

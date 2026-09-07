@@ -51,3 +51,31 @@ export function useMarkNotUseful() {
     },
   });
 }
+
+export function useDismissInsight() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<boolean> => {
+      const { data: body, error } = await looseApi.insights({ id }).dismiss.post(null);
+      if (error) throw callFailed(error, "Failed to dismiss recommendation");
+      return Boolean((body as { data: OkDto | null }).data?.ok);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["insights"] });
+    },
+  });
+}
+
+export function useDeleteInsight() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<boolean> => {
+      const { data: body, error } = await looseApi.insights({ id }).delete();
+      if (error) throw callFailed(error, "Failed to delete recommendation");
+      return Boolean((body as { data: OkDto | null }).data?.ok);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["insights"] });
+    },
+  });
+}

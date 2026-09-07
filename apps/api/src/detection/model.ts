@@ -418,7 +418,7 @@ export class DetectionModel {
   async upsertInsight(dedupeKey: string, values: InsightUpsertValues): Promise<void> {
     const now = new Date();
     const existing = await db
-      .select({ id: insights.id })
+      .select({ id: insights.id, dismissedAt: insights.dismissedAt })
       .from(insights)
       .where(eq(insights.dedupeKey, dedupeKey))
       .limit(1);
@@ -459,6 +459,7 @@ export class DetectionModel {
         priorityScore: values.priorityScore.toFixed(2),
         entityName: values.entityName ?? "",
         lastSeenAt: now,
+        dismissedAt: existing[0].dismissedAt !== null ? null : undefined,
       })
       .where(eq(insights.id, existing[0].id));
   }

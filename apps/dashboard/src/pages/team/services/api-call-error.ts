@@ -18,6 +18,8 @@ export function memberFormError(error: unknown): string {
   if (error instanceof ApiCallError) {
     if (error.errorClass === "EMAIL_TAKEN") return "Email already taken";
     if (error.errorClass === "VALIDATION") return "Check the fields";
+    if (error.errorClass === "CANNOT_DELETE_SELF") return "You cannot delete your own account";
+    if (error.errorClass === "USER_IN_USE") return "This member is still referenced by clients or tasks";
   }
   return error instanceof Error ? error.message : "Something went wrong";
 }

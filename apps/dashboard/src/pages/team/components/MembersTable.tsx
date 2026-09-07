@@ -1,4 +1,5 @@
 import { formatDate, formatRelativeTime } from "@/lib/format";
+import { ActionButton } from "@/shared/components/ActionButton";
 import { Badge } from "@/shared/components/Badge";
 import { DataTable } from "@/shared/components/DataTable";
 import type { DataTableColumn } from "@/shared/components/DataTable";
@@ -24,7 +25,13 @@ function roleLabel(member: Member): string {
   return capitalizeRole(member.agencyRole ?? "admin");
 }
 
-export function MembersTable({ members }: { members: Member[] }) {
+export interface MembersTableProps {
+  members: Member[];
+  onEdit: (member: Member) => void;
+  onDelete: (member: Member) => void;
+}
+
+export function MembersTable({ members, onEdit, onDelete }: MembersTableProps) {
   const columns: Array<DataTableColumn<Member>> = [
     {
       key: "displayName",
@@ -47,6 +54,24 @@ export function MembersTable({ members }: { members: Member[] }) {
       key: "createdAt",
       header: "Created",
       render: (row) => <span className="tabular">{formatDate(row.createdAt)}</span>,
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      align: "right",
+      render: (row) => (
+        <div
+          className="flex justify-end gap-1"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <ActionButton tone="ghost" onClick={() => onEdit(row)}>
+            Edit
+          </ActionButton>
+          <ActionButton tone="ghost-danger" onClick={() => onDelete(row)}>
+            Delete
+          </ActionButton>
+        </div>
+      ),
     },
   ];
 

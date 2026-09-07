@@ -75,4 +75,26 @@ export class TasksService {
     }
     return updated;
   }
+
+  async remove(id: string): Promise<void> {
+    const existing = await this.model.findById(id);
+    if (!existing) {
+      throw problem(404, "RESOURCE_NOT_FOUND", `No task with id ${id}`);
+    }
+    if (existing.linkedAlertId !== null) {
+      await this.model.unsuppressAlert(existing.linkedAlertId);
+    }
+    if (existing.linkedInsightId !== null) {
+      await this.model.unlinkInsight(existing.linkedInsightId);
+    }
+    await this.model.remove(id);
+  }
+
+  unlinkAlertFromTasks(alertId: string): Promise<void> {
+    return this.model.unlinkAlertFromTasks(alertId);
+  }
+
+  unlinkInsightFromTasks(insightId: string): Promise<void> {
+    return this.model.unlinkInsightFromTasks(insightId);
+  }
 }
