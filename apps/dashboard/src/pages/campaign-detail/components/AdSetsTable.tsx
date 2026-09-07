@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import {
   campaignRowTone,
@@ -14,10 +15,45 @@ import { EmptyState } from "@/shared/components/EmptyState";
 import { StatusDot, entityStatusVariant, statusWords } from "@/shared/components/StatusDot";
 import type { CampaignAdSet } from "../types/campaign-detail.types";
 
-export function AdSetsTable({ adSets }: { adSets: CampaignAdSet[] }) {
+const GHOST_ACTION_CLASS =
+  "inline-flex cursor-pointer items-center rounded-wk border border-transparent bg-transparent px-3 py-1 text-xs font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text";
+
+export interface AdSetsTableProps {
+  adSets: CampaignAdSet[];
+  slug: string;
+  campaignId: string;
+  campaignName: string;
+  account: string | undefined;
+  accountName: string | undefined;
+  from: string | undefined;
+  to: string | undefined;
+}
+
+export function AdSetsTable({
+  adSets,
+  slug,
+  campaignId,
+  campaignName,
+  account,
+  accountName,
+  from,
+  to,
+}: AdSetsTableProps) {
   if (adSets.length === 0) {
     return <EmptyState title="No ad sets in this window" hint="Ad sets appear once the campaign has activity." />;
   }
+
+  const creativesSearch = (row: CampaignAdSet) => ({
+    tab: "creatives" as const,
+    adSet: row.id,
+    adSetName: row.name,
+    campaign: campaignId,
+    campaignName,
+    account,
+    accountName,
+    from,
+    to,
+  });
 
   const columns: Array<DataTableColumn<CampaignAdSet>> = [
     {
@@ -76,6 +112,21 @@ export function AdSetsTable({ adSets }: { adSets: CampaignAdSet[] }) {
       header: "Freq",
       align: "right",
       render: (row) => <span className="tabular">{formatDecimal(row.frequency)}</span>,
+    },
+    {
+      key: "actions",
+      header: "",
+      align: "right",
+      render: (row) => (
+        <Link
+          to="/clients/$slug"
+          params={{ slug }}
+          search={creativesSearch(row)}
+          className={GHOST_ACTION_CLASS}
+        >
+          Creatives
+        </Link>
+      ),
     },
   ];
 

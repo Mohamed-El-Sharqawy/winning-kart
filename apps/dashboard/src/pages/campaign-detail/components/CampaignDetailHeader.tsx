@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { formatMoney } from "@/lib/format";
+import type { ClientWorkspaceSearch } from "@/routes/router";
 import { DateRangeControl, rangeLabel } from "@/shared/components/DateRangeControl";
 import type { DateRange } from "@/shared/components/DateRangeControl";
 import { StatusDot, entityStatusVariant, statusWords } from "@/shared/components/StatusDot";
@@ -8,7 +9,8 @@ import type { CampaignSummary } from "../types/campaign-detail.types";
 export interface CampaignDetailHeaderProps {
   slug: string;
   clientName: string;
-  accountName?: string;
+  accountName: string | null;
+  campaignsSearch: Omit<ClientWorkspaceSearch, "tab">;
   campaign: CampaignSummary | null;
   range: DateRange;
   from: string | undefined;
@@ -20,19 +22,21 @@ export function CampaignDetailHeader({
   slug,
   clientName,
   accountName,
+  campaignsSearch,
   campaign,
   range,
   from,
   to,
   onApplyRange,
 }: CampaignDetailHeaderProps) {
+  const crumbSearch: ClientWorkspaceSearch = { ...campaignsSearch, tab: "campaigns" };
   return (
     <header className="flex flex-col gap-3">
       <nav className="flex flex-wrap items-center gap-2 text-[13px] text-volt-text-3">
         <Link
           to="/clients/$slug"
           params={{ slug }}
-          search={{ tab: "campaigns" }}
+          search={crumbSearch}
           className="hover:text-volt-text"
         >
           {clientName}
@@ -43,7 +47,7 @@ export function CampaignDetailHeader({
             <Link
               to="/clients/$slug"
               params={{ slug }}
-              search={{ tab: "campaigns" }}
+              search={crumbSearch}
               className="hover:text-volt-text"
             >
               {accountName}

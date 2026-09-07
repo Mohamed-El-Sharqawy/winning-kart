@@ -18,8 +18,48 @@ describe("client workspace", () => {
     ],
   };
 
+  const SECOND_ACCOUNT = {
+    id: "act_nour_2",
+    name: "Nour Prospecting",
+    slug: "nour-prospecting",
+    adAccountId: "act_nour_2",
+    platform: "meta",
+    healthState: "healthy",
+    currency: "AED",
+    timezone: "UTC",
+    lastSyncAt: "2026-08-19T06:00:00.000Z",
+    campaignCount: 0,
+    tokenType: "system_user",
+    tokenExpiresAt: null,
+  };
+
   beforeEach(() => {
     cy.loginAs("agency-admin");
+  });
+
+  it("initializes the ad account selector from the account search param", () => {
+    cy.stubClient();
+    cy.intercept("GET", /\/api\/clients\/[^/]+\/ad-accounts(\?.*)?$/, {
+      body: { data: [...NOUR_ACCOUNT.data, SECOND_ACCOUNT] },
+    });
+    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ads(\?.*)?$/, {
+      body: { data: [], meta: { nextCursor: null } },
+    }).as("ads");
+    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/fatigue-summary(\?.*)?$/, {
+      fixture: "fatigue-summary.json",
+    });
+
+    cy.visit("/clients/maison-nour?tab=creatives&account=act_nour_2");
+
+    cy.get("select[aria-label='Ad account']", { timeout: 15000 }).should(
+      "have.value",
+      "act_nour_2",
+    );
+    cy.wait("@ads", { timeout: 15000 }).its("request.url").should((url) => {
+      expect(url, "ads load for the account from the url").to.contain(
+        "/api/ad-accounts/act_nour_2/ads",
+      );
+    });
   });
 
   it("navigates from the clients list into the workspace tabs", () => {

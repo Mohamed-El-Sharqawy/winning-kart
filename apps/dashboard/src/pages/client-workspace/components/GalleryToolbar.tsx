@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+import type { CampaignDetailSearch } from "@/routes/router";
 import { EFFECTIVE_STATUS_OPTIONS, FATIGUE_FLAG_COPY, FATIGUE_FLAG_ORDER } from "../data/gallery-copy.data";
 import type { AdFormat, FatigueFlag, StatusFilter } from "../types/creatives.types";
 import { FilterChip } from "./FilterChip";
@@ -9,6 +11,14 @@ export interface GalleryToolbarProps {
   adSet: string | undefined;
   adSetName: string | undefined;
   onClearAdSet: () => void;
+  campaign: string | undefined;
+  campaignName: string | undefined;
+  onClearCampaign: () => void;
+  campaignBackTo: {
+    slug: string;
+    campaignId: string;
+    search: CampaignDetailSearch;
+  } | null;
   status: StatusFilter;
   onStatus: (status: StatusFilter) => void;
   flagFilter: FatigueFlag | "all";
@@ -24,6 +34,10 @@ export function GalleryToolbar({
   adSet,
   adSetName,
   onClearAdSet,
+  campaign,
+  campaignName,
+  onClearCampaign,
+  campaignBackTo,
   status,
   onStatus,
   flagFilter,
@@ -36,7 +50,30 @@ export function GalleryToolbar({
 }: GalleryToolbarProps) {
   return (
     <div className="flex flex-wrap items-center gap-4">
-      {adSet !== undefined ? <FilterChip label={`Ad set: ${adSetName ?? adSet}`} onClear={onClearAdSet} /> : null}
+      {campaignBackTo !== null ? (
+        <Link
+          to="/clients/$slug/campaigns/$campaignId"
+          params={{ slug: campaignBackTo.slug, campaignId: campaignBackTo.campaignId }}
+          search={campaignBackTo.search}
+          className="text-[13px] text-volt-text-3 transition-colors hover:text-volt-text"
+        >
+          ‹ campaign
+        </Link>
+      ) : null}
+      {campaign !== undefined ? (
+        <FilterChip
+          label={`Campaign: ${campaignName ?? campaign}`}
+          clearLabel="Clear campaign filter"
+          onClear={onClearCampaign}
+        />
+      ) : null}
+      {adSet !== undefined ? (
+        <FilterChip
+          label={`Ad set: ${adSetName ?? adSet}`}
+          clearLabel="Clear ad set filter"
+          onClear={onClearAdSet}
+        />
+      ) : null}
       <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
         Status
         <select
