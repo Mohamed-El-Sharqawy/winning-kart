@@ -46,6 +46,7 @@ export const GALLERY_ROWS: GalleryAdStub[] = [
     format: "VIDEO",
     videoId: "v_nour_101",
     metrics: { spend: 500, revenue: 900, purchases: 6, roas: 1.8, cpa: 83.33, ctr: 1.1, frequency: 5.2 },
+    fatigue: { flag: "fatiguing", reason: "Frequency 5.2 with declining ROAS" },
   }),
   galleryAd({
     id: "ad_carousel_1",

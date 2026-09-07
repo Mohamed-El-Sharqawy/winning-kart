@@ -4,11 +4,11 @@ import type { GalleryAd } from "../types/creatives.types";
 export interface GalleryMediaCellProps {
   ad: GalleryAd;
   thumbnailUrl: string | null;
-  onTogglePlay: (adId: string) => void;
+  onOpen: (adId: string) => void;
   onImageError: (adId: string, failedSrc: string | null) => void;
 }
 
-export function GalleryMediaCell({ ad, thumbnailUrl, onTogglePlay, onImageError }: GalleryMediaCellProps) {
+export function GalleryMediaCell({ ad, thumbnailUrl, onOpen, onImageError }: GalleryMediaCellProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const format = (ad.format ?? "image").toUpperCase();
   const isVideo = format === "VIDEO";
@@ -22,8 +22,11 @@ export function GalleryMediaCell({ ad, thumbnailUrl, onTogglePlay, onImageError 
       {isVideo ? (
         <button
           type="button"
-          aria-label={`Play ${ad.name}`}
-          onClick={() => onTogglePlay(ad.id)}
+          aria-label={`Open ${ad.name}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpen(ad.id);
+          }}
           className="group flex h-full w-full cursor-pointer items-center justify-center"
         >
           <svg

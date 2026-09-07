@@ -63,6 +63,7 @@ export interface ClientWorkspaceSearch {
   adSet?: string;
   adSetName?: string;
   variant?: string;
+  creative?: string;
 }
 
 export interface CampaignDetailSearch {
@@ -71,6 +72,7 @@ export interface CampaignDetailSearch {
   to?: string;
   account?: string;
   accountName?: string;
+  creative?: string;
 }
 
 export type AlertsTab = "alerts" | "tasks" | "recommendations";
@@ -175,6 +177,7 @@ const clientWorkspaceRoute = createRoute({
     adSet: readOptionalString(search.adSet),
     adSetName: readOptionalString(search.adSetName),
     variant: readOptionalString(search.variant),
+    creative: readOptionalString(search.creative),
   }),
   component: ClientWorkspacePage,
 });
@@ -189,6 +192,7 @@ const campaignDetailRoute = createRoute({
     to: readIsoDate(search.to),
     account: readOptionalString(search.account),
     accountName: readOptionalString(search.accountName),
+    creative: readOptionalString(search.creative),
   }),
   component: CampaignDetailPage,
 });
