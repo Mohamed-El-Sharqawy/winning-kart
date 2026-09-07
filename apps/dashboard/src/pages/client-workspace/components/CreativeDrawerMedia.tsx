@@ -6,7 +6,8 @@ export interface CreativeDrawerMediaProps {
 
 export function CreativeDrawerMedia({ detail }: CreativeDrawerMediaProps) {
   const format = (detail.format ?? "IMAGE").toUpperCase();
-  const poster = detail.posterUrl ?? detail.thumbnailUrl;
+  const videoPoster = detail.posterUrl ?? detail.thumbnailUrl;
+  const stillImage = detail.imageUrl ?? detail.thumbnailUrl;
 
   if (format === "VIDEO") {
     if (detail.embedUrl !== null) {
@@ -26,19 +27,19 @@ export function CreativeDrawerMedia({ detail }: CreativeDrawerMediaProps) {
         <video
           controls
           autoPlay
-          poster={poster ?? undefined}
+          poster={videoPoster ?? undefined}
           src={detail.sourceUrl}
           className="aspect-video w-full rounded-wk bg-black"
         />
       );
     }
-    return <PosterFallback poster={poster} note="This video has no playable source yet." />;
+    return <PosterFallback poster={videoPoster} note="This video has no playable source yet." />;
   }
 
   return (
     <div className="relative">
-      {poster !== null ? (
-        <img src={poster} alt="" className="max-h-[60vh] w-full rounded-wk object-contain" />
+      {stillImage !== null ? (
+        <img src={stillImage} alt="" className="max-h-[60vh] w-full rounded-wk object-contain" />
       ) : (
         <div className="flex aspect-[4/5] w-full items-center justify-center rounded-wk bg-volt-surface-2 text-[11px] uppercase tracking-wider text-volt-text-3">
           {format}

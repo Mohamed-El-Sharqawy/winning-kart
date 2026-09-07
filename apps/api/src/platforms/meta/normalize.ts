@@ -50,6 +50,8 @@ export interface AdRecord {
   carouselCount: number | null;
   thumbnailUrl: string | null;
   thumbnailResolvedAt: Date | null;
+  imageUrl: string | null;
+  imageResolvedAt: Date | null;
   platformUpdatedAt: Date | null;
 }
 
@@ -237,6 +239,7 @@ export function normalizeAd(row: MetaAdRow, resolvedAt: Date = new Date()): AdRe
   const creative = row.creative;
   const { format, carouselCount } = deriveAdFormat(creative);
   const thumbnailUrl = creative?.thumbnail_url ?? null;
+  const imageUrl = creative?.image_url ?? null;
   return {
     platformAdId: row.id,
     adSetPlatformId: row.adset_id,
@@ -249,6 +252,8 @@ export function normalizeAd(row: MetaAdRow, resolvedAt: Date = new Date()): AdRe
     carouselCount,
     thumbnailUrl,
     thumbnailResolvedAt: thumbnailUrl === null ? null : resolvedAt,
+    imageUrl,
+    imageResolvedAt: imageUrl === null ? null : resolvedAt,
     platformUpdatedAt: parseMetaTime(row.updated_time),
   };
 }

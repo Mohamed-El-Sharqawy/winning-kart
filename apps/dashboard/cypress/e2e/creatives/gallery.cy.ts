@@ -49,6 +49,9 @@ describe("creatives gallery", () => {
     cy.wait("@adDetail");
     cy.get("[data-testid='creative-drawer']").should("be.visible");
     cy.contains("Lead card of 4").should("be.visible");
+    cy.get("[data-testid='creative-drawer'] img")
+      .should("have.attr", "src")
+      .and("include", "/media/full-creative.jpg");
     cy.contains("a", "Open in Ads Manager")
       .should("have.attr", "target", "_blank")
       .and("have.attr", "href")

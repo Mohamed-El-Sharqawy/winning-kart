@@ -53,6 +53,7 @@ export interface GalleryAd {
 export interface GalleryAdDetail extends GalleryAd {
   posterUrl: string | null;
   sourceUrl: string | null;
+  imageUrl: string | null;
   adsManagerUrl: string;
   embedUrl: string | null;
 }

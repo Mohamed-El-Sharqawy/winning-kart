@@ -98,6 +98,8 @@ function adsRowsQuery(
         a.carousel_count as "carouselCount",
         a.thumbnail_url as "thumbnailUrl",
         a.thumbnail_resolved_at as "thumbnailResolvedAt",
+        a.image_url as "imageUrl",
+        a.image_resolved_at as "imageResolvedAt",
         a.poster_url as "posterUrl",
         a.poster_resolved_at as "posterResolvedAt",
         a.source_url as "sourceUrl",

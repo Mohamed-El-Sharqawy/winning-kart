@@ -29,6 +29,7 @@ export interface MediaFreshnessFields {
   videoId: string | null;
   thumbnailUrl: string | null;
   thumbnailResolvedAt: Date | null;
+  imageResolvedAt: Date | null;
   posterUrl: string | null;
   posterResolvedAt: Date | null;
   sourceUrl: string | null;
@@ -37,6 +38,9 @@ export interface MediaFreshnessFields {
 
 export function anyMediaStale(row: MediaFreshnessFields, now: Date, ttlDays: number): boolean {
   if (isMediaStale(row.thumbnailUrl, row.thumbnailResolvedAt, now, ttlDays)) {
+    return true;
+  }
+  if (isAttemptStale(row.imageResolvedAt, now, ttlDays)) {
     return true;
   }
   if (row.videoId === null) {

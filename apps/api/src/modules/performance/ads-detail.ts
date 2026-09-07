@@ -16,6 +16,7 @@ export interface AdDetailDeps {
 export interface AdDetailItem extends AdItem {
   posterUrl: string | null;
   sourceUrl: string | null;
+  imageUrl: string | null;
   adsManagerUrl: string;
   embedUrl: string | null;
 }
@@ -55,6 +56,7 @@ export async function adDetail(
     thumbnailUrl: resolved?.thumbnailUrl ?? row.thumbnailUrl,
     posterUrl: resolved?.posterUrl ?? row.posterUrl,
     sourceUrl: resolved?.sourceUrl ?? row.sourceUrl,
+    imageUrl: resolved?.imageUrl ?? row.imageUrl,
     adsManagerUrl: adsManagerUrl(account.adAccountId, row.platformAdId),
     embedUrl: row.videoId === null ? null : videoEmbedUrl(row.videoId),
   };

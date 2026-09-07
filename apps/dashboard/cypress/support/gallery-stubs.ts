@@ -100,6 +100,7 @@ export function stubGallery() {
         ...row,
         posterUrl: null,
         sourceUrl: null,
+        imageUrl: row.format === "VIDEO" ? null : "/media/full-creative.jpg",
         adsManagerUrl: "https://www.facebook.com/adsmanager/manage/campaigns?act=1&selected_ad_ids=2",
         embedUrl: row.videoId === null ? null : "https://www.facebook.com/plugins/video.php?href=x",
       },
@@ -122,5 +123,10 @@ export function stubGallery() {
     statusCode: 200,
     headers: { "content-type": "image/svg+xml" },
     body: '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="640"></svg>',
+  });
+  cy.intercept("GET", "/media/full-creative.jpg", {
+    statusCode: 200,
+    headers: { "content-type": "image/svg+xml" },
+    body: '<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350"></svg>',
   });
 }

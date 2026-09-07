@@ -121,10 +121,21 @@ describe("normalizeAd media fields", () => {
     expect(record.thumbnailResolvedAt).toEqual(RESOLVED_AT);
   });
 
+  test("persists the full-size image url and stamps imageResolvedAt", () => {
+    const record = normalizeAd(
+      adRow({ id: "c1", thumbnail_url: "https://cdn/t.jpg", image_url: "https://cdn/full.jpg" }),
+      RESOLVED_AT
+    );
+    expect(record.imageUrl).toBe("https://cdn/full.jpg");
+    expect(record.imageResolvedAt).toEqual(RESOLVED_AT);
+  });
+
   test("leaves thumbnail fields null when thumbnail_url is absent", () => {
     const record = normalizeAd(adRow({ id: "c1", video_id: "vid-1" }), RESOLVED_AT);
     expect(record.thumbnailUrl).toBeNull();
     expect(record.thumbnailResolvedAt).toBeNull();
+    expect(record.imageUrl).toBeNull();
+    expect(record.imageResolvedAt).toBeNull();
   });
 
   test("keeps status and platform timestamps mapping intact", () => {

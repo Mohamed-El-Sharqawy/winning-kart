@@ -15,6 +15,8 @@ export interface FakeRow {
   carouselCount: number | null;
   thumbnailUrl: string | null;
   thumbnailResolvedAt: Date | null;
+  imageUrl: string | null;
+  imageResolvedAt: Date | null;
   posterUrl: string | null;
   posterResolvedAt: Date | null;
   sourceUrl: string | null;
@@ -30,6 +32,8 @@ export function row(overrides: Partial<FakeRow> = {}): FakeRow {
     carouselCount: null,
     thumbnailUrl: "https://cdn/fresh.jpg",
     thumbnailResolvedAt: new Date(Date.now() - DAY_MS),
+    imageUrl: null,
+    imageResolvedAt: new Date(Date.now() - DAY_MS),
     posterUrl: null,
     posterResolvedAt: null,
     sourceUrl: null,
@@ -38,12 +42,12 @@ export function row(overrides: Partial<FakeRow> = {}): FakeRow {
   };
 }
 
-export function adRow(platformAdId: string, thumbnailUrl: string): MetaAdRow {
+export function adRow(platformAdId: string, thumbnailUrl: string, imageUrl?: string): MetaAdRow {
   return {
     id: platformAdId,
     adset_id: "adset-1",
     name: "ad",
-    creative: { id: `creative-${platformAdId}`, thumbnail_url: thumbnailUrl },
+    creative: { id: `creative-${platformAdId}`, thumbnail_url: thumbnailUrl, image_url: imageUrl },
   };
 }
 

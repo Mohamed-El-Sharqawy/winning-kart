@@ -13,7 +13,7 @@ import { resolveAdMedia } from "./media-resolver";
 
 describe("resolveAdMedia thumbnails", () => {
   test("warm resolve performs zero adapter calls and no persistence", async () => {
-    const model = new FakeModel([row()]);
+    const model = new FakeModel([row({ imageUrl: "https://cdn/full-fresh.jpg" })]);
     const adapter = new FakeAdapter();
     const items = await resolveAdMedia(model, ACCOUNT, adapter, ["ad-1"], false);
     expect(adapter.adCalls).toEqual([]);
@@ -24,6 +24,7 @@ describe("resolveAdMedia thumbnails", () => {
         adId: "ad-1",
         format: "IMAGE",
         thumbnailUrl: "https://cdn/fresh.jpg",
+        imageUrl: "https://cdn/full-fresh.jpg",
         videoId: null,
         carouselCount: null,
         posterUrl: null,
@@ -38,19 +39,47 @@ describe("resolveAdMedia thumbnails", () => {
       platformAdId: "plat-stale",
       thumbnailUrl: "https://cdn/old.jpg",
       thumbnailResolvedAt: new Date(Date.now() - 8 * DAY_MS),
+      imageResolvedAt: new Date(Date.now() - 8 * DAY_MS),
     });
     const model = new FakeModel([stale]);
     const adapter = new FakeAdapter();
-    adapter.adResponse = [adRow("plat-stale", "https://cdn/new.jpg")];
+    adapter.adResponse = [adRow("plat-stale", "https://cdn/new.jpg", "https://cdn/full-new.jpg")];
     const items = await resolveAdMedia(model, ACCOUNT, adapter, ["ad-stale"], false);
     expect(adapter.adCalls).toEqual([["plat-stale"]]);
     expect(model.calls).toEqual([
       {
         adId: "ad-stale",
-        patch: { thumbnailUrl: "https://cdn/new.jpg", thumbnailResolvedAt: expect.any(Date) },
+        patch: {
+          thumbnailUrl: "https://cdn/new.jpg",
+          thumbnailResolvedAt: expect.any(Date),
+          imageUrl: "https://cdn/full-new.jpg",
+          imageResolvedAt: expect.any(Date),
+        },
       },
     ]);
     expect(items[0]?.thumbnailUrl).toBe("https://cdn/new.jpg");
+    expect(items[0]?.imageUrl).toBe("https://cdn/full-new.jpg");
+  });
+
+  test("stale image attempt with a warm thumbnail triggers one read and stamps the attempt", async () => {
+    const staleImage = row({
+      imageUrl: null,
+      imageResolvedAt: new Date(Date.now() - 8 * DAY_MS),
+    });
+    const model = new FakeModel([staleImage]);
+    const adapter = new FakeAdapter();
+    adapter.adResponse = [
+      { id: "plat-1", adset_id: "adset-1", name: "ad", creative: { id: "c-1", image_url: "https://cdn/full.jpg" } },
+    ];
+    const items = await resolveAdMedia(model, ACCOUNT, adapter, ["ad-1"], false);
+    expect(adapter.adCalls).toEqual([["plat-1"]]);
+    expect(model.calls).toEqual([
+      {
+        adId: "ad-1",
+        patch: { imageUrl: "https://cdn/full.jpg", imageResolvedAt: expect.any(Date) },
+      },
+    ]);
+    expect(items[0]?.imageUrl).toBe("https://cdn/full.jpg");
   });
 
   test("missing thumbnail triggers re-resolution; absent graph url persists nothing", async () => {

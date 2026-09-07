@@ -33,7 +33,8 @@ describe("adResolveBatchEntries", () => {
     expect(entries).toHaveLength(2);
     const url = new URL(`https://graph.facebook.com/v21.0/${entries[0]}`);
     expect(url.pathname).toBe("/v21.0/111");
-    expect(url.searchParams.get("fields")).toContain("creative{id,thumbnail_url");
+    expect(url.searchParams.get("fields")).toContain("creative{id,thumbnail_url,image_url");
+    expect(url.searchParams.get("fields")).toContain("thumbnail_url,image_url,video_id");
     expect(url.searchParams.get("thumbnail_width")).toBe(THUMBNAIL_WIDTH);
     expect(url.searchParams.get("thumbnail_height")).toBe(THUMBNAIL_HEIGHT);
   });

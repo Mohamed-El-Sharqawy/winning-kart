@@ -362,6 +362,8 @@ export async function runStructureStages(
         carouselCount: record.carouselCount,
         thumbnailUrl: record.thumbnailUrl,
         thumbnailResolvedAt: record.thumbnailResolvedAt,
+        imageUrl: record.imageUrl,
+        imageResolvedAt: record.imageResolvedAt,
         platformUpdatedAt: record.platformUpdatedAt,
       });
     }

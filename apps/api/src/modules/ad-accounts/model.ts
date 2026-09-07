@@ -40,6 +40,8 @@ export interface AdUpsertRow {
   carouselCount: number | null;
   thumbnailUrl: string | null;
   thumbnailResolvedAt: Date | null;
+  imageUrl: string | null;
+  imageResolvedAt: Date | null;
   platformUpdatedAt: Date | null;
 }
 
@@ -52,6 +54,8 @@ export type AdMediaRow = Pick<
   | "carouselCount"
   | "thumbnailUrl"
   | "thumbnailResolvedAt"
+  | "imageUrl"
+  | "imageResolvedAt"
   | "posterUrl"
   | "posterResolvedAt"
   | "sourceUrl"
@@ -61,6 +65,8 @@ export type AdMediaRow = Pick<
 export interface AdMediaPatch {
   thumbnailUrl?: string | null;
   thumbnailResolvedAt?: Date | null;
+  imageUrl?: string | null;
+  imageResolvedAt?: Date | null;
   posterUrl?: string | null;
   posterResolvedAt?: Date | null;
   sourceUrl?: string | null;
@@ -279,6 +285,8 @@ export class AdAccountsModel {
           carouselCount: row.carouselCount,
           thumbnailUrl: row.thumbnailUrl,
           thumbnailResolvedAt: row.thumbnailResolvedAt,
+          imageUrl: row.imageUrl,
+          imageResolvedAt: row.imageResolvedAt,
           platformUpdatedAt: row.platformUpdatedAt,
           updatedAt: new Date(),
         }))
@@ -295,6 +303,8 @@ export class AdAccountsModel {
           carouselCount: sql`coalesce(excluded.carousel_count, ${ads.carouselCount})`,
           thumbnailUrl: sql`coalesce(excluded.thumbnail_url, ${ads.thumbnailUrl})`,
           thumbnailResolvedAt: sql`coalesce(excluded.thumbnail_resolved_at, ${ads.thumbnailResolvedAt})`,
+          imageUrl: sql`coalesce(excluded.image_url, ${ads.imageUrl})`,
+          imageResolvedAt: sql`coalesce(excluded.image_resolved_at, ${ads.imageResolvedAt})`,
           platformUpdatedAt: sql`excluded.platform_updated_at`,
           updatedAt: sql`excluded.updated_at`,
         },
@@ -621,6 +631,8 @@ export class AdAccountsModel {
         carouselCount: ads.carouselCount,
         thumbnailUrl: ads.thumbnailUrl,
         thumbnailResolvedAt: ads.thumbnailResolvedAt,
+        imageUrl: ads.imageUrl,
+        imageResolvedAt: ads.imageResolvedAt,
         posterUrl: ads.posterUrl,
         posterResolvedAt: ads.posterResolvedAt,
         sourceUrl: ads.sourceUrl,
