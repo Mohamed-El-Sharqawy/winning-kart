@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { clients, db, insights } from "@wk/db";
 import type { Insight } from "@wk/db";
 
@@ -25,6 +25,7 @@ const insightColumns = {
   ctaTarget: insights.ctaTarget,
   acceptedAsTaskId: insights.acceptedAsTaskId,
   notUsefulCount: insights.notUsefulCount,
+  dismissedAt: insights.dismissedAt,
   priorityScore: insights.priorityScore,
   detectedAt: insights.detectedAt,
   lastSeenAt: insights.lastSeenAt,
@@ -32,11 +33,15 @@ const insightColumns = {
 
 export class InsightsModel {
   list(clientId?: string): Promise<InsightRow[]> {
+    const conditions = [
+      isNull(insights.dismissedAt),
+      clientId !== undefined ? eq(insights.clientId, clientId) : undefined,
+    ];
     return db
       .select({ ...insightColumns, clientName: clients.name })
       .from(insights)
       .innerJoin(clients, eq(insights.clientId, clients.id))
-      .where(clientId !== undefined ? eq(insights.clientId, clientId) : undefined)
+      .where(and(...conditions))
       .orderBy(desc(insights.priorityScore), desc(insights.lastSeenAt))
       .limit(500);
   }
@@ -59,5 +64,13 @@ export class InsightsModel {
       .update(insights)
       .set({ notUsefulCount: sql`${insights.notUsefulCount} + 1` })
       .where(eq(insights.id, id));
+  }
+
+  async dismiss(id: string): Promise<void> {
+    await db.update(insights).set({ dismissedAt: new Date() }).where(eq(insights.id, id));
+  }
+
+  async remove(id: string): Promise<void> {
+    await db.delete(insights).where(eq(insights.id, id));
   }
 }

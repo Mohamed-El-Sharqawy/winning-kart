@@ -42,6 +42,8 @@ export interface CreateTaskDto {
 }
 
 export interface TaskPatchDto {
+  title?: string;
+  description?: string | null;
   status?: TaskStatusDto;
   priority?: TaskPriorityDto;
   assigneeUserId?: string;

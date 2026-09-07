@@ -35,6 +35,8 @@ export const createTaskDto = t.Object({
 });
 
 export const updateTaskDto = t.Object({
+  title: t.Optional(t.String({ minLength: 1, maxLength: 200 })),
+  description: t.Optional(t.Union([t.String(), t.Null()])),
   status: t.Optional(taskStatusDto),
   priority: t.Optional(taskPriorityDto),
   assigneeUserId: t.Optional(t.Union([t.String(), t.Null()])),

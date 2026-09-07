@@ -1,4 +1,5 @@
 import { formatDate } from "@/lib/format";
+import { ActionButton } from "@/shared/components/ActionButton";
 import { Badge } from "@/shared/components/Badge";
 import { DataTable } from "@/shared/components/DataTable";
 import type { DataTableColumn } from "@/shared/components/DataTable";
@@ -24,9 +25,11 @@ interface TasksTableProps {
   tasks: Task[];
   selectedId: string | null;
   onRowClick: (task: Task) => void;
+  onEdit: (task: Task) => void;
+  onDelete: (task: Task) => void;
 }
 
-export function TasksTable({ tasks, selectedId, onRowClick }: TasksTableProps) {
+export function TasksTable({ tasks, selectedId, onRowClick, onEdit, onDelete }: TasksTableProps) {
   const columns: Array<DataTableColumn<Task>> = [
     {
       key: "title",
@@ -66,6 +69,24 @@ export function TasksTable({ tasks, selectedId, onRowClick }: TasksTableProps) {
         <span className="rounded-full border border-volt-border bg-volt-surface-2 px-2 py-0.5 text-xs text-volt-text-3">
           {row.source}
         </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      align: "right",
+      render: (row) => (
+        <div
+          className="flex justify-end gap-1"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <ActionButton tone="ghost" onClick={() => onEdit(row)}>
+            Edit
+          </ActionButton>
+          <ActionButton tone="ghost-danger" onClick={() => onDelete(row)}>
+            Delete
+          </ActionButton>
+        </div>
       ),
     },
   ];

@@ -95,6 +95,15 @@ export const alertsModule = new Elysia()
     },
     { params: idParamsDto, body: dismissAlertDto, response: { 200: okDto } }
   )
+  .delete(
+    "/alerts/:id",
+    async ({ params, headers }) => {
+      await requireAdmin(headers);
+      await service.remove(params.id);
+      return { data: { ok: true } };
+    },
+    { params: idParamsDto, response: { 200: okDto } }
+  )
   .post(
     "/alerts/:id/create-task",
     async ({ params, headers, set }) => {

@@ -58,6 +58,12 @@ export class AlertsService {
     await this.model.update(id, { status: "dismissed", dismissedReason: reason });
   }
 
+  async remove(id: string): Promise<void> {
+    const alert = await this.requireAlert(id);
+    await this.tasks.unlinkAlertFromTasks(alert.id);
+    await this.model.remove(id);
+  }
+
   async createTask(id: string): Promise<Task> {
     const alert = await this.requireAlert(id);
     if (alert.suppressedByTaskId !== null) {

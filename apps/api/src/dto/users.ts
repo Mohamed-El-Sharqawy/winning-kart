@@ -17,6 +17,27 @@ export const createUserDto = t.Object({
   clientRoleTier: t.Optional(t.Union([t.Literal("admin"), t.Literal("viewer")])),
 });
 
+export const updateUserDto = t.Object({
+  displayName: t.Optional(t.String({ minLength: 1, maxLength: 200 })),
+  role: t.Optional(t.Union([t.Literal("admin"), t.Literal("client")])),
+  agencyRole: t.Optional(
+    t.Union([
+      t.Literal("owner"),
+      t.Literal("admin"),
+      t.Literal("account_manager"),
+      t.Literal("marketer"),
+      t.Literal("analyst"),
+      t.Null(),
+    ])
+  ),
+  clientRoleTier: t.Optional(
+    t.Union([t.Literal("admin"), t.Literal("viewer"), t.Null()])
+  ),
+  status: t.Optional(
+    t.Union([t.Literal("active"), t.Literal("invited"), t.Literal("suspended")])
+  ),
+});
+
 export const userDto = t.Object({
   id: t.String(),
   email: t.String(),

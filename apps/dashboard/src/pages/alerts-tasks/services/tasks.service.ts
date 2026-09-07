@@ -5,13 +5,13 @@ import { toTask, toTasks } from "../transformers/tasks.transformer";
 import type { Task, TaskStatus } from "../types/tasks.types";
 import type { CreateTaskDto, TaskDto, TaskListItemDto, TaskPatchDto } from "../dto/tasks.dto";
 
-interface PatchEndpoint {
+interface TaskMutationEndpoint {
   patch(body: unknown): Promise<{ data: unknown; error: unknown }>;
+  delete(body?: unknown): Promise<{ data: unknown; error: unknown }>;
 }
 
-const patchApi = looseApi as unknown as {
-  tasks: (param: string | Record<string, string | number>) => PatchEndpoint;
-};
+const taskEndpoint = (param: string | Record<string, string | number>) =>
+  looseApi.tasks(param) as unknown as TaskMutationEndpoint;
 
 export function tasksQueryOptions(status?: TaskStatus) {
   return queryOptions({
@@ -49,9 +49,23 @@ export function usePatchTask() {
   return useMutation({
     mutationFn: async (input: { id: string } & TaskPatchDto): Promise<Task> => {
       const { id, ...patch } = input;
-      const { data: body, error } = await patchApi.tasks({ id }).patch(patch);
+      const { data: body, error } = await taskEndpoint({ id }).patch(patch);
       if (error) throw callFailed(error, "Failed to update task");
       return toTask((body as { data: TaskDto }).data);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<boolean> => {
+      const { data: body, error } = await taskEndpoint({ id }).delete();
+      if (error) throw callFailed(error, "Failed to delete task");
+      return Boolean((body as { data: { ok?: boolean } | null }).data?.ok);
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["tasks"] });

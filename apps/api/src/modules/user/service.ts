@@ -1,7 +1,7 @@
 import { hash } from "bcryptjs";
 import { problem } from "../../lib/problem";
 import type { SafeUser } from "../auth/model";
-import type { UserModel } from "./model";
+import type { UserModel, UserUpdatePatch } from "./model";
 
 export interface CreateUserInput {
   email: string;
@@ -10,6 +10,14 @@ export interface CreateUserInput {
   role: "admin" | "client";
   agencyRole?: "owner" | "admin" | "account_manager" | "marketer" | "analyst";
   clientRoleTier?: "admin" | "viewer";
+}
+
+export interface UpdateUserInput {
+  displayName?: string;
+  role?: "admin" | "client";
+  agencyRole?: "owner" | "admin" | "account_manager" | "marketer" | "analyst" | null;
+  clientRoleTier?: "admin" | "viewer" | null;
+  status?: "active" | "invited" | "suspended";
 }
 
 export class UserService {
@@ -41,13 +49,63 @@ export class UserService {
       throw error;
     }
   }
+
+  async update(id: string, input: UpdateUserInput): Promise<SafeUser> {
+    const user = await this.requireUser(id);
+    const role = input.role ?? user.role;
+    const patch: UserUpdatePatch = {
+      ...input,
+      agencyRole: role === "client" ? null : input.agencyRole ?? user.agencyRole,
+      clientRoleTier: role === "admin" ? null : input.clientRoleTier ?? user.clientRoleTier,
+    };
+    if (role === "client" && patch.clientRoleTier === null) {
+      throw problem(422, "VALIDATION", "Client members require a client role tier");
+    }
+    const updated = await this.model.update(id, patch);
+    if (!updated) {
+      throw problem(404, "RESOURCE_NOT_FOUND", `No user with id ${id}`);
+    }
+    return updated;
+  }
+
+  async remove(id: string, actorId: string): Promise<SafeUser> {
+    if (id === actorId) {
+      throw problem(409, "CANNOT_DELETE_SELF", "You cannot delete your own account");
+    }
+    const user = await this.requireUser(id);
+    try {
+      await this.model.remove(id);
+    } catch (error) {
+      if (isForeignKeyViolation(error)) {
+        throw problem(409, "USER_IN_USE", "This member is still referenced by clients or tasks");
+      }
+      throw error;
+    }
+    return user;
+  }
+
+  private async requireUser(id: string): Promise<SafeUser> {
+    const user = await this.model.findById(id);
+    if (!user) {
+      throw problem(404, "RESOURCE_NOT_FOUND", `No user with id ${id}`);
+    }
+    return user;
+  }
 }
 
 function isUniqueViolation(error: unknown): boolean {
+  return isPgErrorCode(error, "23505");
+}
+
+function isForeignKeyViolation(error: unknown): boolean {
+  return isPgErrorCode(error, "23503");
+}
+
+function isPgErrorCode(error: unknown, code: string): boolean {
   return (
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
-    (error as { code?: unknown }).code === "23505"
+    (error as { code?: unknown }).code === code
   );
 }

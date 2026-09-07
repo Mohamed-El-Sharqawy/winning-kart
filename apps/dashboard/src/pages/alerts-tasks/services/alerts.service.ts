@@ -75,6 +75,18 @@ export function useDismissAlert() {
   });
 }
 
+export function useDeleteAlert() {
+  const invalidate = useInvalidateAlerts();
+  return useMutation({
+    mutationFn: async (id: string): Promise<boolean> => {
+      const { data: body, error } = await looseApi.alerts({ id }).delete();
+      if (error) throw callFailed(error, "Failed to delete alert");
+      return Boolean((body as { data: OkDto | null }).data?.ok);
+    },
+    onSettled: invalidate,
+  });
+}
+
 export function useCreateTaskFromAlert() {
   const queryClient = useQueryClient();
   return useMutation({

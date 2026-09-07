@@ -416,6 +416,7 @@ export const insights = pgTable(
     ctaTarget: text("cta_target"),
     acceptedAsTaskId: text("accepted_as_task_id"),
     notUsefulCount: integer("not_useful_count").notNull().default(0),
+    dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
     priorityScore: numeric("priority_score", { precision: 14, scale: 2 })
       .notNull()
       .default("0"),

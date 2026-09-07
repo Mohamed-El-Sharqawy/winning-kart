@@ -2,19 +2,30 @@ import { useState } from "react";
 import { formatRelativeTime } from "@/lib/format";
 import { Button } from "@/shared/components/Button";
 import { inlineErrorCopy } from "../services/api-call-error";
-import { useAcceptInsight, useMarkNotUseful } from "../services/insights.service";
+import {
+  useAcceptInsight,
+  useDeleteInsight,
+  useDismissInsight,
+  useMarkNotUseful,
+} from "../services/insights.service";
 import type { Insight } from "../types/insights.types";
 import { SeverityChip } from "./SeverityChip";
 import { StatChips } from "./StatChips";
+import { InlineConfirmRow } from "./InlineConfirmRow";
 
 export function InsightCard({ insight }: { insight: Insight }) {
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const accept = useAcceptInsight();
   const notUseful = useMarkNotUseful();
+  const dismiss = useDismissInsight();
+  const deleteInsight = useDeleteInsight();
 
   const onMutate = () => setError(null);
   const onError = (mutationError: unknown) => setError(inlineErrorCopy(mutationError));
   const accepted = insight.acceptedAsTaskId !== null;
+  const pending =
+    accept.isPending || notUseful.isPending || dismiss.isPending || deleteInsight.isPending;
   const contributors = insight.decomposition.slice(0, 3).map((entry) => ({
     label: entry.name,
     value: `${entry.pct}%`,
@@ -64,7 +75,32 @@ export function InsightCard({ insight }: { insight: Insight }) {
         >
           Not useful{insight.notUsefulCount > 0 ? ` · ${insight.notUsefulCount}` : null}
         </Button>
+        <Button
+          variant="ghost-danger"
+          disabled={pending}
+          onClick={() => {
+            onMutate();
+            dismiss.mutate(insight.id, { onError });
+          }}
+        >
+          Dismiss
+        </Button>
+        <Button variant="ghost-danger" disabled={pending} onClick={() => setConfirming(true)}>
+          Delete
+        </Button>
       </div>
+      {confirming ? (
+        <InlineConfirmRow
+          confirmLabel="Confirm delete"
+          pending={deleteInsight.isPending}
+          onConfirm={() => {
+            onMutate();
+            setConfirming(false);
+            deleteInsight.mutate(insight.id, { onError });
+          }}
+          onCancel={() => setConfirming(false)}
+        />
+      ) : null}
       {error ? <p className="text-xs text-volt-down">{error}</p> : null}
     </section>
   );

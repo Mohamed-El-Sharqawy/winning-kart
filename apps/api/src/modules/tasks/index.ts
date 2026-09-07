@@ -8,6 +8,7 @@ import {
   taskResponseDto,
   updateTaskDto,
 } from "../../dto/tasks";
+import { okDto } from "../../dto/alerts";
 import { TasksModel } from "./model";
 import { TasksService } from "./service";
 import type { SafeUser } from "../auth/model";
@@ -21,6 +22,14 @@ async function requireAgency(headers: Record<string, string | undefined>): Promi
   }
   if (user.role === "client") {
     throw problem(403, "FORBIDDEN", "Agency role required");
+  }
+  return user;
+}
+
+async function requireAdmin(headers: Record<string, string | undefined>): Promise<SafeUser> {
+  const user = await requireAgency(headers);
+  if (user.role !== "admin") {
+    throw problem(403, "FORBIDDEN", "Admin role required");
   }
   return user;
 }
@@ -55,4 +64,13 @@ export const tasksModule = new Elysia({ prefix: "/tasks" })
       return { data: await service.update(params.id, body) };
     },
     { params: idParamsDto, body: updateTaskDto, response: { 200: taskResponseDto } }
+  )
+  .delete(
+    "/:id",
+    async ({ params, headers }) => {
+      await requireAdmin(headers);
+      await service.remove(params.id);
+      return { data: { ok: true } };
+    },
+    { params: idParamsDto, response: { 200: okDto } }
   );
