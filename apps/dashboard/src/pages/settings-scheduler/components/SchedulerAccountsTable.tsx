@@ -60,6 +60,7 @@ export function SchedulerAccountsTable({ accounts }: { accounts: SchedulerAccoun
       align: "right",
       render: (row) => (
         <span
+          data-testid="recent-failures"
           className={cn(
             "tabular font-mono",
             row.recentFailures > 0 ? "text-volt-down" : "text-volt-text-3",
