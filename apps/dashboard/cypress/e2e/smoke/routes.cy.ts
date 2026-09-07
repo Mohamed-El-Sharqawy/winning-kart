@@ -56,7 +56,13 @@ function stubApi() {
   cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/campaigns\/[^/?]+/, {
     fixture: "walker-campaign-detail.json",
   });
+  cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/campaigns\/summary(\?.*)?$/, {
+    fixture: "kpi-summary.json",
+  });
   cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ad-sets(\?.*)?$/, { fixture: "ad-sets.json" });
+  cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ad-sets\/summary(\?.*)?$/, {
+    fixture: "kpi-summary.json",
+  });
   cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ads(\?.*)?$/, { fixture: "ads.json" });
   cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/fatigue-summary(\?.*)?$/, {
     fixture: "fatigue-summary.json",

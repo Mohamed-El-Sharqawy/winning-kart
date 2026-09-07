@@ -28,7 +28,20 @@ describe("client workspace", () => {
       body: NOUR_ACCOUNT,
     });
     cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/campaigns(\?.*)?$/, {
-      body: { data: [] },
+      body: { data: [], meta: { page: 1, pageSize: 25, total: 0 } },
+    }).as("campaigns");
+    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/campaigns\/summary(\?.*)?$/, {
+      body: {
+        data: {
+          spend: 0,
+          revenue: 0,
+          purchases: 0,
+          roas: null,
+          cpa: null,
+          ctr: null,
+          frequency: null,
+        },
+      },
     });
     cy.intercept("GET", /\/api\/overview(\?.*)?$/, { fixture: "overview.json" });
     cy.intercept("GET", /\/api\/clients\/[^/]+\/overview(\?.*)?$/, {
@@ -50,6 +63,14 @@ describe("client workspace", () => {
 
     cy.contains("[role='tab'], a, button", "Campaigns").click();
     cy.url().should("include", "campaigns");
+    cy.wait("@campaigns").its("request.url").should((url) => {
+      expect(url, "server paging defaults").to.contain("page=1");
+      expect(url, "server page size default").to.contain("pageSize=25");
+      expect(url, "active status default").to.contain("status=active");
+    });
+    cy.contains(/no active campaigns in this scope/i, { timeout: 15000 }).should("be.visible");
+    cy.get("select[aria-label='Status filter']").select("all");
+    cy.wait("@campaigns").its("request.url").should("contain", "status=all");
     cy.contains("No campaigns", { timeout: 15000 }).should("be.visible");
 
     cy.visit("/clients/maison-nour?tab=overview");

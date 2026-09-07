@@ -19,8 +19,8 @@ export interface CampaignDto {
   id: string;
   name: string;
   status: string;
-  objective: string;
-  dailyBudget: number | null;
+  objective: string | null;
+  dailyBudget: string | null;
   currency: string;
   spend: number | null;
   revenue: number | null;

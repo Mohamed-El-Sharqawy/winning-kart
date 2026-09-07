@@ -1,5 +1,6 @@
 import type { AdSetDto } from "../dto/ad-sets.dto";
 import type { AdSet } from "../types/ad-sets.types";
+import { toNumberOrNull } from "@/lib/parse";
 
 export function toAdSet(dto: AdSetDto): AdSet {
   return {
@@ -11,7 +12,7 @@ export function toAdSet(dto: AdSetDto): AdSet {
     status: dto.status,
     optimizationGoal: dto.optimizationGoal,
     bidStrategy: dto.bidStrategy,
-    dailyBudget: dto.dailyBudget ?? null,
+    dailyBudget: toNumberOrNull(dto.dailyBudget),
     currency: dto.currency,
     spend: dto.spend ?? null,
     revenue: dto.revenue ?? null,

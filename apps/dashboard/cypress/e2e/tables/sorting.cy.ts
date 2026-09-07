@@ -11,12 +11,15 @@ describe("ad sets sorting", () => {
       statusCode: 200,
       body: adSetsFixture,
     }).as("adSets");
+    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ad-sets\/summary(\?.*)?$/, {
+      fixture: "kpi-summary.json",
+    });
     cy.visit("/clients/maison-nour?tab=ad-sets", { timeout: 15000 });
     cy.wait("@adSets");
   });
 
   it("flips row order when clicking the Spend header", () => {
-    const rows = (adSetsFixture as { data: Array<{ name: string }> }).data;
+    const rows = (adSetsFixture as { data: Array<{ name: string; spend: number }> }).data;
     const bySpendDesc = [...rows].sort((a, b) => b.spend - a.spend);
     const bySpendAsc = [...bySpendDesc].reverse();
     const table = () => cy.contains("table", "Nour Broad - Purchases");

@@ -34,7 +34,7 @@ export interface Campaign {
   id: string;
   name: string;
   status: string;
-  objective: string;
+  objective: string | null;
   dailyBudget: number | null;
   currency: string;
   spend: number | null;

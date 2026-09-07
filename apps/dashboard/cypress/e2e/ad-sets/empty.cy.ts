@@ -26,7 +26,20 @@ describe("ad sets and creatives empty state", () => {
       body: NOUR_ACCOUNT,
     });
     cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ad-sets(\?.*)?$/, {
-      body: { data: [] },
+      body: { data: [], meta: { page: 1, pageSize: 25, total: 0 } },
+    });
+    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ad-sets\/summary(\?.*)?$/, {
+      body: {
+        data: {
+          spend: 0,
+          revenue: 0,
+          purchases: 0,
+          roas: null,
+          cpa: null,
+          ctr: null,
+          frequency: null,
+        },
+      },
     });
     cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ads(\?.*)?$/, {
       body: { data: [], meta: { nextCursor: null } },
@@ -46,17 +59,12 @@ describe("ad sets and creatives empty state", () => {
   it("renders the ad sets tab against the empty seeded database without crashing", () => {
     cy.visit("/clients/maison-nour?tab=ad-sets");
 
-    cy.get("body", { timeout: 15000 }).should(($body) => {
+    cy.contains(/no active ad sets in this scope/i, { timeout: 15000 }).should("be.visible");
+    cy.get("select[aria-label='Status filter']").select("all");
+    cy.contains(/no ad sets yet/i, { timeout: 15000 }).should("be.visible");
+
+    cy.get("body").should(($body) => {
       const text = $body.text();
-      const accountsLoaded = /act_nour_1|act_nour_2/i.test(text);
-      const emptyState =
-        /no ad sets|no data|nothing yet|no results|get started|0 ad sets/i.test(
-          text,
-        );
-      expect(
-        accountsLoaded || emptyState,
-        "seeded account list loads or an empty state renders",
-      ).to.be.true;
       expect(
         /application error|uncaught|white screen/i.test(text),
         "no crash screen",

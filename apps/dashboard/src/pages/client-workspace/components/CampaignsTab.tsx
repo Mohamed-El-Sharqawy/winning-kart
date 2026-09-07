@@ -1,15 +1,21 @@
-import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/shared/components/Button";
 import { DateRangeControl } from "@/shared/components/DateRangeControl";
 import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { Client } from "@/shared/types/clients.types";
-import { errorCopy } from "../data/sync-copy.data";
-import { useAdAccounts, useCampaigns } from "../services/ad-accounts.service";
-import { useEnqueueSync, useLatestSyncRun } from "../services/sync.service";
+import { statusFilterLabel } from "../data/gallery-copy.data";
+import { useAdAccounts } from "../services/ad-accounts.service";
+import { useCampaigns, useCampaignsSummary } from "../services/campaigns.service";
+import { useCampaignSync } from "../services/use-campaign-sync";
+import type { ListFilters } from "../services/list-query";
+import type { StatusFilter } from "../types/creatives.types";
 import { CampaignsTable } from "./CampaignsTable";
+import { ListFilterBar } from "./ListFilterBar";
+import { ListKpiCards } from "./ListKpiCards";
 import { SkeletonRows } from "./SkeletonRows";
+import { TablePager } from "./TablePager";
 
 const SELECT_CLASS =
   "rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
@@ -23,46 +29,23 @@ export interface CampaignsTabProps {
 
 export function CampaignsTab({ client, range, rangeExplicit, onApplyRange }: CampaignsTabProps) {
   const { data: accounts, isPending: accountsPending } = useAdAccounts(client.id);
-  const queryClient = useQueryClient();
   const [accountId, setAccountId] = useState<string | null>(null);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
-  const [watchedAccountId, setWatchedAccountId] = useState<string | null>(null);
-  const [syncRunId, setSyncRunId] = useState<string | null>(null);
-  const enqueue = useEnqueueSync();
+  const [status, setStatus] = useState<StatusFilter>("active");
+  const [searchInput, setSearchInput] = useState("");
+  const q = useDebounce(searchInput, 300);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const list = accounts ?? [];
   const selectedId = accountId ?? list[0]?.id ?? null;
-  const { data: campaigns, isPending } = useCampaigns(selectedId, range, rangeExplicit);
-  const { data: run } = useLatestSyncRun(watchedAccountId);
+  const currency = list.find((account) => account.id === selectedId)?.currency ?? "AED";
+  const filters = useMemo<ListFilters>(() => ({ status, q }), [status, q]);
+  const campaigns = useCampaigns(selectedId, range, rangeExplicit, filters, page, pageSize);
+  const summary = useCampaignsSummary(selectedId, range, rangeExplicit, filters);
+  const { message: syncMessage, startSync, enqueue } = useCampaignSync(selectedId);
 
   useEffect(() => {
-    if (run === null || run === undefined || run.id !== syncRunId || watchedAccountId === null) {
-      return;
-    }
-    if (run.status === "succeeded" || run.status === "failed" || run.status === "cancelled") {
-      void queryClient.invalidateQueries({ queryKey: ["ad-accounts", watchedAccountId, "campaigns"] });
-      if (run.status === "failed") {
-        setSyncMessage(errorCopy(run.errorClass ?? "server_error"));
-      } else if (run.status === "succeeded") {
-        setSyncMessage(null);
-      }
-      setWatchedAccountId(null);
-      setSyncRunId(null);
-    }
-  }, [run, syncRunId, watchedAccountId, queryClient]);
-
-  function handleSync() {
-    if (selectedId === null) return;
-    setSyncMessage(null);
-    const target = selectedId;
-    enqueue.mutate(target, {
-      onSuccess: (runId) => {
-        setWatchedAccountId(target);
-        setSyncRunId(runId);
-        setSyncMessage("Sync queued — campaigns refresh when it finishes.");
-      },
-      onError: (error: Error) => setSyncMessage(error.message),
-    });
-  }
+    setPage(0);
+  }, [selectedId, status, q, range.from, range.to, rangeExplicit]);
 
   if (accountsPending) {
     return <p className="text-sm text-volt-text-3">Loading ad accounts…</p>;
@@ -76,7 +59,9 @@ export function CampaignsTab({ client, range, rangeExplicit, onApplyRange }: Cam
     );
   }
 
-  const rows = campaigns ?? [];
+  const rows = campaigns.data?.items ?? [];
+  const total = campaigns.data?.total ?? 0;
+  const unfiltered = status === "all" && q.trim() === "";
 
   return (
     <div className="flex flex-col gap-4">
@@ -101,21 +86,48 @@ export function CampaignsTab({ client, range, rangeExplicit, onApplyRange }: Cam
           onApply={onApplyRange}
         />
       </div>
-      {isPending ? (
+      {summary.data ? <ListKpiCards summary={summary.data} currency={currency} /> : null}
+      <ListFilterBar
+        status={status}
+        onStatus={setStatus}
+        searchInput={searchInput}
+        onSearchInput={setSearchInput}
+        searchLabel="Search campaigns"
+      />
+      {campaigns.isPending ? (
         <SkeletonRows rows={8} columns={9} />
       ) : rows.length === 0 ? (
-        <EmptyState
-          title="No campaigns yet"
-          hint="Sync the ad account to pull data."
-          action={
-            <Button variant="ghost" disabled={enqueue.isPending} onClick={handleSync}>
-              {enqueue.isPending ? "Starting…" : "Sync now"}
-            </Button>
-          }
-        />
+        unfiltered ? (
+          <EmptyState
+            title="No campaigns yet"
+            hint="Sync the ad account to pull data."
+            action={
+              <Button variant="ghost" disabled={enqueue.isPending} onClick={startSync}>
+                {enqueue.isPending ? "Starting…" : "Sync now"}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            title={`No ${statusFilterLabel(status).toLowerCase()} campaigns in this scope`}
+            hint="Switch the status filter to widen the scope."
+          />
+        )
       ) : (
         <CampaignsTable campaigns={rows} />
       )}
+      {!campaigns.isPending && total > 0 ? (
+        <TablePager
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
+        />
+      ) : null}
       {syncMessage ? <p className="text-sm text-volt-down">{syncMessage}</p> : null}
     </div>
   );
