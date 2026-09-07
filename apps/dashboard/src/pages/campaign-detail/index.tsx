@@ -4,6 +4,7 @@ import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { AppShell } from "@/shared/layout/AppShell";
 import { useClients } from "@/shared/services/clients.service";
+import { CreativeDrawer } from "@/pages/client-workspace/components/CreativeDrawer";
 import { AdSetsTable } from "./components/AdSetsTable";
 import { CampaignDetailHeader } from "./components/CampaignDetailHeader";
 import { CampaignKpis } from "./components/CampaignKpis";
@@ -12,10 +13,11 @@ import { RoasChartCard } from "./components/RoasChartCard";
 import { SpendRevenueChartCard } from "./components/SpendRevenueChartCard";
 import { TopCreatives } from "./components/TopCreatives";
 import { useCampaignAccountResolution, useCampaignDetail } from "./services/campaign-detail.service";
+import { useCreativeDrawerUrl } from "./services/use-creative-drawer-url";
 
 export function CampaignDetailPage() {
   const { slug, campaignId } = useParams({ from: "/clients/$slug/campaigns/$campaignId" });
-  const { days, from, to, account, accountName } = useSearch({
+  const { days, from, to, account, accountName, creative } = useSearch({
     from: "/clients/$slug/campaigns/$campaignId",
   });
   const navigate = useNavigate();
@@ -27,6 +29,7 @@ export function CampaignDetailPage() {
   const range: DateRange = rangeExplicit ? { from, to } : defaultRange();
   const detail = useCampaignDetail(accountId, campaignId, days, rangeExplicit ? range : null);
   const resolvedAccountName = accountName ?? detail.data?.accountName ?? resolution.accountName ?? null;
+  const { openCreative, closeCreative } = useCreativeDrawerUrl(slug, campaignId);
 
   function applyRange(next: DateRange | undefined) {
     void navigate({
@@ -41,6 +44,14 @@ export function CampaignDetailPage() {
       }),
     });
   }
+
+  const campaignsSearch = {
+    days,
+    from,
+    to,
+    account: accountId ?? undefined,
+    accountName: resolvedAccountName ?? undefined,
+  };
 
   return (
     <AppShell>
@@ -57,7 +68,8 @@ export function CampaignDetailPage() {
             <CampaignDetailHeader
               slug={slug}
               clientName={clientName}
-              accountName={resolvedAccountName ?? undefined}
+              accountName={resolvedAccountName}
+              campaignsSearch={campaignsSearch}
               campaign={detail.data?.campaign ?? null}
               range={range}
               from={from}
@@ -83,12 +95,41 @@ export function CampaignDetailPage() {
             ) : detail.data ? (
               <>
                 <FunnelSection funnel={detail.data.funnel} />
-                <AdSetsTable adSets={detail.data.adSets} />
-                <TopCreatives ads={detail.data.ads} currency={detail.data.campaign.currency} />
+                <AdSetsTable
+                  adSets={detail.data.adSets}
+                  slug={slug}
+                  campaignId={campaignId}
+                  campaignName={detail.data.campaign.name}
+                  account={accountId}
+                  accountName={resolvedAccountName ?? undefined}
+                  from={from}
+                  to={to}
+                />
+                <TopCreatives
+                  ads={detail.data.ads}
+                  currency={detail.data.campaign.currency}
+                  slug={slug}
+                  campaignId={campaignId}
+                  campaignName={detail.data.campaign.name}
+                  account={accountId}
+                  accountName={resolvedAccountName ?? undefined}
+                  from={from}
+                  to={to}
+                  onOpen={openCreative}
+                />
               </>
             ) : null}
           </>
         )}
+        {creative !== undefined && accountId !== null ? (
+          <CreativeDrawer
+            accountId={accountId}
+            adId={creative}
+            range={range}
+            rangeExplicit={rangeExplicit}
+            onClose={closeCreative}
+          />
+        ) : null}
       </div>
     </AppShell>
   );

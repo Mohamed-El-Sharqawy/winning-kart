@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import { formatDecimal, formatMoney, formatRoas, roasTone } from "@/lib/format";
 import { Badge } from "@/shared/components/Badge";
@@ -45,12 +46,41 @@ function CreativeThumb({ url, name, format }: { url: string | null; name: string
 export interface TopCreativesProps {
   ads: CampaignAd[];
   currency: string;
+  slug: string;
+  campaignId: string;
+  campaignName: string;
+  account: string | undefined;
+  accountName: string | undefined;
+  from: string | undefined;
+  to: string | undefined;
+  onOpen: (adId: string) => void;
 }
 
-export function TopCreatives({ ads, currency }: TopCreativesProps) {
+export function TopCreatives({
+  ads,
+  currency,
+  slug,
+  campaignId,
+  campaignName,
+  account,
+  accountName,
+  from,
+  to,
+  onOpen,
+}: TopCreativesProps) {
   if (ads.length === 0) {
     return <EmptyState title="No creatives in this window" hint="Top creatives appear once the campaign has spend." />;
   }
+
+  const seeAllSearch = {
+    tab: "creatives" as const,
+    campaign: campaignId,
+    campaignName,
+    account,
+    accountName,
+    from,
+    to,
+  };
 
   return (
     <Card title="Top creatives">
@@ -62,7 +92,20 @@ export function TopCreatives({ ads, currency }: TopCreativesProps) {
         </div>
         <div className="flex flex-col divide-y divide-volt-border">
           {ads.map((ad) => (
-            <div key={ad.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
+            <div
+              key={ad.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Open ${ad.name}`}
+              onClick={() => onOpen(ad.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onOpen(ad.id);
+                }
+              }}
+              className="flex cursor-pointer items-center gap-4 py-3 first:pt-0 last:pb-0 hover:bg-volt-surface-2 focus-visible:outline focus-visible:outline-volt-primary"
+            >
               <CreativeThumb url={ad.thumbnailUrl} name={ad.name} format={ad.format} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-volt-text">{ad.name}</p>
@@ -88,6 +131,16 @@ export function TopCreatives({ ads, currency }: TopCreativesProps) {
               </div>
             </div>
           ))}
+        </div>
+        <div className="flex justify-end">
+          <Link
+            to="/clients/$slug"
+            params={{ slug }}
+            search={seeAllSearch}
+            className="text-[13px] text-volt-text-3 transition-colors hover:text-volt-text"
+          >
+            See all creatives
+          </Link>
         </div>
       </div>
     </Card>

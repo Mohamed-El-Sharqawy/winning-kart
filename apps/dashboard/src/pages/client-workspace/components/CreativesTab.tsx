@@ -1,18 +1,19 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useSearch } from "@tanstack/react-router";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { statusFilterLabel } from "../data/gallery-copy.data";
 import { useAds, useFatigueSummary, type GalleryFilters } from "../services/creatives.service";
 import { useCreativeDrawerUrl } from "../services/use-creative-drawer-url";
+import { useCreativesScope } from "../services/use-creatives-scope";
 import { useGalleryRepair } from "../services/use-gallery-repair";
+import { useGalleryRows } from "../services/use-gallery-rows";
 import { useSentinel } from "../services/use-sentinel";
 import type { AdFormat, FatigueFlag, GallerySortKey, StatusFilter } from "../types/creatives.types";
 import { GalleryPrototype } from "../prototype/GalleryPrototype";
 import { CreativeDrawer } from "./CreativeDrawer";
 import { GalleryTable } from "./GalleryTable";
-import type { GalleryRowData } from "./GalleryTable";
 import { GallerySummary } from "./GallerySummary";
 import { GalleryToolbar } from "./GalleryToolbar";
 import { SkeletonRows } from "./SkeletonRows";
@@ -34,8 +35,16 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
   const q = useDebounce(searchInput, 300);
   const [sort, setSort] = useState<SortState>({ key: "spend", direction: "desc" });
   const { thumbOverrides, repairThumbnail } = useGalleryRepair(accountId);
-  const { adSet, adSetName, variant, creative } = useSearch({ from: "/clients/$slug" });
-  const navigate = useNavigate();
+  const { variant, creative } = useSearch({ from: "/clients/$slug" });
+  const {
+    adSet,
+    adSetName,
+    campaign,
+    campaignName,
+    clearAdSetFilter,
+    clearCampaignFilter,
+    campaignBackTo,
+  } = useCreativesScope(clientSlug);
   const { openCreative, closeCreative } = useCreativeDrawerUrl(clientSlug);
 
   const filters = useMemo<GalleryFilters>(
@@ -47,25 +56,19 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
       sort: sort.key as GallerySortKey,
       order: sort.direction,
       adSetId: adSet === undefined ? undefined : adSet,
+      campaignId: campaign === undefined ? undefined : campaign,
     }),
-    [status, flagFilter, formatFilter, q, sort, adSet],
+    [status, flagFilter, formatFilter, q, sort, adSet, campaign],
   );
   const ads = useAds(accountId, range, rangeExplicit, filters);
   const summary = useFatigueSummary(accountId, range, rangeExplicit, {
     status,
     adSetId: adSet === undefined ? undefined : adSet,
+    campaignId: campaign === undefined ? undefined : campaign,
     format: formatFilter,
     q,
   });
-  const rows = useMemo<GalleryRowData[]>(() =>
-      (ads.data?.pages ?? []).flatMap((page, pageIndex) =>
-        page.items.map((ad) => ({
-          rowKey: `${pageIndex}:${ad.id}`,
-          ad: thumbOverrides[ad.id] !== undefined ? { ...ad, thumbnailUrl: thumbOverrides[ad.id] } : ad,
-        })),
-      ),
-    [ads.data, thumbOverrides],
-  );
+  const rows = useGalleryRows(ads, thumbOverrides);
 
   const sentinelRef = useSentinel(
     () => {
@@ -88,14 +91,6 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
       />
     ) : null;
 
-  function clearAdSetFilter() {
-    void navigate({
-      to: "/clients/$slug",
-      params: { slug: clientSlug },
-      search: (prev) => ({ ...prev, tab: "creatives", adSet: undefined, adSetName: undefined }),
-    });
-  }
-
   return (
     <div className="flex flex-col gap-4">
       {ads.isPending ? (
@@ -107,6 +102,10 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
             adSet={adSet}
             adSetName={adSetName}
             onClearAdSet={clearAdSetFilter}
+            campaign={campaign}
+            campaignName={campaignName}
+            onClearCampaign={clearCampaignFilter}
+            campaignBackTo={campaignBackTo}
             status={status}
             onStatus={setStatus}
             flagFilter={flagFilter}

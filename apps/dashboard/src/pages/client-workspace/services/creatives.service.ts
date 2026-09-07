@@ -14,6 +14,7 @@ export interface GalleryFilters {
   sort: GallerySortKey;
   order: SortDirection;
   adSetId?: string;
+  campaignId?: string;
 }
 
 function windowQuery(range: DateRange, rangeExplicit: boolean): Record<string, string | number> {
@@ -29,6 +30,7 @@ export function adsQueryParams(
   const query = windowQuery(range, rangeExplicit);
   query.status = filters.status;
   if (filters.adSetId !== undefined) query.adSetId = filters.adSetId;
+  if (filters.campaignId !== undefined) query.campaignId = filters.campaignId;
   if (filters.flag !== "all") query.flag = filters.flag;
   if (filters.format !== "all") query.format = filters.format;
   if (filters.q.trim() !== "") query.q = filters.q.trim();
@@ -88,7 +90,7 @@ export function useMediaRepair(accountId: string | null) {
   });
 }
 
-export type FatigueScope = Pick<GalleryFilters, "status" | "adSetId" | "format" | "q">;
+export type FatigueScope = Pick<GalleryFilters, "status" | "adSetId" | "campaignId" | "format" | "q">;
 
 export function useFatigueSummary(
   accountId: string | null,
@@ -103,6 +105,7 @@ export function useFatigueSummary(
       const query: Record<string, string | number> = windowQuery(range, rangeExplicit);
       query.status = scope.status;
       if (scope.adSetId !== undefined) query.adSetId = scope.adSetId;
+      if (scope.campaignId !== undefined) query.campaignId = scope.campaignId;
       if (scope.format !== "all") query.format = scope.format;
       if (scope.q.trim() !== "") query.q = scope.q.trim();
       const { data: body, error } = await looseApi["ad-accounts"]({ id: accountId as string })[

@@ -41,7 +41,7 @@ export function RevenueEventsTable({ events }: { events: RevenueEvent[] }) {
         row.campaignName ? (
           <span className="text-volt-text">{row.campaignName}</span>
         ) : (
-          <span className="text-volt-text-3">—</span>
+          <span className="text-volt-text-3">Unknown campaign</span>
         ),
     },
     { key: "sourceName", header: "Source" },

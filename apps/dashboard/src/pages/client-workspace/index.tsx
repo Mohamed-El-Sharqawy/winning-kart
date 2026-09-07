@@ -53,11 +53,15 @@ export function ClientWorkspacePage() {
 
 function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
   const navigate = useNavigate();
-  const { from, to } = useSearch({ from: "/clients/$slug" });
+  const { from, to, account: accountParam } = useSearch({ from: "/clients/$slug" });
   const [accountId, setAccountId] = useState<string | null>(null);
   const { data: accounts, isPending: accountsPending } = useAdAccounts(client.id);
   const list = accounts ?? [];
-  const selectedAccountId = accountId ?? list[0]?.id ?? null;
+  const paramAccount =
+    accountParam !== undefined && list.some((account) => account.id === accountParam)
+      ? accountParam
+      : null;
+  const selectedAccountId = accountId ?? paramAccount ?? list[0]?.id ?? null;
   const selectedAccount = list.find((account) => account.id === selectedAccountId) ?? null;
   const metricsTab = tab === "ad-sets" || tab === "creatives";
   const accountsReady = !accountsPending && list.length > 0;
@@ -82,6 +86,7 @@ function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
           <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
             Ad account
             <select
+              aria-label="Ad account"
               value={selectedAccountId ?? ""}
               onChange={(event) => setAccountId(event.target.value)}
               className={SELECT_CLASS}
