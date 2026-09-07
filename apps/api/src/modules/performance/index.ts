@@ -3,6 +3,7 @@ import { resolveSessionUser } from "../../lib/session";
 import { problem } from "../../lib/problem";
 import {
   fatigueSummaryDto,
+  fatigueSummaryQueryDto,
   performanceCampaignDto,
   performanceWindowQueryDto,
 } from "../../dto/performance";
@@ -18,18 +19,16 @@ import {
 import { adsListPageDto, adsListQueryDto, adDetailDto } from "../../dto/ads-list";
 import { mediaResolveBodyDto, mediaResolveResponseDto } from "../../dto/media";
 import { toMediaResolveItem } from "../ad-accounts/media-resolver";
-import { resolveWindow } from "../../lib/window";
 import { AdAccountsService } from "../ad-accounts/service";
 import { AdAccountsModel } from "../ad-accounts/model";
-import { PerformanceModel } from "./model";
-import { PerformanceService } from "./service";
+import { campaignDetail } from "./campaign-detail";
+import { fatigueSummary } from "./fatigue-summary";
 import { listAdsPage } from "./ads-list";
 import { adDetail } from "./ads-detail";
-import { adsListDeps, adDetailDeps, listDeps } from "./ads-deps";
+import { adsListDeps, adDetailDeps, campaignDetailDeps, fatigueSummaryDeps, listDeps } from "./ads-deps";
 import { adSetsPage, adSetsSummary, campaignsPage, campaignsSummary } from "./list-service";
 import type { SafeUser } from "../auth/model";
 
-const service = new PerformanceService(new PerformanceModel());
 const adAccounts = new AdAccountsService(new AdAccountsModel());
 
 async function requireUser(headers: Record<string, string | undefined>): Promise<SafeUser> {
@@ -115,7 +114,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
     async ({ params, query, headers }) => {
       await requireAgency(headers);
       return {
-        data: await service.campaignDetail(params.id, params.campaignId, resolveWindow(query)),
+        data: await campaignDetail(campaignDetailDeps(params.id), params.id, params.campaignId, query),
       };
     },
     { params: campaignParamsDto, query: performanceWindowQueryDto, response: { 200: performanceCampaignDto } }
@@ -124,7 +123,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
     "/:id/fatigue-summary",
     async ({ params, query, headers }) => {
       await requireAgency(headers);
-      return { data: await service.fatigueSummary(params.id, resolveWindow(query)) };
+      return { data: await fatigueSummary(fatigueSummaryDeps(), params.id, query) };
     },
-    { params: idParamsDto, query: performanceWindowQueryDto, response: { 200: fatigueSummaryDto } }
+    { params: idParamsDto, query: fatigueSummaryQueryDto, response: { 200: fatigueSummaryDto } }
   );

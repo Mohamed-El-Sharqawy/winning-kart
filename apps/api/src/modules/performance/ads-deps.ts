@@ -7,6 +7,8 @@ import { ListSummaryRepository } from "./list-summaries";
 import { trendWindows } from "./ads-list";
 import type { AdsListDeps } from "./ads-list";
 import type { AdDetailDeps } from "./ads-detail";
+import type { CampaignDetailDeps } from "./campaign-detail-types";
+import type { FatigueSummaryDeps } from "./fatigue-summary";
 import type { ListsDeps } from "./list-service";
 
 const performanceModel = new PerformanceModel();
@@ -50,5 +52,25 @@ export function listDeps(): ListsDeps {
     pageAdSets: (input) => listRepository.pageAdSets(input),
     campaignSummary: (input) => listSummaryRepository.campaignSummary(input),
     adSetSummary: (input) => listSummaryRepository.adSetSummary(input),
+  };
+}
+
+export function campaignDetailDeps(accountId: string): CampaignDetailDeps {
+  return {
+    ...baseDeps(accountId),
+    findCampaign: (id) => performanceModel.findCampaign(id),
+    windowMetrics: (accountId, level, since, until) =>
+      performanceModel.windowMetrics(accountId, level, since, until),
+    campaignSeries: (accountId, campaignId, since, until) =>
+      performanceModel.campaignSeries(accountId, campaignId, since, until),
+    pageAdSets: (input) => listRepository.pageAdSets(input),
+    pageAds: (input) => adsRepository.pageAds(input),
+  };
+}
+
+export function fatigueSummaryDeps(): FatigueSummaryDeps {
+  return {
+    findAccount: (id) => performanceModel.findAccount(id),
+    pageAds: (input) => adsRepository.pageAds(input),
   };
 }

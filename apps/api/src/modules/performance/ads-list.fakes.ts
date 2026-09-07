@@ -16,6 +16,7 @@ export function adRow(overrides: Partial<AdsRow> = {}): AdsRow {
     name: "Ad 1",
     status: "ACTIVE",
     format: "IMAGE",
+    creativeId: "cre-1",
     videoId: null,
     carouselCount: null,
     thumbnailUrl: "https://cdn/thumb.jpg",

@@ -4,11 +4,13 @@ import type { ResolvedWindow } from "../../lib/window";
 import { adsCursorContext, decodeAdsCursor, encodeAdsCursor } from "./ads-cursor";
 import type { AdsCursor } from "./ads-cursor";
 import { classifyAdsRow, decorateAdsPage } from "./ads-decoration";
-import { deriveAdMetrics } from "./ads-metrics";
 import type { AdItem, AdsRow } from "./ads-decoration";
+import { deriveAdMetrics } from "./ads-metrics";
 import { parseAdsFilters, parseAdsLimit, parseAdsOrder, parseAdsSort } from "./ads-query";
 import { refreshPageThumbnails, applyThumbnailRefresh } from "./ads-refresh";
 import type { PageRefresher } from "./ads-refresh";
+import { scanAdsRows } from "./ads-scan";
+import type { FullAdsScanInput } from "./ads-scan";
 import type { AdsPageInput } from "./ads-repository";
 
 export interface AdsListQuery {
@@ -37,8 +39,6 @@ export interface AdsListPage {
   data: AdItem[];
   meta: { nextCursor: string | null };
 }
-
-const SCAN_CHUNK = 500;
 
 function laterDate(a: string, b: string): string {
   return a >= b ? a : b;
@@ -84,29 +84,19 @@ function pageInput(
 
 async function collectFlagMatches(
   deps: AdsListDeps,
-  input: Omit<AdsPageInput, "cursor" | "limit">,
+  input: FullAdsScanInput,
   flag: NonNullable<AdsPageInput["filters"]["flag"]>,
   cursor: AdsCursor | null,
   limit: number
 ): Promise<AdsRow[]> {
   const matches: AdsRow[] = [];
-  let scanCursor = cursor;
-  let exhausted = false;
-  while (matches.length <= limit && !exhausted) {
-    const chunk = await deps.pageAds({ ...input, cursor: scanCursor, limit: SCAN_CHUNK });
-    for (const row of chunk) {
-      const finding = classifyAdsRow(row, deriveAdMetrics(row.sums));
-      if (finding !== null && finding.flag === flag) {
-        matches.push(row);
-      }
+  await scanAdsRows(deps.pageAds, input, cursor, (row) => {
+    const finding = classifyAdsRow(row, deriveAdMetrics(row.sums));
+    if (finding !== null && finding.flag === flag) {
+      matches.push(row);
     }
-    if (chunk.length < SCAN_CHUNK) {
-      exhausted = true;
-    } else {
-      const last = chunk[chunk.length - 1];
-      scanCursor = { id: last.id, sortValue: last.sortValue };
-    }
-  }
+    return matches.length <= limit;
+  });
   return matches;
 }
 

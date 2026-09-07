@@ -93,6 +93,7 @@ function adsRowsQuery(
         a.name,
         a.status,
         a.format,
+        a.creative_id as "creativeId",
         a.video_id as "videoId",
         a.carousel_count as "carouselCount",
         a.thumbnail_url as "thumbnailUrl",
