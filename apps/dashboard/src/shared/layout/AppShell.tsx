@@ -37,7 +37,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar pathname={pathname} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-end gap-4 border-b border-volt-border bg-volt-surface px-6 py-3">
-          <TopbarBell />
+          {role !== "client" ? <TopbarBell /> : null}
           <span className="text-sm text-volt-text">{displayName ?? "Signed in"}</span>
           <span className="rounded-full border border-volt-border-2 bg-volt-surface-2 px-2 py-0.5 text-xs text-volt-text-2">
             {roleLabel}

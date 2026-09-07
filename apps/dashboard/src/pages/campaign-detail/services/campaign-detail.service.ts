@@ -1,6 +1,6 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { looseApi } from "@/shared/lib/loose-api";
-import { useClients } from "@/shared/services/clients.service";
+import { useWorkspaceClients } from "@/shared/services/workspace-clients.service";
 import type { DateRange } from "@/shared/components/DateRangeControl";
 import { adAccountsQueryOptions } from "@/pages/client-workspace/services/ad-accounts.service";
 import type { CampaignDetailResponseDto } from "../dto/campaign-detail.dto";
@@ -63,7 +63,7 @@ export function useCampaignAccountResolution(
   campaignId: string,
   enabled: boolean,
 ): CampaignAccountResolution {
-  const { data: clients, isPending: clientsPending } = useClients();
+  const { data: clients, isPending: clientsPending } = useWorkspaceClients();
   const client = clients?.find((candidate) => candidate.slug === slug) ?? null;
   const accountsQuery = useQuery({
     ...adAccountsQueryOptions(client?.id ?? ""),

@@ -4,6 +4,18 @@ export const portalOverviewQueryDto = t.Object({
   days: t.Optional(t.String({ pattern: "^[0-9]+$" })),
 });
 
+export const portalClientDto = t.Object({
+  data: t.Object({
+    id: t.String(),
+    name: t.String(),
+    slug: t.String(),
+    status: t.Union([t.Literal("active"), t.Literal("paused"), t.Literal("archived")]),
+    industry: t.Union([t.String(), t.Null()]),
+    displayCurrency: t.String(),
+    createdAt: t.String(),
+  }),
+});
+
 export const portalOverviewDto = t.Object({
   data: t.Object({
     client: t.Object({

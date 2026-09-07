@@ -21,6 +21,8 @@ import { mediaResolveBodyDto, mediaResolveResponseDto } from "../../dto/media";
 import { toMediaResolveItem } from "../ad-accounts/media-resolver";
 import { AdAccountsService } from "../ad-accounts/service";
 import { AdAccountsModel } from "../ad-accounts/model";
+import { ClientOwnershipModel } from "../portal/client-ownership";
+import { requireAdAccountAccess } from "../portal/access";
 import { campaignDetail } from "./campaign-detail";
 import { fatigueSummary } from "./fatigue-summary";
 import { listAdsPage } from "./ads-list";
@@ -30,6 +32,7 @@ import { adSetsPage, adSetsSummary, campaignsPage, campaignsSummary } from "./li
 import type { SafeUser } from "../auth/model";
 
 const adAccounts = new AdAccountsService(new AdAccountsModel());
+const ownership = new ClientOwnershipModel();
 
 async function requireUser(headers: Record<string, string | undefined>): Promise<SafeUser> {
   const user = await resolveSessionUser({ cookie: headers.cookie, headers });
@@ -39,11 +42,12 @@ async function requireUser(headers: Record<string, string | undefined>): Promise
   return user;
 }
 
-async function requireAgency(headers: Record<string, string | undefined>): Promise<SafeUser> {
+async function requireAdAccountRead(
+  headers: Record<string, string | undefined>,
+  accountId: string
+): Promise<SafeUser> {
   const user = await requireUser(headers);
-  if (user.role === "client") {
-    throw problem(403, "FORBIDDEN", "Agency role required");
-  }
+  await requireAdAccountAccess(user, ownership, accountId);
   return user;
 }
 
@@ -55,7 +59,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/campaigns/summary",
     async ({ params, query, headers }) => {
-      await requireAgency(headers);
+      await requireAdAccountRead(headers, params.id);
       return { data: await campaignsSummary(listDeps(), params.id, query) };
     },
     { params: idParamsDto, query: campaignsSummaryQueryDto, response: { 200: kpiSummaryDto } }
@@ -63,7 +67,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/ad-sets/summary",
     async ({ params, query, headers }) => {
-      await requireAgency(headers);
+      await requireAdAccountRead(headers, params.id);
       return { data: await adSetsSummary(listDeps(), params.id, query) };
     },
     { params: idParamsDto, query: adSetsSummaryQueryDto, response: { 200: kpiSummaryDto } }
@@ -71,7 +75,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/campaigns",
     async ({ params, query, headers }) => {
-      await requireAgency(headers);
+      await requireAdAccountRead(headers, params.id);
       return await campaignsPage(listDeps(), params.id, query);
     },
     { params: idParamsDto, query: campaignsListQueryDto, response: { 200: campaignsPageDto } }
@@ -79,7 +83,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/ad-sets",
     async ({ params, query, headers }) => {
-      await requireAgency(headers);
+      await requireAdAccountRead(headers, params.id);
       return await adSetsPage(listDeps(), params.id, query);
     },
     { params: idParamsDto, query: adSetsListQueryDto, response: { 200: adSetsPageDto } }
@@ -87,7 +91,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/ads",
     async ({ params, query, headers }) => {
-      await requireAgency(headers);
+      await requireAdAccountRead(headers, params.id);
       return await listAdsPage(adsListDeps(params.id), params.id, query);
     },
     { params: idParamsDto, query: adsListQueryDto, response: { 200: adsListPageDto } }
@@ -95,7 +99,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/ads/:adId",
     async ({ params, query, headers }) => {
-      await requireAgency(headers);
+      await requireAdAccountRead(headers, params.id);
       return { data: await adDetail(adDetailDeps(params.id), params.id, params.adId, query) };
     },
     { params: adParamsDto, query: performanceWindowQueryDto, response: { 200: adDetailDto } }
@@ -103,8 +107,9 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .post(
     "/:id/ads/media/resolve",
     async ({ params, body, headers }) => {
-      await requireAgency(headers);
-      const items = await adAccounts.resolveMedia(params.id, body.ids, body.force ?? false);
+      const user = await requireAdAccountRead(headers, params.id);
+      const force = user.role === "client" ? false : (body.force ?? false);
+      const items = await adAccounts.resolveMedia(params.id, body.ids, force);
       return { data: { items: items.map(toMediaResolveItem) } };
     },
     { params: idParamsDto, body: mediaResolveBodyDto, response: { 200: mediaResolveResponseDto } }
@@ -112,7 +117,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/campaigns/:campaignId",
     async ({ params, query, headers }) => {
-      await requireAgency(headers);
+      await requireAdAccountRead(headers, params.id);
       return {
         data: await campaignDetail(campaignDetailDeps(params.id), params.id, params.campaignId, query),
       };
@@ -122,7 +127,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
   .get(
     "/:id/fatigue-summary",
     async ({ params, query, headers }) => {
-      await requireAgency(headers);
+      await requireAdAccountRead(headers, params.id);
       return { data: await fatigueSummary(fatigueSummaryDeps(), params.id, query) };
     },
     { params: idParamsDto, query: fatigueSummaryQueryDto, response: { 200: fatigueSummaryDto } }

@@ -1,21 +1,6 @@
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
-import {
-  adAccounts,
-  ads,
-  adSets,
-  campaigns,
-  clientUserAssignments,
-  clients,
-  dailyInsights,
-  db,
-} from "@wk/db";
-
-export interface PortalClientRow {
-  id: string;
-  name: string;
-  slug: string;
-  displayCurrency: string;
-}
+import { adAccounts, ads, adSets, campaigns, dailyInsights, db } from "@wk/db";
+import type { PortalClientRow } from "./client-ownership";
 
 export interface DailyTotalsRow {
   date: string;
@@ -54,43 +39,6 @@ function parseSum(value: string | null): number {
 }
 
 export class PortalModel {
-  async findAssignedClientId(userId: string): Promise<string | null> {
-    const rows = await db
-      .select({ clientId: clientUserAssignments.clientId })
-      .from(clientUserAssignments)
-      .where(eq(clientUserAssignments.userId, userId))
-      .limit(1);
-    return rows[0]?.clientId ?? null;
-  }
-
-  async findClientByPrimaryContact(userId: string): Promise<PortalClientRow | null> {
-    const rows = await db
-      .select({
-        id: clients.id,
-        name: clients.name,
-        slug: clients.slug,
-        displayCurrency: clients.displayCurrency,
-      })
-      .from(clients)
-      .where(eq(clients.primaryContactUserId, userId))
-      .limit(1);
-    return rows[0] ?? null;
-  }
-
-  async findClientById(id: string): Promise<PortalClientRow | null> {
-    const rows = await db
-      .select({
-        id: clients.id,
-        name: clients.name,
-        slug: clients.slug,
-        displayCurrency: clients.displayCurrency,
-      })
-      .from(clients)
-      .where(eq(clients.id, id))
-      .limit(1);
-    return rows[0] ?? null;
-  }
-
   async accountIdsForClient(clientId: string): Promise<string[]> {
     const rows = await db
       .select({ id: adAccounts.id })

@@ -11,8 +11,8 @@ export interface AdAccountDto {
   timezone: string;
   lastSyncAt: string | null;
   campaignCount: number | null;
-  tokenType: TokenTypeDto;
-  tokenExpiresAt: string | null;
+  tokenType?: TokenTypeDto | null;
+  tokenExpiresAt?: string | null;
 }
 
 export interface CampaignDto {

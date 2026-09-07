@@ -1,6 +1,4 @@
 import { Elysia, t } from "elysia";
-import { resolveSessionUser } from "../../lib/session";
-import { problem } from "../../lib/problem";
 import { clientIp, recordAudit } from "../../lib/audit";
 import {
   adAccountBackfillDto,
@@ -10,6 +8,7 @@ import {
 } from "../../dto/ad-accounts";
 import { AdAccountsModel } from "./model";
 import { AdAccountsService } from "./service";
+import { requireAdmin, requireClientScopedList } from "./guards";
 import {
   cancelRun,
   enqueueBackfill,
@@ -17,26 +16,9 @@ import {
   latestRun,
   recoverInterruptedRuns,
 } from "./queue";
-import type { SafeUser } from "../auth/model";
 
 const service = new AdAccountsService(new AdAccountsModel());
 void recoverInterruptedRuns();
-
-async function requireUser(headers: Record<string, string | undefined>): Promise<SafeUser> {
-  const user = await resolveSessionUser({ cookie: headers.cookie, headers });
-  if (!user) {
-    throw problem(401, "UNAUTHENTICATED", "Authentication required");
-  }
-  return user;
-}
-
-async function requireAdmin(headers: Record<string, string | undefined>): Promise<SafeUser> {
-  const user = await requireUser(headers);
-  if (user.role !== "admin") {
-    throw problem(403, "FORBIDDEN", "Admin role required");
-  }
-  return user;
-}
 
 const idParamsDto = t.Object({ id: t.String() });
 const clientIdParamsDto = t.Object({ clientId: t.String() });
@@ -45,8 +27,14 @@ export const adAccountsModule = new Elysia()
   .get(
     "/clients/:clientId/ad-accounts",
     async ({ params, headers }) => {
-      await requireAdmin(headers);
-      return { data: await service.listForClient(params.clientId) };
+      const user = await requireClientScopedList(headers, params.clientId);
+      const rows = await service.listForClient(params.clientId);
+      return {
+        data:
+          user.role === "client"
+            ? rows.map(({ tokenType: _tokenType, tokenExpiresAt: _tokenExpiresAt, ...row }) => row)
+            : rows,
+      };
     },
     { params: clientIdParamsDto }
   )

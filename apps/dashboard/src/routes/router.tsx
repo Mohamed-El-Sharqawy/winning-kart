@@ -4,6 +4,7 @@ import {
   createRouter,
   Outlet,
   redirect,
+  type RouteComponent,
 } from "@tanstack/react-router";
 import { queryClient } from "@/lib/query-client";
 import { AlertsTasksPage } from "@/pages/alerts-tasks";
@@ -22,107 +23,30 @@ import { TeamPage } from "@/pages/team";
 import { TokensPage } from "@/pages/tokens";
 import { sessionQueryOptions } from "@/shared/services/session.service";
 import { RouteError } from "@/shared/components/RouteError";
-import { isIsoDate } from "@/shared/components/DateRangeControl";
+import { requireAdmin, requireClient, requireWorkspaceAccess } from "./guards";
+import type { AlertsSearch, CampaignDetailSearch, ClientWorkspaceSearch } from "./search";
+import { isAlertsTab, readDays, readIsoDate, readOptionalNumber, readOptionalString, readTab } from "./search";
+
+export type {
+  AlertsTab,
+  AlertsSearch,
+  CampaignDetailSearch,
+  ClientWorkspaceSearch,
+  WorkspaceTab,
+} from "./search";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
   errorComponent: RouteError,
 });
 
-async function loadSession() {
-  return queryClient.fetchQuery(sessionQueryOptions());
-}
-
-async function requireAdmin() {
-  const session = await loadSession();
-  if (!session) throw redirect({ to: "/auth" });
-  if (session.role !== "admin") throw redirect({ to: "/portal" });
-}
-
-async function requireClient() {
-  const session = await loadSession();
-  if (!session) throw redirect({ to: "/auth" });
-  if (session.role !== "client") throw redirect({ to: "/overview" });
-}
-
-export type WorkspaceTab =
-  | "overview"
-  | "ad-accounts"
-  | "campaigns"
-  | "ad-sets"
-  | "creatives"
-  | "revenue";
-
-export interface ClientWorkspaceSearch {
-  tab: WorkspaceTab;
-  days?: number;
-  from?: string;
-  to?: string;
-  account?: string;
-  accountName?: string;
-  campaign?: string;
-  campaignName?: string;
-  adSet?: string;
-  adSetName?: string;
-  variant?: string;
-  creative?: string;
-}
-
-export interface CampaignDetailSearch {
-  days: number;
-  from?: string;
-  to?: string;
-  account?: string;
-  accountName?: string;
-  creative?: string;
-}
-
-export type AlertsTab = "alerts" | "tasks" | "recommendations";
-
-const MAX_RANGE_DAYS = 365;
-
-export interface AlertsSearch {
-  tab: AlertsTab;
-}
-
-function isAlertsTab(value: unknown): value is AlertsTab {
-  return value === "alerts" || value === "tasks" || value === "recommendations";
-}
-
-function isWorkspaceTab(value: unknown): value is WorkspaceTab {
-  return (
-    value === "overview" ||
-    value === "ad-accounts" ||
-    value === "campaigns" ||
-    value === "ad-sets" ||
-    value === "creatives" ||
-    value === "revenue"
-  );
-}
-
-function readTab(value: unknown): WorkspaceTab {
-  return isWorkspaceTab(value) ? value : "overview";
-}
-
-function readDays(value: unknown): number {
-  const parsed = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return 30;
-  return Math.min(Math.floor(parsed), MAX_RANGE_DAYS);
-}
-
-function readOptionalNumber(value: unknown): number | undefined {
-  if (value === undefined || value === null || value === "") return undefined;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
-  return Math.min(Math.floor(parsed), MAX_RANGE_DAYS);
-}
-
-function readOptionalString(value: unknown): string | undefined {
-  return typeof value === "string" && value.length > 0 ? value : undefined;
-}
-
-function readIsoDate(value: unknown): string | undefined {
-  return isIsoDate(value) ? value : undefined;
+function adminRoute<TPath extends string>(path: TPath, component: RouteComponent) {
+  return createRoute({
+    getParentRoute: () => rootRoute,
+    path,
+    beforeLoad: requireAdmin,
+    component,
+  });
 }
 
 const authRoute = createRoute({
@@ -135,25 +59,15 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: async () => {
-    const session = await loadSession();
+    const session = await queryClient.fetchQuery(sessionQueryOptions());
     if (!session) throw redirect({ to: "/auth" });
     throw redirect({ to: session.role === "admin" ? "/overview" : "/portal" });
   },
 });
 
-const overviewRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/overview",
-  beforeLoad: requireAdmin,
-  component: OverviewPage,
-});
+const overviewRoute = adminRoute("/overview", OverviewPage);
 
-const clientsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/clients",
-  beforeLoad: requireAdmin,
-  component: ClientsPage,
-});
+const clientsRoute = adminRoute("/clients", ClientsPage);
 
 const alertsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -168,7 +82,9 @@ const alertsRoute = createRoute({
 const clientWorkspaceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/clients/$slug",
-  beforeLoad: requireAdmin,
+  beforeLoad: async ({ params, search }) => {
+    await requireWorkspaceAccess(params, search.tab);
+  },
   validateSearch: (search: Record<string, unknown>): ClientWorkspaceSearch => ({
     tab: readTab(search.tab),
     days: readOptionalNumber(search.days),
@@ -189,7 +105,9 @@ const clientWorkspaceRoute = createRoute({
 const campaignDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/clients/$slug/campaigns/$campaignId",
-  beforeLoad: requireAdmin,
+  beforeLoad: async ({ params }) => {
+    await requireWorkspaceAccess(params, "campaigns");
+  },
   validateSearch: (search: Record<string, unknown>): CampaignDetailSearch => ({
     days: readDays(search.days),
     from: readIsoDate(search.from),
@@ -201,54 +119,14 @@ const campaignDetailRoute = createRoute({
   component: CampaignDetailPage,
 });
 
-const tokensRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/settings/tokens",
-  beforeLoad: requireAdmin,
-  component: TokensPage,
-});
+const tokensRoute = adminRoute("/settings/tokens", TokensPage);
 
-const settingsAuditRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/settings/audit",
-  beforeLoad: requireAdmin,
-  component: SettingsAuditPage,
-});
-
-const settingsDataRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/settings/data",
-  beforeLoad: requireAdmin,
-  component: SettingsDataPage,
-});
-
-const settingsSchedulerRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/settings/scheduler",
-  beforeLoad: requireAdmin,
-  component: SettingsSchedulerPage,
-});
-
-const teamRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/team",
-  beforeLoad: requireAdmin,
-  component: TeamPage,
-});
-
-const integrationDocsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/docs/integrations",
-  beforeLoad: requireAdmin,
-  component: IntegrationDocsPage,
-});
-
-const attributionDocsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/docs/attribution",
-  beforeLoad: requireAdmin,
-  component: AttributionDocsPage,
-});
+const settingsAuditRoute = adminRoute("/settings/audit", SettingsAuditPage);
+const settingsDataRoute = adminRoute("/settings/data", SettingsDataPage);
+const settingsSchedulerRoute = adminRoute("/settings/scheduler", SettingsSchedulerPage);
+const teamRoute = adminRoute("/team", TeamPage);
+const integrationDocsRoute = adminRoute("/docs/integrations", IntegrationDocsPage);
+const attributionDocsRoute = adminRoute("/docs/attribution", AttributionDocsPage);
 
 const portalRoute = createRoute({
   getParentRoute: () => rootRoute,

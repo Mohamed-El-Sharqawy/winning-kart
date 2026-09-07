@@ -17,19 +17,24 @@ function emptyClientOverview() {
   };
 }
 
+const CLIENT_SUMMARY = (row: {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+}) => ({ id: row.id, name: row.name, slug: row.slug, status: row.status });
+
 const listClients: McpTool = {
   name: "list_clients",
   description: "List clients visible to the caller with name, slug, and status",
   inputSchema: { type: "object", properties: {} },
   handler: async (ctx) => {
     const rows = await ctx.models.clients.listClients();
-    const assignedId =
-      ctx.user.role === "client"
-        ? await ctx.models.portal.findAssignedClientId(ctx.user.id)
-        : null;
-    return rows
-      .filter((row) => assignedId === null || row.id === assignedId)
-      .map((row) => ({ id: row.id, name: row.name, slug: row.slug, status: row.status }));
+    if (ctx.user.role !== "client") {
+      return rows.map(CLIENT_SUMMARY);
+    }
+    const assigned = await ctx.models.ownership.findAssignedClient(ctx.user.id);
+    return assigned === null ? [] : rows.filter((row) => row.id === assigned.id).map(CLIENT_SUMMARY);
   },
 };
 
@@ -44,8 +49,8 @@ const listAdAccounts: McpTool = {
   handler: async (ctx, args) => {
     const clientId = requireString(args, "clientId");
     if (ctx.user.role === "client") {
-      const ownClientId = await ctx.models.portal.findAssignedClientId(ctx.user.id);
-      if (ownClientId !== clientId) {
+      const ownClient = await ctx.models.ownership.findAssignedClient(ctx.user.id);
+      if (ownClient === null || ownClient.id !== clientId) {
         return [];
       }
     }
@@ -71,14 +76,11 @@ const getOverview: McpTool = {
     if (ctx.user.role !== "client") {
       return ctx.models.overview.overview();
     }
-    const clientId = await ctx.models.portal.findAssignedClientId(ctx.user.id);
-    if (clientId === null) {
+    const client = await ctx.models.ownership.findAssignedClient(ctx.user.id);
+    if (client === null) {
       return emptyClientOverview();
     }
-    const [client, accounts] = await Promise.all([
-      ctx.models.portal.findClientById(clientId),
-      ctx.models.adAccounts.listForClient(clientId),
-    ]);
+    const accounts = await ctx.models.adAccounts.listForClient(client.id);
     const daily = await ctx.models.portal.accountDailySince(
       accounts.map((account) => account.id),
       utcWindow(30).since
@@ -104,10 +106,7 @@ const getOverview: McpTool = {
           lastSyncAt: account.lastSyncAt,
           errorHint: account.healthState,
         })),
-      clients:
-        client === null
-          ? []
-          : [{ id: client.id, name: client.name, slug: client.slug, spend, revenue, roas }],
+      clients: [{ id: client.id, name: client.name, slug: client.slug, spend, revenue, roas }],
       insights: [],
     };
   },

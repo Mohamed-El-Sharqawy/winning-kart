@@ -1,6 +1,6 @@
 import { round2 } from "../../platforms/meta";
 import { utcWindow } from "../ad-accounts/service";
-import type { PortalClientRow } from "./model";
+import type { PortalClientRow } from "./client-ownership";
 import type { PortalModel } from "./model";
 
 export interface PortalKpis {
