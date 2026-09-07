@@ -1,38 +1,61 @@
-import type { CreativeDto, CreativeFatigueDto, FatigueSummaryDto } from "../dto/creatives.dto";
-import type { Creative, CreativeFatigue, FatigueSummary } from "../types/creatives.types";
+import type { GalleryAdDetailDto, GalleryAdDto, GalleryPageDto, RepairedMediaDto } from "../dto/creatives.dto";
+import type { GalleryAd, GalleryAdDetail, GalleryPage, RepairedMedia } from "../types/creatives.types";
+import type { FatigueSummaryDto } from "../dto/creatives.dto";
+import type { FatigueSummary } from "../types/creatives.types";
 
-function toFatigue(dto: CreativeFatigueDto | null | undefined): CreativeFatigue | null {
-  if (!dto) return null;
-  return { flag: dto.flag, reason: dto.reason };
-}
-
-export function toCreative(dto: CreativeDto): Creative {
+export function toGalleryAd(dto: GalleryAdDto): GalleryAd {
   return {
     id: dto.id,
-    adSetId: dto.adSetId,
-    adSetName: dto.adSetName,
-    campaignName: dto.campaignName,
-    platformAdId: dto.platformAdId,
     name: dto.name,
     status: dto.status,
     format: dto.format,
-    bodyCopy: dto.bodyCopy ?? null,
-    creativeId: dto.creativeId,
+    adSetId: dto.adSetId,
+    adSetName: dto.adSetName,
+    campaignId: dto.campaignId,
+    campaignName: dto.campaignName,
     thumbnailUrl: dto.thumbnailUrl ?? null,
-    spend: dto.spend ?? null,
-    revenue: dto.revenue ?? null,
-    purchases: dto.purchases ?? null,
-    roas: dto.roas ?? null,
-    cpa: dto.cpa ?? null,
-    ctr: dto.ctr ?? null,
-    frequency: dto.frequency ?? null,
+    videoId: dto.videoId ?? null,
+    carouselCount: dto.carouselCount ?? null,
+    bodyCopy: dto.bodyCopy ?? null,
+    spend: dto.metrics?.spend ?? null,
+    revenue: dto.metrics?.revenue ?? null,
+    purchases: dto.metrics?.purchases ?? null,
+    roas: dto.metrics?.roas ?? null,
+    cpa: dto.metrics?.cpa ?? null,
+    ctr: dto.metrics?.ctr ?? null,
+    frequency: dto.metrics?.frequency ?? null,
     spendShare: dto.spendShare ?? null,
-    fatigue: toFatigue(dto.fatigue),
+    trendSpend: dto.trend?.spend ?? 0,
+    trendCtr: dto.trend?.ctr ?? null,
+    fatigue: dto.fatigue ? { flag: dto.fatigue.flag, reason: dto.fatigue.reason } : null,
   };
 }
 
-export function toCreatives(dtos: CreativeDto[]): Creative[] {
-  return dtos.map(toCreative);
+export function toGalleryPage(dto: GalleryPageDto): GalleryPage {
+  return {
+    items: dto.data.map(toGalleryAd),
+    nextCursor: dto.meta?.nextCursor ?? null,
+  };
+}
+
+export function toGalleryAdDetail(dto: GalleryAdDetailDto): GalleryAdDetail {
+  return {
+    ...toGalleryAd(dto),
+    posterUrl: dto.posterUrl ?? null,
+    sourceUrl: dto.sourceUrl ?? null,
+    adsManagerUrl: dto.adsManagerUrl,
+    embedUrl: dto.embedUrl ?? null,
+  };
+}
+
+export function toRepairedMedia(dto: RepairedMediaDto): RepairedMedia {
+  return {
+    adId: dto.adId,
+    format: dto.format,
+    thumbnailUrl: dto.thumbnailUrl ?? null,
+    videoId: dto.videoId ?? null,
+    carouselCount: dto.carouselCount ?? null,
+  };
 }
 
 export function toFatigueSummary(dto: FatigueSummaryDto | null | undefined): FatigueSummary {
