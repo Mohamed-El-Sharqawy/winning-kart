@@ -1,54 +1,18 @@
 import { problem } from "../../lib/problem";
 import { resolveWindow, shiftDate } from "../../lib/window";
-import type { ResolvedWindow, WindowQuery } from "../../lib/window";
+import type { WindowQuery } from "../../lib/window";
 import { round2 } from "../../platforms/meta";
-import { classifyAdsRow } from "./ads-decoration";
-import type { AdsRow } from "./ads-decoration";
-import { deriveAdMetrics, deriveWindowMetrics } from "./ads-metrics";
-import { trendWindows } from "./ads-list";
-import { STATUS_GROUPS } from "./ads-query";
-import type { AdsPageInput } from "./ads-repository";
-import { toAdSetItem } from "./ad-set-items";
-import { LIST_PAGE_MAX } from "./list-query";
-import type { PagedListInput } from "./list-repository";
+import { deriveWindowMetrics } from "./ads-metrics";
+import { embeddedAds, embeddedAdSets } from "./campaign-embed";
 import type { CampaignDetailDeps } from "./campaign-detail-types";
 import type {
-  AdPerformance,
   CampaignDetailPayload,
   CampaignFunnel,
   CampaignPerformance,
   CampaignPrev,
   SeriesPoint,
 } from "./campaign-detail-types";
-import type { CampaignDailyRow, WindowSums } from "./model";
-
-const EMBEDDED_ADS_LIMIT = 10;
-
-function toAdPerformance(row: AdsRow): AdPerformance {
-  const metrics = deriveAdMetrics(row.sums);
-  return {
-    id: row.id,
-    adSetId: row.adSetId,
-    adSetName: row.adSetName,
-    campaignName: row.campaignName,
-    platformAdId: row.platformAdId,
-    name: row.name,
-    status: row.status,
-    format: row.format,
-    creativeId: row.creativeId,
-    thumbnailUrl: row.thumbnailUrl,
-    bodyCopy: row.bodyCopy,
-    spend: metrics?.spend ?? null,
-    revenue: metrics?.revenue ?? null,
-    purchases: metrics?.purchases ?? null,
-    roas: metrics?.roas ?? null,
-    cpa: metrics?.cpa ?? null,
-    ctr: metrics?.ctr ?? null,
-    frequency: metrics?.frequency ?? null,
-    spendShare: row.spendShare === null ? null : round2(row.spendShare),
-    fatigue: classifyAdsRow(row, metrics),
-  };
-}
+import type { CampaignDailyRow, CampaignEntityRow, WindowSums } from "./model";
 
 function buildSeries(since: string, until: string, rows: CampaignDailyRow[]): SeriesPoint[] {
   const byDate = new Map(rows.map((row) => [row.date, row]));
@@ -65,52 +29,20 @@ function buildSeries(since: string, until: string, rows: CampaignDailyRow[]): Se
   return points;
 }
 
-function embeddedAdSetInput(accountId: string, campaignId: string, window: ResolvedWindow): PagedListInput {
-  return {
-    accountId,
-    since: window.since,
-    until: window.until,
-    statuses: STATUS_GROUPS.active,
-    q: null,
-    campaignId,
-    sort: "spend",
-    order: "desc",
-    page: 1,
-    pageSize: LIST_PAGE_MAX,
-  };
-}
-
-function embeddedAdInput(accountId: string, campaignId: string, window: ResolvedWindow): AdsPageInput {
-  return {
-    accountId,
-    since: window.since,
-    until: window.until,
-    ...trendWindows(window),
-    filters: {
-      statuses: STATUS_GROUPS.active,
-      adSetId: null,
-      campaignId,
-      flag: null,
-      format: null,
-      q: null,
-    },
-    sort: "spend",
-    order: "desc",
-    cursor: null,
-    limit: EMBEDDED_ADS_LIMIT,
-  };
-}
-
-function campaignHeader(campaign: {
-  id: string;
-  name: string;
-  status: string;
-  objective: string | null;
-  dailyBudget: string | null;
-  lifetimeBudget: string | null;
-  currency: string;
-}, sums: WindowSums | undefined): CampaignPerformance {
+function metricsOf(sums: WindowSums | undefined): CampaignPrev {
   const metrics = deriveWindowMetrics(sums);
+  return {
+    spend: metrics.spend,
+    revenue: metrics.revenue,
+    purchases: metrics.purchases,
+    roas: metrics.roas,
+    cpa: metrics.cpa,
+    ctr: metrics.ctr,
+    frequency: metrics.frequency,
+  };
+}
+
+function campaignHeader(campaign: CampaignEntityRow, sums: WindowSums | undefined): CampaignPerformance {
   return {
     id: campaign.id,
     name: campaign.name,
@@ -119,26 +51,7 @@ function campaignHeader(campaign: {
     dailyBudget: campaign.dailyBudget,
     lifetimeBudget: campaign.lifetimeBudget,
     currency: campaign.currency,
-    spend: metrics.spend,
-    revenue: metrics.revenue,
-    purchases: metrics.purchases,
-    roas: metrics.roas,
-    cpa: metrics.cpa,
-    ctr: metrics.ctr,
-    frequency: metrics.frequency,
-  };
-}
-
-function campaignPrev(sums: WindowSums | undefined): CampaignPrev {
-  const metrics = deriveWindowMetrics(sums);
-  return {
-    spend: metrics.spend,
-    revenue: metrics.revenue,
-    purchases: metrics.purchases,
-    roas: metrics.roas,
-    cpa: metrics.cpa,
-    ctr: metrics.ctr,
-    frequency: metrics.frequency,
+    ...metricsOf(sums),
   };
 }
 
@@ -172,12 +85,12 @@ export async function campaignDetail(
   const window = resolveWindow(query);
   const prevUntil = shiftDate(window.since, -1);
   const prevSince = shiftDate(window.since, -window.spanDays);
-  const [sumsRows, prevSumsRows, seriesRows, adSetRows, adRows] = await Promise.all([
+  const [sumsRows, prevSumsRows, seriesRows, adSets, ads] = await Promise.all([
     deps.windowMetrics(accountId, "campaign", window.since, window.until),
     deps.windowMetrics(accountId, "campaign", prevSince, prevUntil),
     deps.campaignSeries(accountId, campaignId, window.since, window.until),
-    deps.pageAdSets(embeddedAdSetInput(accountId, campaignId, window)),
-    deps.pageAds(embeddedAdInput(accountId, campaignId, window)),
+    embeddedAdSets(deps, accountId, campaignId, window),
+    embeddedAds(deps, accountId, campaignId, window),
   ]);
   const sums = sumsRows.find((row) => row.entityId === campaignId);
   const prevSums = prevSumsRows.find((row) => row.entityId === campaignId);
@@ -186,10 +99,10 @@ export async function campaignDetail(
     adAccountPlatformId: campaign.adAccountPlatformId,
     accountName: campaign.accountName,
     campaign: campaignHeader(campaign, sums),
-    prev: campaignPrev(prevSums),
+    prev: metricsOf(prevSums),
     series: buildSeries(window.since, window.until, seriesRows),
     funnel: campaignFunnel(sums),
-    adSets: adSetRows.rows.map(toAdSetItem),
-    ads: adRows.map(toAdPerformance),
+    adSets,
+    ads,
   };
 }

@@ -5,7 +5,7 @@ import { round2 } from "../../platforms/meta";
 import { scanAdsRows } from "./ads-scan";
 import type { FullAdsScanInput } from "./ads-scan";
 import { classifyAdsRow } from "./ads-decoration";
-import type { AdsRow } from "./ads-decoration";
+import type { AdsRow, FatigueCounts } from "./ads-decoration";
 import { deriveAdMetrics } from "./ads-metrics";
 import { trendWindows } from "./ads-list";
 import { parseAdsFilters } from "./ads-query";
@@ -15,7 +15,7 @@ export interface FatigueSummaryPayload {
   topCreativeSpendShare: number | null;
   top3SpendShare: number | null;
   concentration: "top1" | "top3" | null;
-  counts: { fatiguing: number; bleeding: number; scale: number; status_anomaly: number };
+  counts: FatigueCounts;
 }
 
 export interface FatigueSummaryDeps {
@@ -33,7 +33,7 @@ export interface FatigueSummaryQuery extends WindowQuery {
 }
 
 interface FatigueAccumulator {
-  counts: FatigueSummaryPayload["counts"];
+  counts: FatigueCounts;
   top: number[];
   totalSpend: number;
 }

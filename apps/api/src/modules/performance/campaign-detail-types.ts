@@ -1,6 +1,7 @@
 import type { AdsRow } from "./ads-decoration";
 import type { AdsPageInput } from "./ads-repository";
 import type { AdSetDbRow, AdSetPerformance } from "./ad-set-items";
+import type { PageRefresher } from "./ads-refresh";
 import type { PagedListInput, PagedRows } from "./list-repository";
 import type { CampaignDailyRow, CampaignEntityRow, WindowSums } from "./model";
 import type { FatigueFinding } from "../../detection/fatigue";
@@ -97,4 +98,5 @@ export interface CampaignDetailDeps {
   campaignSeries(accountId: string, campaignId: string, since: string, until: string): Promise<CampaignDailyRow[]>;
   pageAdSets(input: PagedListInput): Promise<PagedRows<AdSetDbRow>>;
   pageAds(input: AdsPageInput): Promise<AdsRow[]>;
+  refresher: PageRefresher;
 }

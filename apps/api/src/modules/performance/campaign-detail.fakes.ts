@@ -75,5 +75,17 @@ export function memoryCampaignDetailDeps(
       calls.ads.push(input);
       return options.ads ?? [];
     },
+    refresher: {
+      resolve: async (ids) =>
+        ids.map((id) => ({
+          adId: id,
+          format: "IMAGE" as const,
+          thumbnailUrl: `https://cdn/fresh-${id}.jpg`,
+          videoId: null,
+          carouselCount: null,
+          posterUrl: null,
+          sourceUrl: null,
+        })),
+    },
   };
 }

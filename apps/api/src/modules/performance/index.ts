@@ -114,7 +114,7 @@ export const performanceModule = new Elysia({ prefix: "/ad-accounts" })
     async ({ params, query, headers }) => {
       await requireAgency(headers);
       return {
-        data: await campaignDetail(campaignDetailDeps(), params.id, params.campaignId, query),
+        data: await campaignDetail(campaignDetailDeps(params.id), params.id, params.campaignId, query),
       };
     },
     { params: campaignParamsDto, query: performanceWindowQueryDto, response: { 200: performanceCampaignDto } }

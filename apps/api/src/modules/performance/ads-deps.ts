@@ -55,9 +55,9 @@ export function listDeps(): ListsDeps {
   };
 }
 
-export function campaignDetailDeps(): CampaignDetailDeps {
+export function campaignDetailDeps(accountId: string): CampaignDetailDeps {
   return {
-    findAccount: (id) => performanceModel.findAccount(id),
+    ...baseDeps(accountId),
     findCampaign: (id) => performanceModel.findCampaign(id),
     windowMetrics: (accountId, level, since, until) =>
       performanceModel.windowMetrics(accountId, level, since, until),
