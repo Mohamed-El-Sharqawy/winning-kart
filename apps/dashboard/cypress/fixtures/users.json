@@ -7,6 +7,8 @@
       "role": "admin",
       "agencyRole": "owner",
       "clientRoleTier": null,
+      "clientId": null,
+      "clientName": null,
       "status": "active",
       "lastActiveAt": "2026-02-10T08:45:00.000Z",
       "createdAt": "2026-01-02T09:00:00.000Z"
@@ -18,6 +20,8 @@
       "role": "admin",
       "agencyRole": "admin",
       "clientRoleTier": null,
+      "clientId": null,
+      "clientName": null,
       "status": "active",
       "lastActiveAt": "2026-02-10T09:15:00.000Z",
       "createdAt": "2026-01-03T11:30:00.000Z"
@@ -29,9 +33,24 @@
       "role": "client",
       "agencyRole": null,
       "clientRoleTier": "admin",
+      "clientId": "cli_nour_test",
+      "clientName": "Maison Nour",
       "status": "active",
       "lastActiveAt": "2026-02-09T16:20:00.000Z",
       "createdAt": "2026-01-05T10:00:00.000Z"
+    },
+    {
+      "id": "u4",
+      "email": "admin@diaflower.client",
+      "displayName": "Testing Client",
+      "role": "client",
+      "agencyRole": null,
+      "clientRoleTier": "admin",
+      "clientId": null,
+      "clientName": null,
+      "status": "active",
+      "lastActiveAt": "2026-02-09T18:00:00.000Z",
+      "createdAt": "2026-01-06T10:00:00.000Z"
     }
   ]
 }

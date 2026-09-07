@@ -6,15 +6,25 @@ import { Modal } from "@/shared/components/Modal";
 import { memberFormError } from "../services/api-call-error";
 import { useUpdateMember } from "../services/team.service";
 import type { Member, MemberRoleSelection, MemberStatus } from "../types/team.types";
-import { ROLE_OPTIONS, SELECTION_BODY, STATUS_OPTIONS, selectionFromMember } from "./role-options";
+import {
+  ROLE_OPTIONS,
+  SELECTION_BODY,
+  STATUS_OPTIONS,
+  isClientSelection,
+  selectionFromMember,
+} from "./role-options";
 import { Select } from "./Select";
+import { ClientSelect } from "./ClientSelect";
 
 export function EditMemberModal({ member, onClose }: { member: Member; onClose: () => void }) {
   const [displayName, setDisplayName] = useState(member.displayName);
   const [selection, setSelection] = useState<MemberRoleSelection>(selectionFromMember(member));
   const [status, setStatus] = useState<MemberStatus>(member.status);
+  const [clientId, setClientId] = useState(member.clientId ?? "");
   const [error, setError] = useState<string | null>(null);
   const updateMember = useUpdateMember();
+
+  const clientSelected = isClientSelection(selection);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -25,6 +35,7 @@ export function EditMemberModal({ member, onClose }: { member: Member; onClose: 
         displayName: displayName.trim(),
         status,
         ...SELECTION_BODY[selection],
+        ...(clientSelected && clientId.length > 0 ? { clientId } : {}),
       });
       onClose();
     } catch (submitError) {
@@ -32,7 +43,7 @@ export function EditMemberModal({ member, onClose }: { member: Member; onClose: 
     }
   }
 
-  const ready = displayName.trim().length > 0;
+  const ready = displayName.trim().length > 0 && (!clientSelected || clientId.length > 0);
 
   return (
     <Modal title={`Edit ${member.displayName}`} onClose={onClose}>
@@ -51,6 +62,13 @@ export function EditMemberModal({ member, onClose }: { member: Member; onClose: 
             options={ROLE_OPTIONS}
             onChange={(value) => setSelection(value as MemberRoleSelection)}
           />
+          {clientSelected ? (
+            <ClientSelect
+              value={clientId}
+              onChange={setClientId}
+              disabled={updateMember.isPending}
+            />
+          ) : null}
           <Select
             label="Status"
             value={status}

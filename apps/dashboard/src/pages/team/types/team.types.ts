@@ -20,6 +20,8 @@ export interface Member {
   role: MemberRole;
   agencyRole: AgencyRole | null;
   clientRoleTier: ClientTier | null;
+  clientId: string | null;
+  clientName: string | null;
   status: MemberStatus;
   lastActiveAt: Date | null;
   createdAt: Date | null;

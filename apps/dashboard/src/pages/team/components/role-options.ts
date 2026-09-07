@@ -31,6 +31,10 @@ export function selectionFromMember(member: Member): MemberRoleSelection {
   return agencyRole as MemberRoleSelection;
 }
 
+export function isClientSelection(selection: MemberRoleSelection): boolean {
+  return selection === "client_admin" || selection === "client_viewer";
+}
+
 export const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
   { value: "invited", label: "Invited" },

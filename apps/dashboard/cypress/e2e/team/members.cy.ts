@@ -1,3 +1,5 @@
+import { TEAM_MODAL } from "../../support/commands";
+
 describe("team members page", () => {
   const createdUser = {
     id: "u9",
@@ -11,7 +13,7 @@ describe("team members page", () => {
     createdAt: "2026-02-10T10:00:00.000Z",
   };
 
-  const MODAL = "[role='dialog'], dialog, [class*='modal'], [class*='inset-0']";
+  const MODAL = TEAM_MODAL;
 
   function openAddMemberModal() {
     cy.contains("button", /add member/i, { timeout: 15000 }).click();
@@ -70,13 +72,14 @@ describe("team members page", () => {
     cy.contains("Members", { timeout: 15000 }).should("be.visible");
     cy.wait("@users", { timeout: 15000 });
 
-    ["Captain Owner", "Amina Admin", "Nour Client-Admin"].forEach((name) => {
+    ["Captain Owner", "Amina Admin", "Nour Client-Admin", "Testing Client"].forEach((name) => {
       cy.contains(name, { timeout: 15000 }).should("be.visible");
     });
 
-    cy.get("tbody tr", { timeout: 15000 }).should("have.length", 3);
+    cy.get("tbody tr", { timeout: 15000 }).should("have.length", 4);
     cy.contains(/\bowner\b/i).should("be.visible");
     cy.contains(/client\s*·\s*admin/i).should("be.visible");
+    cy.contains("Unassigned", { timeout: 15000 }).should("be.visible");
   });
 
   it("creates a member from the add member modal", () => {

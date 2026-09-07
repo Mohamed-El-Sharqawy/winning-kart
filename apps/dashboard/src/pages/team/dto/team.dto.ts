@@ -7,6 +7,8 @@ export interface UserDto {
   role: "admin" | "client";
   agencyRole: AgencyRole | null;
   clientRoleTier: ClientTier | null;
+  clientId?: string | null;
+  clientName?: string | null;
   status: "active" | "invited" | "suspended";
   lastActiveAt: string | null;
   createdAt: string;
@@ -19,6 +21,7 @@ export interface CreateUserDto {
   role: "admin" | "client";
   agencyRole?: AgencyRole;
   clientRoleTier?: ClientTier;
+  clientId?: string;
 }
 
 export interface UpdateUserDto {
@@ -26,5 +29,6 @@ export interface UpdateUserDto {
   role?: "admin" | "client";
   agencyRole?: AgencyRole | null;
   clientRoleTier?: ClientTier | null;
+  clientId?: string | null;
   status?: "active" | "invited" | "suspended";
 }

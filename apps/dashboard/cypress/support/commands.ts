@@ -6,6 +6,8 @@ const ROLE_EMAILS = {
 
 export type LoginRole = keyof typeof ROLE_EMAILS;
 
+export const TEAM_MODAL = "[role='dialog'], dialog, [class*='modal'], [class*='inset-0']";
+
 Cypress.Commands.add("loginAs", (role: LoginRole) => {
   cy.session(
     role,
