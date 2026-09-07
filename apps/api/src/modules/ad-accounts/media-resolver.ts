@@ -12,6 +12,7 @@ export interface ResolvedMediaItem {
   adId: string;
   format: AdFormat | null;
   thumbnailUrl: string | null;
+  imageUrl: string | null;
   videoId: string | null;
   carouselCount: number | null;
   posterUrl: string | null;
@@ -51,19 +52,28 @@ export async function resolveAdMedia(
   const ttlDays = mediaUrlTtlDays();
   const patches = new Map<string, AdMediaPatch>();
 
-  const staleThumbnails = rows.filter(
-    (row) => force || isMediaStale(row.thumbnailUrl, row.thumbnailResolvedAt, now, ttlDays)
+  const staleCreativeReads = rows.filter(
+    (row) =>
+      force ||
+      isMediaStale(row.thumbnailUrl, row.thumbnailResolvedAt, now, ttlDays) ||
+      isAttemptStale(row.imageResolvedAt, now, ttlDays)
   );
-  for (let index = 0; index < staleThumbnails.length; index += MEDIA_IDS_BATCH_MAX) {
-    const chunk = staleThumbnails.slice(index, index + MEDIA_IDS_BATCH_MAX);
+  for (let index = 0; index < staleCreativeReads.length; index += MEDIA_IDS_BATCH_MAX) {
+    const chunk = staleCreativeReads.slice(index, index + MEDIA_IDS_BATCH_MAX);
     const graphRows = await adapter.getAdsByIds(chunk.map((row) => row.platformAdId));
     for (const graphRow of graphRows) {
       const row = rowByPlatformId.get(graphRow.id);
       const thumbnailUrl = graphRow.creative?.thumbnail_url ?? null;
-      if (row === undefined || thumbnailUrl === null) {
+      const imageUrl = graphRow.creative?.image_url ?? null;
+      if (row === undefined || (thumbnailUrl === null && imageUrl === null)) {
         continue;
       }
-      patches.set(row.id, { ...patches.get(row.id), thumbnailUrl, thumbnailResolvedAt: now });
+      patches.set(row.id, {
+        ...patches.get(row.id),
+        ...(thumbnailUrl !== null ? { thumbnailUrl, thumbnailResolvedAt: now } : {}),
+        ...(imageUrl !== null ? { imageUrl } : {}),
+        imageResolvedAt: now,
+      });
     }
   }
 
@@ -122,6 +132,7 @@ export async function resolveAdMedia(
         adId,
         format: row.format,
         thumbnailUrl: patch?.thumbnailUrl ?? row.thumbnailUrl,
+        imageUrl: patch?.imageUrl ?? row.imageUrl,
         videoId: row.videoId,
         carouselCount: row.carouselCount,
         posterUrl: patch?.posterUrl ?? row.posterUrl,

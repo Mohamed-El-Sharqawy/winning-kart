@@ -18,6 +18,8 @@ function row(overrides: Partial<AdsRow> = {}): AdsRow {
     carouselCount: null,
     thumbnailUrl: "https://cdn/thumb.jpg",
     thumbnailResolvedAt: new Date("2026-09-01T00:00:00Z"),
+    imageUrl: null,
+    imageResolvedAt: new Date("2026-09-01T00:00:00Z"),
     posterUrl: null,
     posterResolvedAt: null,
     sourceUrl: null,

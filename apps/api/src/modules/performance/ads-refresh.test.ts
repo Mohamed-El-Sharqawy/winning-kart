@@ -62,7 +62,7 @@ describe("refreshPageThumbnails", () => {
 
   test("re-resolves stale thumbnails and returns fresh urls", async () => {
     const refresher = new FakeRefresher();
-    refresher.response = [{ adId: "ad-1", format: "IMAGE", thumbnailUrl: "https://cdn/new.jpg", videoId: null, carouselCount: null, posterUrl: null, sourceUrl: null }];
+    refresher.response = [{ adId: "ad-1", format: "IMAGE", thumbnailUrl: "https://cdn/new.jpg", imageUrl: null, videoId: null, carouselCount: null, posterUrl: null, sourceUrl: null }];
     const resolutions = await refreshPageThumbnails(
       refresher,
       [{ id: "ad-1", thumbnailUrl: null, thumbnailResolvedAt: null }],

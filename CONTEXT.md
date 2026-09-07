@@ -8,7 +8,7 @@ A CRM that syncs Meta ad accounts so agencies can monitor campaign performance w
 The synced Meta ad inside an ad set. The entity that carries effective status and window metrics. Canonical in code, endpoints, and API paths.
 
 **Creative media**:
-The displayable media belonging to one creative: thumbnail (grid image), poster (video still frame), embed (public Facebook player iframe built from the stored video id; playback for video ads since Graph v21.0 no longer returns a raw playable video URL).
+The displayable media belonging to one creative: thumbnail (grid image, capped at 512x640), image (full-resolution creative image for the large drawer view), poster (video still frame), embed (public Facebook player iframe built from the stored video id; playback for video ads since Graph v21.0 no longer returns a raw playable video URL).
 
 **Creative**:
 The gallery UI's display name for an ad. Every creative row, card, or filter in the gallery is an ad; "creative" never denotes a separate entity.

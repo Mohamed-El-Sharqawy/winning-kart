@@ -216,6 +216,8 @@ export const ads = pgTable(
     effectiveStoryId: text("effective_story_id"),
     carouselCount: integer("carousel_count"),
     thumbnailResolvedAt: timestamp("thumbnail_resolved_at", { withTimezone: true }),
+    imageUrl: text("image_url"),
+    imageResolvedAt: timestamp("image_resolved_at", { withTimezone: true }),
     posterUrl: text("poster_url"),
     posterResolvedAt: timestamp("poster_resolved_at", { withTimezone: true }),
     sourceUrl: text("source_url"),

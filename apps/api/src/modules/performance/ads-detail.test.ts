@@ -11,6 +11,7 @@ function resolvedItem(overrides: Partial<ResolvedMediaItem> = {}): ResolvedMedia
     adId: "ad-1",
     format: "IMAGE",
     thumbnailUrl: "https://cdn/thumb.jpg",
+    imageUrl: null,
     videoId: null,
     carouselCount: null,
     posterUrl: null,
@@ -111,6 +112,7 @@ describe("adDetail", () => {
       videoId: "vid-1",
       thumbnailUrl: "https://cdn/stale.jpg",
       thumbnailResolvedAt: new Date(Date.now() - 30 * 86400000),
+      imageResolvedAt: new Date(Date.now() - 30 * 86400000),
     });
     const deps = detailDeps({ id: "acc-1", adAccountId: "act_1" }, row, [
       resolvedItem({
@@ -118,6 +120,7 @@ describe("adDetail", () => {
         format: "VIDEO",
         videoId: "vid-1",
         thumbnailUrl: "https://cdn/fresh-thumb.jpg",
+        imageUrl: "https://cdn/fresh-full.jpg",
         posterUrl: "https://cdn/fresh-poster.jpg",
         sourceUrl: "https://cdn/fresh-source.mp4",
       }),
@@ -125,8 +128,29 @@ describe("adDetail", () => {
     const detail = await adDetail(deps, "acc-1", "ad-1");
     expect(deps.resolveCalls).toEqual([["ad-1"]]);
     expect(detail.thumbnailUrl).toBe("https://cdn/fresh-thumb.jpg");
+    expect(detail.imageUrl).toBe("https://cdn/fresh-full.jpg");
     expect(detail.posterUrl).toBe("https://cdn/fresh-poster.jpg");
     expect(detail.sourceUrl).toBe("https://cdn/fresh-source.mp4");
+  });
+
+  test("serves the stored full-size image for a warm image ad", async () => {
+    const deps = detailDeps(
+      { id: "acc-1", adAccountId: "act_1" },
+      adRow({ imageUrl: "https://cdn/full.jpg" })
+    );
+    const detail = await adDetail(deps, "acc-1", "ad-1");
+    expect(deps.resolveCalls).toHaveLength(0);
+    expect(detail.imageUrl).toBe("https://cdn/full.jpg");
+    expect(detail.thumbnailUrl).toBe("https://cdn/thumb.jpg");
+  });
+
+  test("a never-attempted image resolution triggers one resolve pass", async () => {
+    const deps = detailDeps(
+      { id: "acc-1", adAccountId: "act_1" },
+      adRow({ imageResolvedAt: null })
+    );
+    await adDetail(deps, "acc-1", "ad-1");
+    expect(deps.resolveCalls).toEqual([["ad-1"]]);
   });
 
   test("a warm ad adds zero resolver calls and serves the stored urls", async () => {

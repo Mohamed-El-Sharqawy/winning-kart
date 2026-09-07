@@ -47,6 +47,7 @@ export interface GalleryPageDto {
 export interface GalleryAdDetailDto extends GalleryAdDto {
   posterUrl: string | null;
   sourceUrl: string | null;
+  imageUrl: string | null;
   adsManagerUrl: string;
   embedUrl: string | null;
 }

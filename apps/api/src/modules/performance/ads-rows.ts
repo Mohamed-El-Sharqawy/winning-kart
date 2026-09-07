@@ -15,6 +15,8 @@ export interface AdsPageDbRow {
   carouselCount: number | null;
   thumbnailUrl: string | null;
   thumbnailResolvedAt: string | Date | null;
+  imageUrl: string | null;
+  imageResolvedAt: string | Date | null;
   posterUrl: string | null;
   posterResolvedAt: string | Date | null;
   sourceUrl: string | null;
@@ -68,6 +70,8 @@ export function toAdsRow(row: AdsPageDbRow): AdsRow {
     carouselCount: row.carouselCount,
     thumbnailUrl: row.thumbnailUrl,
     thumbnailResolvedAt: toTimestamp(row.thumbnailResolvedAt),
+    imageUrl: row.imageUrl,
+    imageResolvedAt: toTimestamp(row.imageResolvedAt),
     posterUrl: row.posterUrl,
     posterResolvedAt: toTimestamp(row.posterResolvedAt),
     sourceUrl: row.sourceUrl,

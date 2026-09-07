@@ -90,6 +90,7 @@ export interface MetaObjectStorySpec {
 export interface MetaAdCreativeRef {
   id: string;
   thumbnail_url?: string;
+  image_url?: string;
   video_id?: string;
   effective_object_story_id?: string;
   object_story_spec?: MetaObjectStorySpec;
@@ -169,9 +170,9 @@ export const CAMPAIGN_FIELDS =
 export const AD_SET_FIELDS =
   "id,campaign_id,name,status,effective_status,optimization_goal,bid_strategy,daily_budget,lifetime_budget,updated_time";
 export const AD_FIELDS =
-  "id,adset_id,name,status,effective_status,updated_time,creative{id,thumbnail_url,video_id,effective_object_story_id,object_story_spec{link_data{child_attachments{id}},template_data}}";
+  "id,adset_id,name,status,effective_status,updated_time,creative{id,thumbnail_url,image_url,video_id,effective_object_story_id,object_story_spec{link_data{child_attachments{id}},template_data}}";
 export const RESOLVE_AD_FIELDS =
-  "id,creative{id,thumbnail_url,video_id,effective_object_story_id,object_story_spec{link_data{child_attachments{id}},template_data}}";
+  "id,creative{id,thumbnail_url,image_url,video_id,effective_object_story_id,object_story_spec{link_data{child_attachments{id}},template_data}}";
 export const VIDEO_MEDIA_FIELDS = "source,picture";
 
 export const MEDIA_IDS_BATCH_MAX = 50;

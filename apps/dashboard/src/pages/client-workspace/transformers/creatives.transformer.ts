@@ -43,6 +43,7 @@ export function toGalleryAdDetail(dto: GalleryAdDetailDto): GalleryAdDetail {
     ...toGalleryAd(dto),
     posterUrl: dto.posterUrl ?? null,
     sourceUrl: dto.sourceUrl ?? null,
+    imageUrl: dto.imageUrl ?? null,
     adsManagerUrl: dto.adsManagerUrl,
     embedUrl: dto.embedUrl ?? null,
   };

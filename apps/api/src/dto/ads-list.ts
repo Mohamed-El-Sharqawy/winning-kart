@@ -64,6 +64,7 @@ export const adDetailDto = t.Object({
     ...galleryAdItemDto.properties,
     posterUrl: nullableString,
     sourceUrl: nullableString,
+    imageUrl: nullableString,
     adsManagerUrl: t.String(),
     embedUrl: nullableString,
   }),

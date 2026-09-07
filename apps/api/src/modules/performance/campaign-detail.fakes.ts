@@ -81,6 +81,7 @@ export function memoryCampaignDetailDeps(
           adId: id,
           format: "IMAGE" as const,
           thumbnailUrl: `https://cdn/fresh-${id}.jpg`,
+          imageUrl: null,
           videoId: null,
           carouselCount: null,
           posterUrl: null,
