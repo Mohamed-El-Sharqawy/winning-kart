@@ -8,11 +8,12 @@ import { StatusDot, entityStatusVariant, statusWords } from "@/shared/components
 import type { AdSet } from "../types/ad-sets.types";
 import { nextSortState, sortHeaderCell, sortRows } from "./SortHeader";
 import type { SortDirection, SortState } from "./SortHeader";
-import { TablePager } from "./TablePager";
 
 const DASH = "—";
 const GHOST_ACTION_CLASS =
   "inline-flex cursor-pointer items-center rounded-wk border border-transparent bg-transparent px-3 py-1 text-xs font-semibold text-volt-text-2 transition-colors hover:bg-volt-surface-2 hover:text-volt-text";
+
+export const MAX_COMPARE = 4;
 
 function humanize(value: string | null | undefined): string {
   if (value === null || value === undefined) return DASH;
@@ -25,18 +26,13 @@ type AdSetSortKey = "name" | AdSetMetricKey;
 export interface AdSetsTableProps {
   adSets: AdSet[];
   selectedIds: string[];
-  onToggle: (id: string) => void;
+  onToggle: (row: AdSet) => void;
   clientSlug: string;
 }
 
 export function AdSetsTable({ adSets, selectedIds, onToggle, clientSlug }: AdSetsTableProps) {
   const [sort, setSort] = useState<SortState | null>(null);
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(25);
-  const sorted = sortRows(adSets, sort, (row, key) => row[key as AdSetSortKey]);
-  const pages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const safePage = Math.min(page, pages - 1);
-  const rows = sorted.slice(safePage * pageSize, safePage * pageSize + pageSize);
+  const rows = sortRows(adSets, sort, (row, key) => row[key as AdSetSortKey]);
   const header = (key: AdSetSortKey, label: string, fallback: SortDirection = "desc") =>
     sortHeaderCell({
       label,
@@ -52,16 +48,19 @@ export function AdSetsTable({ adSets, selectedIds, onToggle, clientSlug }: AdSet
     {
       key: "compare",
       header: "",
-      render: (row) => {
-        const checked = selectedIds.includes(row.id);
-        return (
-          <input
-            type="checkbox" checked={checked} disabled={!checked && selectedIds.length >= 4}
-            onChange={() => onToggle(row.id)} aria-label={`Compare ${row.name}`}
-            className="size-4 cursor-pointer accent-volt-primary disabled:cursor-not-allowed disabled:opacity-40"
-          />
-        );
-      },
+        render: (row) => {
+          const checked = selectedIds.includes(row.id);
+          return (
+            <input
+              type="checkbox"
+              checked={checked}
+              disabled={!checked && selectedIds.length >= MAX_COMPARE}
+              onChange={() => onToggle(row)}
+              aria-label={`Compare ${row.name}`}
+              className="size-4 cursor-pointer accent-volt-primary disabled:cursor-not-allowed disabled:opacity-40"
+            />
+          );
+        },
     },
     {
       key: "name",
@@ -118,20 +117,11 @@ export function AdSetsTable({ adSets, selectedIds, onToggle, clientSlug }: AdSet
   ];
 
   return (
-    <>
-      <DataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(row) => row.id}
-        rowClassName={(row) => campaignRowTone(row.roas)}
-      />
-      <TablePager
-        total={sorted.length}
-        page={safePage}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={(size) => { setPageSize(size); setPage(0); }}
-      />
-    </>
+    <DataTable
+      columns={columns}
+      rows={rows}
+      rowKey={(row) => row.id}
+      rowClassName={(row) => campaignRowTone(row.roas)}
+    />
   );
 }

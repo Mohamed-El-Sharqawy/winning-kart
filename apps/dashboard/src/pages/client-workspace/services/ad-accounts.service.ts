@@ -8,14 +8,12 @@ import type { QueryClient } from "@tanstack/react-query";
 import { asErrorClass, looseApi } from "@/shared/lib/loose-api";
 import { OVERVIEW_QUERY_KEY } from "@/shared/services/overview.service";
 import { errorCopy } from "../data/sync-copy.data";
-import type { DateRange } from "@/shared/components/DateRangeControl";
 import {
   toAdAccount,
   toAdAccounts,
-  toCampaigns,
 } from "../transformers/ad-accounts.transformer";
-import type { AdAccount, Campaign, TokenType, RateLimitState } from "../types/ad-accounts.types";
-import type { AdAccountDto, CampaignDto, OkResponseDto } from "../dto/ad-accounts.dto";
+import type { AdAccount, TokenType, RateLimitState } from "../types/ad-accounts.types";
+import type { AdAccountDto, OkResponseDto } from "../dto/ad-accounts.dto";
 
 export class ApiCallError extends Error {
   readonly errorClass: string | null;
@@ -66,22 +64,6 @@ export function rateLimitQueryOptions(accountId: string) {
 
 export function useRateLimit(accountId: string) {
   return useQuery(rateLimitQueryOptions(accountId));
-}
-
-export function useCampaigns(accountId: string | null, range: DateRange, rangeExplicit: boolean) {
-  return useQuery({
-    queryKey: ["ad-accounts", accountId, "campaigns", range.from, range.to, rangeExplicit],
-    enabled: accountId !== null,
-    queryFn: async (): Promise<Campaign[]> => {
-      const query: Record<string, string | number> = rangeExplicit ? { from: range.from, to: range.to } : { days: 30 };
-      const { data: body, error } = await looseApi
-        ["ad-accounts"]({ id: accountId as string })
-        .campaigns.get({ query });
-      if (error) throw new Error("Failed to load campaigns");
-      const payload = (body as { data: CampaignDto[] }).data;
-      return toCampaigns(payload);
-    },
-  });
 }
 
 export interface CreateAdAccountInput {

@@ -16,17 +16,18 @@ describe("campaign detail rendering", () => {
             name: CAMPAIGN_NAME,
             status: "ACTIVE",
             objective: "OUTCOME_SALES",
-            dailyBudget: 650,
+            dailyBudget: "650",
             currency: "AED",
             spend: 41260,
             revenue: 132032,
             purchases: 522,
             roas: 3.2,
             cpa: 79.04,
-            ctr: 0.0286,
+            ctr: 2.86,
             frequency: 2.8,
           },
         ],
+        meta: { page: 1, pageSize: 25, total: 1 },
       },
     });
     cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ads(\?.*)?$/, {
@@ -35,6 +36,9 @@ describe("campaign detail rendering", () => {
     cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/campaigns\/[^/?]+/, {
       fixture: "renders-campaign-detail.json",
     }).as("campaignDetail");
+    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/campaigns\/summary(\?.*)?$/, {
+      fixture: "kpi-summary.json",
+    });
   });
 
   [1, 2, 3].forEach((attempt) => {

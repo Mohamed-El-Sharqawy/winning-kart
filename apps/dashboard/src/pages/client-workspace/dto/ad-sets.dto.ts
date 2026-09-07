@@ -5,9 +5,9 @@ export interface AdSetDto {
   platformAdsetId: string;
   name: string;
   status: string;
-  optimizationGoal: string;
-  bidStrategy: string;
-  dailyBudget: number | null;
+  optimizationGoal: string | null;
+  bidStrategy: string | null;
+  dailyBudget: string | null;
   currency: string;
   spend: number | null;
   revenue: number | null;

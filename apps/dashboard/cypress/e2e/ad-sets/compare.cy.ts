@@ -14,9 +14,14 @@ describe("ad sets compare", () => {
     });
     cy.intercept(
       "GET",
-      /\/api\/ad-accounts\/[^/]+\/ad-sets/,
+      /\/api\/ad-accounts\/[^/]+\/ad-sets(\?.*)?$/,
       { fixture: "ad-sets.json" },
     ).as("adSets");
+    cy.intercept(
+      "GET",
+      /\/api\/ad-accounts\/[^/]+\/ad-sets\/summary(\?.*)?$/,
+      { fixture: "kpi-summary.json" },
+    ).as("adSetsSummary");
     cy.intercept(
       "GET",
       /\/api\/ad-accounts\/[^/]+\/ads(\?.*)?$/,
@@ -29,6 +34,12 @@ describe("ad sets compare", () => {
     ).as("fatigueSummary");
 
     cy.visit("/clients/maison-nour?tab=ad-sets");
+    cy.wait("@adSets").its("request.url").should((url) => {
+      expect(url, "server paging defaults").to.contain("page=1");
+      expect(url, "active status default").to.contain("status=active");
+    });
+    cy.get("select[aria-label='Status filter']", { timeout: 15000 }).select("all");
+    cy.wait("@adSets").its("request.url").should("contain", "status=all");
   });
 
   it("renders three ad set rows, compares two in a drawer, and closes with Escape", () => {

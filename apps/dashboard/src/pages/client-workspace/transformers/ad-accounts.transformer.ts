@@ -1,5 +1,6 @@
 import type { AdAccountDto, CampaignDto, SyncResponseDto } from "../dto/ad-accounts.dto";
 import type { AdAccount, Campaign, SyncResult, SyncStageResult } from "../types/ad-accounts.types";
+import { toNumberOrNull } from "@/lib/parse";
 
 function toDate(value: string | null | undefined): Date | null {
   return value ? new Date(value) : null;
@@ -32,7 +33,7 @@ export function toCampaign(dto: CampaignDto): Campaign {
     name: dto.name,
     status: dto.status,
     objective: dto.objective,
-    dailyBudget: dto.dailyBudget ?? null,
+    dailyBudget: toNumberOrNull(dto.dailyBudget),
     currency: dto.currency,
     spend: dto.spend ?? null,
     revenue: dto.revenue ?? null,

@@ -16,7 +16,6 @@ import { StatusDot, entityStatusVariant, statusWords } from "@/shared/components
 import type { Campaign } from "../types/ad-accounts.types";
 import { nextSortState, sortHeaderCell, sortRows } from "./SortHeader";
 import type { SortDirection, SortState } from "./SortHeader";
-import { TablePager } from "./TablePager";
 
 const DASH = "—";
 
@@ -42,8 +41,6 @@ export function CampaignsTable({ campaigns, accountId, accountName, days }: Camp
   const workspaceSearch = useSearch({ from: "/clients/$slug" });
   const navigate = useNavigate();
   const [sort, setSort] = useState<SortState | null>(null);
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(25);
   const resolvedDays = days ?? workspaceSearch.days ?? 30;
   const resolvedAccountId = accountId ?? workspaceSearch.account ?? null;
   const resolvedAccountName = accountName ?? workspaceSearch.accountName ?? null;
@@ -54,10 +51,7 @@ export function CampaignsTable({ campaigns, accountId, accountName, days }: Camp
     account: resolvedAccountId ?? undefined,
     accountName: resolvedAccountName ?? undefined,
   };
-  const sorted = sortRows(campaigns, sort, (row, key) => row[key as CampaignSortKey]);
-  const pages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const safePage = Math.min(page, pages - 1);
-  const rows = sorted.slice(safePage * pageSize, safePage * pageSize + pageSize);
+  const rows = sortRows(campaigns, sort, (row, key) => row[key as CampaignSortKey]);
   const header = (key: CampaignSortKey, label: string, fallback: SortDirection = "desc") =>
     sortHeaderCell({
       label,
@@ -108,30 +102,18 @@ export function CampaignsTable({ campaigns, accountId, accountName, days }: Camp
   ];
 
   return (
-    <>
-      <DataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(row) => row.id}
-        rowClassName={(row) => campaignRowTone(row.roas)}
-        onRowClick={(row) => {
-          void navigate({
-            to: "/clients/$slug/campaigns/$campaignId",
-            params: { slug, campaignId: row.id },
-            search: detailSearch,
-          });
-        }}
-      />
-      <TablePager
-        total={sorted.length}
-        page={safePage}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPage(0);
-        }}
-      />
-    </>
+    <DataTable
+      columns={columns}
+      rows={rows}
+      rowKey={(row) => row.id}
+      rowClassName={(row) => campaignRowTone(row.roas)}
+      onRowClick={(row) => {
+        void navigate({
+          to: "/clients/$slug/campaigns/$campaignId",
+          params: { slug, campaignId: row.id },
+          search: detailSearch,
+        });
+      }}
+    />
   );
 }

@@ -5,8 +5,8 @@ export interface AdSet {
   platformAdsetId: string;
   name: string;
   status: string;
-  optimizationGoal: string;
-  bidStrategy: string;
+  optimizationGoal: string | null;
+  bidStrategy: string | null;
   dailyBudget: number | null;
   currency: string;
   spend: number | null;

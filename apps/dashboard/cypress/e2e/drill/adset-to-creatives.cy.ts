@@ -12,6 +12,9 @@ describe("ad set to creatives drill", () => {
       statusCode: 200,
       body: adSetsFixture,
     }).as("adSets");
+    cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ad-sets\/summary(\?.*)?$/, {
+      fixture: "kpi-summary.json",
+    });
     cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ads(\?.*)?$/, {
       statusCode: 200,
       body: adsFixture,

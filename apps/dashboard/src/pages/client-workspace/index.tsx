@@ -58,6 +58,7 @@ function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
   const { data: accounts, isPending: accountsPending } = useAdAccounts(client.id);
   const list = accounts ?? [];
   const selectedAccountId = accountId ?? list[0]?.id ?? null;
+  const selectedAccount = list.find((account) => account.id === selectedAccountId) ?? null;
   const metricsTab = tab === "ad-sets" || tab === "creatives";
   const accountsReady = !accountsPending && list.length > 0;
   const rangeExplicit = from !== undefined && to !== undefined;
@@ -108,7 +109,13 @@ function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
         <CampaignsTab client={client} range={range} rangeExplicit={rangeExplicit} onApplyRange={applyRange} />
       ) : null}
       {tab === "ad-sets" && accountsReady ? (
-        <AdSetsTab accountId={selectedAccountId} range={range} rangeExplicit={rangeExplicit} clientSlug={client.slug} />
+        <AdSetsTab
+          accountId={selectedAccountId}
+          currency={selectedAccount?.currency ?? "AED"}
+          range={range}
+          rangeExplicit={rangeExplicit}
+          clientSlug={client.slug}
+        />
       ) : null}
       {tab === "creatives" && accountsReady ? (
         <CreativesTab accountId={selectedAccountId} range={range} rangeExplicit={rangeExplicit} clientSlug={client.slug} />
