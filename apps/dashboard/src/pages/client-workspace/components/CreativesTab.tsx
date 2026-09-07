@@ -1,26 +1,21 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Badge } from "@/shared/components/Badge";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
-import { useClients } from "@/shared/services/clients.service";
-import { FATIGUE_FLAG_COPY, FATIGUE_FLAG_ORDER } from "../data/gallery-copy.data";
-import { adAccountsQueryOptions } from "../services/ad-accounts.service";
-import { useCreatives, useFatigueSummary } from "../services/creatives.service";
-import type { Creative, FatigueFlag } from "../types/creatives.types";
+import { statusFilterLabel } from "../data/gallery-copy.data";
+import { useAds, useFatigueSummary, type GalleryFilters } from "../services/creatives.service";
+import { useGalleryRepair } from "../services/use-gallery-repair";
+import { useSentinel } from "../services/use-sentinel";
+import type { AdFormat, FatigueFlag, GallerySortKey, StatusFilter } from "../types/creatives.types";
 import { GalleryPrototype } from "../prototype/GalleryPrototype";
-import { CreativeCard } from "./CreativeCard";
-import { CreativeDetailModal } from "./CreativeDetailModal";
-import { FilterChip } from "./FilterChip";
+import { GalleryTable } from "./GalleryTable";
+import type { GalleryRowData } from "./GalleryTable";
+import { GallerySummary } from "./GallerySummary";
+import { GalleryToolbar } from "./GalleryToolbar";
 import { SkeletonRows } from "./SkeletonRows";
-import { TablePager } from "./TablePager";
-
-const SELECT_CLASS =
-  "rounded-wk border border-volt-border-2 bg-volt-surface-2 px-3 py-2 text-sm text-volt-text focus:border-volt-primary focus:outline-none";
-const COUNTED_FLAGS: FatigueFlag[] = ["fatiguing", "bleeding", "scale"];
-const SORT_LABELS: Record<SortKey, string> = { spend: "Spend", roas: "ROAS", ctr: "CTR", frequency: "Frequency" };
-type SortKey = "spend" | "roas" | "ctr" | "frequency";
+import { nextSortState } from "./SortHeader";
+import type { SortState } from "./SortHeader";
 
 export interface CreativesTabProps {
   accountId: string | null;
@@ -30,39 +25,57 @@ export interface CreativesTabProps {
 }
 
 export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: CreativesTabProps) {
+  const [status, setStatus] = useState<StatusFilter>("active");
   const [flagFilter, setFlagFilter] = useState<FatigueFlag | "all">("all");
-  const [formatFilter, setFormatFilter] = useState("all");
-  const [sortKey, setSortKey] = useState<SortKey>("spend");
-  const [selected, setSelected] = useState<Creative | null>(null);
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(25);
+  const [formatFilter, setFormatFilter] = useState<"all" | AdFormat>("all");
+  const [searchInput, setSearchInput] = useState("");
+  const q = useDebounce(searchInput, 300);
+  const [sort, setSort] = useState<SortState>({ key: "spend", direction: "desc" });
+  const [playingKey, setPlayingKey] = useState<string | null>(null);
+  const { thumbOverrides, repairThumbnail } = useGalleryRepair(accountId);
   const { adSet, adSetName, variant } = useSearch({ from: "/clients/$slug" });
   const navigate = useNavigate();
-  const { data: creatives, isPending } = useCreatives(accountId, range, rangeExplicit);
-  const { data: summary } = useFatigueSummary(accountId, range, rangeExplicit);
-  const { data: clients } = useClients();
-  const client = clients?.find((candidate) => candidate.slug === clientSlug) ?? null;
-  const { data: accounts } = useQuery({ ...adAccountsQueryOptions(client?.id ?? ""), enabled: client !== null });
-  const actId = accounts?.find((account) => account.id === accountId)?.adAccountId ?? null;
+
+  const filters = useMemo<GalleryFilters>(
+    () => ({
+      status,
+      flag: flagFilter,
+      format: formatFilter,
+      q,
+      sort: sort.key as GallerySortKey,
+      order: sort.direction,
+      adSetId: adSet === undefined ? undefined : adSet,
+    }),
+    [status, flagFilter, formatFilter, q, sort, adSet],
+  );
+  const ads = useAds(accountId, range, rangeExplicit, filters);
+  const summary = useFatigueSummary(accountId, range, rangeExplicit, {
+    status,
+    adSetId: adSet === undefined ? undefined : adSet,
+    format: formatFilter,
+    q,
+  });
+  const rows = useMemo<GalleryRowData[]>(() =>
+      (ads.data?.pages ?? []).flatMap((page, pageIndex) =>
+        page.items.map((ad) => ({
+          rowKey: `${pageIndex}:${ad.id}`,
+          ad: thumbOverrides[ad.id] !== undefined ? { ...ad, thumbnailUrl: thumbOverrides[ad.id] } : ad,
+        })),
+      ),
+    [ads.data, thumbOverrides],
+  );
+
+  const sentinelRef = useSentinel(
+    () => {
+      if (ads.hasNextPage && !ads.isFetchingNextPage) void ads.fetchNextPage();
+    },
+    rows.length > 0 && Boolean(ads.hasNextPage),
+    rows.length,
+  );
 
   if (variant !== undefined) {
     return <GalleryPrototype variant={variant} />;
   }
-
-  const rows = creatives ?? [];
-  const scoped = adSet === undefined ? rows : rows.filter((row) => row.adSetId === adSet);
-  const visible = scoped
-    .filter((row) => flagFilter === "all" || row.fatigue?.flag === flagFilter)
-    .filter((row) => formatFilter === "all" || row.format === formatFilter)
-    .sort((a, b) => (b[sortKey] ?? -Infinity) - (a[sortKey] ?? -Infinity));
-  const pages = Math.max(1, Math.ceil(visible.length / pageSize));
-  const safePage = Math.min(page, pages - 1);
-  const paged = visible.slice(safePage * pageSize, safePage * pageSize + pageSize);
-  const concentrationRaw =
-    summary === undefined || summary.concentration === null
-      ? null
-      : (summary.concentration === "top1" ? summary.topCreativeSpendShare : summary.top3SpendShare);
-  const concentrationPct = concentrationRaw === null ? null : Math.round(concentrationRaw * 100);
 
   function clearAdSetFilter() {
     void navigate({
@@ -72,82 +85,56 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
     });
   }
 
-  if (isPending) {
-    return <SkeletonRows rows={6} columns={4} />;
-  }
-  if (rows.length === 0) {
-    return <EmptyState title="No creatives yet — sync the ad account first" />;
+  if (ads.isPending) {
+    return <SkeletonRows rows={8} columns={7} />;
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {summary && summary.concentration !== null && concentrationPct !== null ? (
-        <p className="rounded-wk border border-volt-border bg-volt-surface px-4 py-3 text-[13px] text-volt-text-2">
-          Concentration risk:{" "}
-          {summary.concentration === "top1" ? "top creative is" : "top 3 creatives are"} {concentrationPct}% of spend
-        </p>
-      ) : null}
-      {summary ? (
-        <div className="flex flex-wrap gap-2">
-          {COUNTED_FLAGS.map((flag) => (
-            <Badge key={flag} variant={FATIGUE_FLAG_COPY[flag].badgeVariant}>
-              {FATIGUE_FLAG_COPY[flag].label} {summary.counts[flag]}
-            </Badge>
-          ))}
-        </div>
-      ) : null}
-      <div className="flex flex-wrap items-center gap-4">
-        {adSet !== undefined ? <FilterChip label={`Ad set: ${adSetName ?? adSet}`} onClear={clearAdSetFilter} /> : null}
-        <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
-          Fatigue
-          <select
-            value={flagFilter}
-            onChange={(event) => setFlagFilter(event.target.value as FatigueFlag | "all")}
-            className={SELECT_CLASS}
-          >
-            <option value="all">All</option>
-            {FATIGUE_FLAG_ORDER.map((flag) => (
-              <option key={flag} value={flag}>{FATIGUE_FLAG_COPY[flag].label}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
-          Format
-          <select value={formatFilter} onChange={(event) => setFormatFilter(event.target.value)} className={SELECT_CLASS}>
-            <option value="all">All</option>
-            {Array.from(new Set(rows.map((row) => row.format).filter((format): format is string => format !== null))).map((format) => (
-              <option key={format} value={format}>{format}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-[13px] text-volt-text-2">
-          Sort
-          <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)} className={SELECT_CLASS}>
-            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-              <option key={key} value={key}>{SORT_LABELS[key]}</option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {visible.length === 0 ? (
-        <EmptyState title="No creatives match these filters" hint="Adjust the filters to see more creatives." />
+      {summary.data ? <GallerySummary summary={summary.data} /> : null}
+      <GalleryToolbar
+        adSet={adSet}
+        adSetName={adSetName}
+        onClearAdSet={clearAdSetFilter}
+        status={status}
+        onStatus={setStatus}
+        flagFilter={flagFilter}
+        onFlagFilter={setFlagFilter}
+        formatFilter={formatFilter}
+        onFormatFilter={setFormatFilter}
+        searchInput={searchInput}
+        onSearchInput={setSearchInput}
+        rowCount={rows.length}
+      />
+      {rows.length === 0 ? (
+        status === "all" ? (
+          <EmptyState title="No creatives yet — sync the ad account" />
+        ) : (
+          <EmptyState
+            title={`No ${statusFilterLabel(status).toLowerCase()} creatives in this scope`}
+            hint="Switch the status filter to widen the scope."
+          />
+        )
       ) : (
         <>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-            {paged.map((creative) => (
-              <CreativeCard key={creative.id} creative={creative} onSelect={() => setSelected(creative)} />
-            ))}
-          </div>
-          <TablePager
-            total={visible.length}
-            page={safePage}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={(size) => { setPageSize(size); setPage(0); }}
+          <GalleryTable
+            rows={rows}
+            sort={sort}
+            onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))}
+            playingKey={playingKey}
+            onTogglePlay={setPlayingKey}
+            onImageError={repairThumbnail}
+            accountId={accountId}
+            range={range}
+            rangeExplicit={rangeExplicit}
           />
+          <div ref={sentinelRef} data-testid="gallery-sentinel" className="h-2" />
+          {ads.isFetchingNextPage ? <p className="text-center text-[13px] text-volt-text-3">Loading more…</p> : null}
+          {!ads.hasNextPage && rows.length > 0 ? (
+            <p className="text-center text-[13px] text-volt-text-3">End of results</p>
+          ) : null}
         </>
       )}
-      {selected !== null ? <CreativeDetailModal creative={selected} actId={actId} onClose={() => setSelected(null)} /> : null}
     </div>
   );
 }

@@ -5,18 +5,38 @@ export interface CreativeFatigue {
   reason: string;
 }
 
-export interface Creative {
+export type AdFormat = "IMAGE" | "VIDEO" | "CAROUSEL";
+
+export type EffectiveStatus =
+  | "ACTIVE"
+  | "PAUSED"
+  | "CAMPAIGN_PAUSED"
+  | "ADSET_PAUSED"
+  | "PENDING_REVIEW"
+  | "DISAPPROVED"
+  | "PREAPPROVED"
+  | "PENDING_BILLING_INFO"
+  | "WITH_ISSUES"
+  | "IN_PROCESS"
+  | "UNKNOWN";
+
+export type StatusFilter = "all" | "active" | "inactive" | Lowercase<EffectiveStatus>;
+
+export type GallerySortKey = "spend" | "roas" | "ctr" | "frequency";
+
+export interface GalleryAd {
   id: string;
-  adSetId: string;
-  adSetName: string;
-  campaignName: string;
-  platformAdId: string;
   name: string;
   status: string;
   format: string | null;
-  bodyCopy: string | null;
-  creativeId: string;
+  adSetId: string;
+  adSetName: string;
+  campaignId: string;
+  campaignName: string;
   thumbnailUrl: string | null;
+  videoId: string | null;
+  carouselCount: number | null;
+  bodyCopy: string | null;
   spend: number | null;
   revenue: number | null;
   purchases: number | null;
@@ -25,7 +45,29 @@ export interface Creative {
   ctr: number | null;
   frequency: number | null;
   spendShare: number | null;
+  trendSpend: number;
+  trendCtr: number | null;
   fatigue: CreativeFatigue | null;
+}
+
+export interface GalleryAdDetail extends GalleryAd {
+  posterUrl: string | null;
+  sourceUrl: string | null;
+  adsManagerUrl: string;
+  embedUrl: string | null;
+}
+
+export interface GalleryPage {
+  items: GalleryAd[];
+  nextCursor: string | null;
+}
+
+export interface RepairedMedia {
+  adId: string;
+  format: string | null;
+  thumbnailUrl: string | null;
+  videoId: string | null;
+  carouselCount: number | null;
 }
 
 export type ConcentrationKind = "top1" | "top3";

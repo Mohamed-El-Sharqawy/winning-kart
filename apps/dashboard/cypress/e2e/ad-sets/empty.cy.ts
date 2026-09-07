@@ -29,7 +29,7 @@ describe("ad sets and creatives empty state", () => {
       body: { data: [] },
     });
     cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/ads(\?.*)?$/, {
-      body: { data: [] },
+      body: { data: [], meta: { nextCursor: null } },
     });
     cy.intercept("GET", /\/api\/ad-accounts\/[^/]+\/fatigue-summary(\?.*)?$/, {
       body: {
@@ -64,9 +64,11 @@ describe("ad sets and creatives empty state", () => {
     });
   });
 
-  it("shows the empty creatives state on the creatives tab", () => {
+  it("shows the scoped empty state on the creatives tab until the filter widens", () => {
     cy.visit("/clients/maison-nour?tab=creatives");
 
+    cy.contains(/no active creatives in this scope/i, { timeout: 15000 }).should("be.visible");
+    cy.get("select[aria-label='Status filter']").select("all");
     cy.contains(/no creatives yet/i, { timeout: 15000 }).should("be.visible");
   });
 });
