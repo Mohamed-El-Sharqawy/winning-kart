@@ -3,7 +3,7 @@ import { defaultRange } from "@/shared/components/DateRangeControl";
 import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { AppShell } from "@/shared/layout/AppShell";
-import { useClients } from "@/shared/services/clients.service";
+import { useWorkspaceClients } from "@/shared/services/workspace-clients.service";
 import { CreativeDrawer } from "@/pages/client-workspace/components/CreativeDrawer";
 import { AdSetsTable } from "./components/AdSetsTable";
 import { CampaignDetailHeader } from "./components/CampaignDetailHeader";
@@ -21,7 +21,7 @@ export function CampaignDetailPage() {
     from: "/clients/$slug/campaigns/$campaignId",
   });
   const navigate = useNavigate();
-  const { data: clients } = useClients();
+  const { data: clients } = useWorkspaceClients();
   const clientName = clients?.find((client) => client.slug === slug)?.name ?? slug;
   const resolution = useCampaignAccountResolution(slug, campaignId, account === undefined);
   const accountId = account ?? resolution.accountId;

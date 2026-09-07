@@ -4,11 +4,12 @@ import { DateRangeControl, defaultRange } from "@/shared/components/DateRangeCon
 import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { AppShell } from "@/shared/layout/AppShell";
+import { usePermissions } from "@/shared/hooks/usePermissions";
 import {
   clearWorkspaceClient,
   writeWorkspaceClient,
 } from "@/shared/lib/workspace-client";
-import { useClients } from "@/shared/services/clients.service";
+import { useWorkspaceClients } from "@/shared/services/workspace-clients.service";
 import type { Client } from "@/shared/types/clients.types";
 import type { WorkspaceTab } from "@/routes/router";
 import { AdSetsTab } from "./components/AdSetsTab";
@@ -27,7 +28,7 @@ const SELECT_CLASS =
 export function ClientWorkspacePage() {
   const { slug } = useParams({ from: "/clients/$slug" });
   const { tab } = useSearch({ from: "/clients/$slug" });
-  const { data: clients, isPending, isError } = useClients();
+  const { data: clients, isPending, isError } = useWorkspaceClients();
   const client = clients?.find((candidate) => candidate.slug === slug) ?? null;
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export function ClientWorkspacePage() {
 
 function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
   const navigate = useNavigate();
+  const { isClient } = usePermissions();
   const { from, to, account: accountParam } = useSearch({ from: "/clients/$slug" });
   const [accountId, setAccountId] = useState<string | null>(null);
   const { data: accounts, isPending: accountsPending } = useAdAccounts(client.id);
@@ -79,7 +81,7 @@ function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
   return (
     <>
       <WorkspaceHeader client={client} />
-      <WorkspaceTabs slug={client.slug} tab={tab} />
+      <WorkspaceTabs slug={client.slug} tab={tab} audience={isClient ? "client" : "agency"} />
       {metricsTab && accountsPending ? <p className="text-sm text-volt-text-3">Loading ad accounts…</p> : null}
       {metricsTab && accountsReady ? (
         <div className="flex flex-wrap items-center gap-4">
@@ -111,7 +113,13 @@ function WorkspaceBody({ client, tab }: { client: Client; tab: WorkspaceTab }) {
       ) : null}
       {tab === "ad-accounts" ? <AccountsTab client={client} /> : null}
       {tab === "campaigns" ? (
-        <CampaignsTab client={client} range={range} rangeExplicit={rangeExplicit} onApplyRange={applyRange} />
+        <CampaignsTab
+          client={client}
+          range={range}
+          rangeExplicit={rangeExplicit}
+          onApplyRange={applyRange}
+          canSync={!isClient}
+        />
       ) : null}
       {tab === "ad-sets" && accountsReady ? (
         <AdSetsTab

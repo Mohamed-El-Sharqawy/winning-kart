@@ -14,6 +14,9 @@ export const overviewModule = new Elysia({ prefix: "/overview" }).get(
     if (!user) {
       throw problem(401, "UNAUTHENTICATED", "Authentication required");
     }
+    if (user.role === "client") {
+      throw problem(403, "FORBIDDEN", "Agency role required");
+    }
     return { data: await service.overview(query.from, query.to) };
   },
   {

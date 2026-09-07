@@ -26,7 +26,7 @@ export interface AdAccount {
   timezone: string;
   lastSyncAt: Date | null;
   campaignCount: number;
-  tokenType: TokenType;
+  tokenType: TokenType | null;
   tokenExpiresAt: Date | null;
 }
 

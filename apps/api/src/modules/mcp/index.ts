@@ -8,6 +8,7 @@ import { AdAccountsService } from "../ad-accounts/service";
 import { OverviewModel } from "../overview/model";
 import { OverviewService } from "../overview/service";
 import { PortalModel } from "../portal/model";
+import { ClientOwnershipModel } from "../portal/client-ownership";
 import { AlertsModel } from "../alerts/model";
 import { TasksModel } from "../tasks/model";
 import { TasksService } from "../tasks/service";
@@ -21,6 +22,7 @@ const models: McpModels = {
   adAccounts: new AdAccountsService(new AdAccountsModel()),
   overview: new OverviewService(new OverviewModel()),
   portal: new PortalModel(),
+  ownership: new ClientOwnershipModel(),
   alerts: new AlertsModel(),
   tasks: new TasksService(new TasksModel()),
   adsList: (accountId, query) => listAdsPage(adsListDeps(accountId), accountId, query),

@@ -72,6 +72,7 @@ Implementation: handlers and services throw `ProblemError` from `apps/api/src/li
 | Unknown resource id | 404 | `RESOURCE_NOT_FOUND` | - |
 | Unauthenticated | 401 | `UNAUTHENTICATED` | - |
 | Wrong role | 403 | `FORBIDDEN` | - |
+| Client user has no client assigned | 403 | `NO_CLIENT_ASSIGNMENT` | - |
 | Bad login credentials | 401 | `INVALID_CREDENTIALS` | - |
 | Body validation failure | 422 | `VALIDATION` | - |
 | Undecodable pagination cursor | 422 | `CURSOR_INVALID` | - |

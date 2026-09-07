@@ -3,6 +3,7 @@ import type { ClientsModel } from "../clients/model";
 import type { AdAccountsService } from "../ad-accounts/service";
 import type { OverviewService } from "../overview/service";
 import type { PortalModel } from "../portal/model";
+import type { ClientOwnershipModel } from "../portal/client-ownership";
 import type { AlertsModel } from "../alerts/model";
 import type { TasksService } from "../tasks/service";
 import type { AdsListPage, AdsListQuery } from "../performance/ads-list";
@@ -15,6 +16,7 @@ export interface McpModels {
   adAccounts: AdAccountsService;
   overview: OverviewService;
   portal: PortalModel;
+  ownership: ClientOwnershipModel;
   alerts: AlertsModel;
   tasks: TasksService;
   adsList: (accountId: string, query: AdsListQuery) => Promise<AdsListPage>;

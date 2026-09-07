@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
+import { CLIENT_WORKSPACE_TABS } from "@/shared/data/roles.data";
 import type { WorkspaceTab } from "@/routes/router";
 
 const TABS: Array<{ id: WorkspaceTab; label: string }> = [
@@ -11,10 +12,21 @@ const TABS: Array<{ id: WorkspaceTab; label: string }> = [
   { id: "revenue", label: "Revenue" },
 ];
 
-export function WorkspaceTabs({ slug, tab }: { slug: string; tab: WorkspaceTab }) {
+export function WorkspaceTabs({
+  slug,
+  tab,
+  audience,
+}: {
+  slug: string;
+  tab: WorkspaceTab;
+  audience: "agency" | "client";
+}) {
+  const visible =
+    audience === "client" ? TABS.filter(({ id }) => CLIENT_WORKSPACE_TABS.includes(id)) : TABS;
+
   return (
     <nav className="flex gap-6 border-b border-volt-border" aria-label="Client workspace sections">
-      {TABS.map(({ id, label }) => (
+      {visible.map(({ id, label }) => (
         <Link
           key={id}
           to="/clients/$slug"

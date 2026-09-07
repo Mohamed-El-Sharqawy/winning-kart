@@ -25,9 +25,10 @@ export interface CampaignsTabProps {
   range: DateRange;
   rangeExplicit: boolean;
   onApplyRange: (range: DateRange | undefined) => void;
+  canSync: boolean;
 }
 
-export function CampaignsTab({ client, range, rangeExplicit, onApplyRange }: CampaignsTabProps) {
+export function CampaignsTab({ client, range, rangeExplicit, onApplyRange, canSync }: CampaignsTabProps) {
   const { data: accounts, isPending: accountsPending } = useAdAccounts(client.id);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [status, setStatus] = useState<StatusFilter>("active");
@@ -100,11 +101,13 @@ export function CampaignsTab({ client, range, rangeExplicit, onApplyRange }: Cam
         unfiltered ? (
           <EmptyState
             title="No campaigns yet"
-            hint="Sync the ad account to pull data."
+            hint={canSync ? "Sync the ad account to pull data." : "Your agency is connecting your ad accounts."}
             action={
-              <Button variant="ghost" disabled={enqueue.isPending} onClick={startSync}>
-                {enqueue.isPending ? "Starting…" : "Sync now"}
-              </Button>
+              canSync ? (
+                <Button variant="ghost" disabled={enqueue.isPending} onClick={startSync}>
+                  {enqueue.isPending ? "Starting…" : "Sync now"}
+                </Button>
+              ) : undefined
             }
           />
         ) : (

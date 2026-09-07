@@ -33,7 +33,7 @@ const createTask: McpTool = {
       priority = rawPriority as Task["priority"];
     }
     if (clientId !== undefined) {
-      const client = await ctx.models.portal.findClientById(clientId);
+      const client = await ctx.models.ownership.findClientById(clientId);
       if (client === null) {
         throw invalidParams();
       }
