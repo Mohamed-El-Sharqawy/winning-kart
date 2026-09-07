@@ -4,11 +4,11 @@ import { okDto } from "../../dto/alerts";
 import { clientIp, recordAudit } from "../../lib/audit";
 import { resolveSessionUser } from "../../lib/session";
 import { problem } from "../../lib/problem";
-import { UserModel } from "./model";
+import { DrizzleUserModel } from "./model";
 import { UserService } from "./service";
 import type { SafeUser } from "../auth/model";
 
-const service = new UserService(new UserModel());
+const service = new UserService(new DrizzleUserModel());
 
 const idParamsDto = t.Object({ id: t.String() });
 

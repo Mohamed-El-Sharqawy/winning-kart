@@ -13,6 +13,8 @@ export function toMember(dto: UserDto): Member {
     role: dto.role,
     agencyRole: dto.agencyRole,
     clientRoleTier: dto.clientRoleTier,
+    clientId: dto.clientId ?? null,
+    clientName: dto.clientName ?? null,
     status: dto.status,
     lastActiveAt: toDate(dto.lastActiveAt),
     createdAt: toDate(dto.createdAt ?? null),

@@ -25,6 +25,13 @@ function roleLabel(member: Member): string {
   return capitalizeRole(member.agencyRole ?? "admin");
 }
 
+function clientLabel(member: Member): string {
+  if (member.role !== "client") {
+    return "—";
+  }
+  return member.clientName ?? "Unassigned";
+}
+
 export interface MembersTableProps {
   members: Member[];
   onEdit: (member: Member) => void;
@@ -40,6 +47,7 @@ export function MembersTable({ members, onEdit, onDelete }: MembersTableProps) {
     },
     { key: "email", header: "Email" },
     { key: "role", header: "Role", render: (row) => <Badge>{roleLabel(row)}</Badge> },
+    { key: "client", header: "Client", render: (row) => clientLabel(row) },
     {
       key: "status",
       header: "Status",

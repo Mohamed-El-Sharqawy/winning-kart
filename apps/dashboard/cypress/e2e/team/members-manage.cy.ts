@@ -1,5 +1,7 @@
+import { TEAM_MODAL } from "../../support/commands";
+
 describe("team members management", () => {
-  const MODAL = "[role='dialog'], dialog, [class*='modal'], [class*='inset-0']";
+  const MODAL = TEAM_MODAL;
 
   beforeEach(() => {
     cy.loginAs("agency-admin");

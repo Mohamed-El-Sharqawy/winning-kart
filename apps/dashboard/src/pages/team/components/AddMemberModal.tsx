@@ -4,16 +4,20 @@ import { Input } from "@/shared/components/Input";
 import { memberFormError } from "../services/api-call-error";
 import { useCreateMember } from "../services/team.service";
 import type { MemberRoleSelection } from "../types/team.types";
-import { ROLE_OPTIONS, SELECTION_BODY } from "./role-options";
+import { ROLE_OPTIONS, SELECTION_BODY, isClientSelection } from "./role-options";
 import { Select } from "./Select";
+import { ClientSelect } from "./ClientSelect";
 
 export function AddMemberModal({ onClose }: { onClose: () => void }) {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [selection, setSelection] = useState<MemberRoleSelection>("owner");
+  const [clientId, setClientId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const createMember = useCreateMember();
+
+  const clientSelected = isClientSelection(selection);
 
   const submit = () => {
     setError(null);
@@ -23,6 +27,7 @@ export function AddMemberModal({ onClose }: { onClose: () => void }) {
         email: email.trim(),
         password,
         displayName: displayName.trim(),
+        ...(clientSelected ? { clientId } : {}),
       },
       {
         onError: (mutationError) => setError(memberFormError(mutationError)),
@@ -32,7 +37,10 @@ export function AddMemberModal({ onClose }: { onClose: () => void }) {
   };
 
   const ready =
-    displayName.trim().length > 0 && email.trim().length > 0 && password.length >= 8;
+    displayName.trim().length > 0 &&
+    email.trim().length > 0 &&
+    password.length >= 8 &&
+    (!clientSelected || clientId.length > 0);
 
   return (
     <div
@@ -71,6 +79,9 @@ export function AddMemberModal({ onClose }: { onClose: () => void }) {
             options={ROLE_OPTIONS}
             onChange={(value) => setSelection(value as MemberRoleSelection)}
           />
+          {clientSelected ? (
+            <ClientSelect value={clientId} onChange={setClientId} disabled={createMember.isPending} />
+          ) : null}
         </div>
         {error ? <p className="text-xs text-volt-down">{error}</p> : null}
         <div className="flex justify-end gap-2">

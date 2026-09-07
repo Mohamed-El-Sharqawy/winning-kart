@@ -15,6 +15,7 @@ export const createUserDto = t.Object({
     ])
   ),
   clientRoleTier: t.Optional(t.Union([t.Literal("admin"), t.Literal("viewer")])),
+  clientId: t.Optional(t.String()),
 });
 
 export const updateUserDto = t.Object({
@@ -33,6 +34,7 @@ export const updateUserDto = t.Object({
   clientRoleTier: t.Optional(
     t.Union([t.Literal("admin"), t.Literal("viewer"), t.Null()])
   ),
+  clientId: t.Optional(t.Union([t.String(), t.Null()])),
   status: t.Optional(
     t.Union([t.Literal("active"), t.Literal("invited"), t.Literal("suspended")])
   ),
@@ -45,6 +47,8 @@ export const userDto = t.Object({
   role: t.Union([t.Literal("admin"), t.Literal("client")]),
   agencyRole: t.Union([t.String(), t.Null()]),
   clientRoleTier: t.Union([t.String(), t.Null()]),
+  clientId: t.Optional(t.Union([t.String(), t.Null()])),
+  clientName: t.Optional(t.Union([t.String(), t.Null()])),
   status: t.Union([t.Literal("active"), t.Literal("invited"), t.Literal("suspended")]),
   lastActiveAt: t.Optional(t.Union([t.Date(), t.Null()])),
   createdAt: t.Optional(t.Date()),

@@ -80,6 +80,9 @@ Implementation: handlers and services throw `ProblemError` from `apps/api/src/li
 | Duplicate user email | 409 | `EMAIL_TAKEN` | - |
 | Duplicate slug (client, ad account) | 409 | `SLUG_TAKEN` | - |
 | Remove-account slug mismatch | 422 | `SLUG_MISMATCH` | - |
+| Client member created or updated without a client | 422 | `VALIDATION` | - |
+| Assigned client id does not exist | 422 | `INVALID_CLIENT` | - |
+| Client account manager assignee is not an agency user | 422 | `INVALID_ASSIGNEE` | - |
 | Meta rejects token | 422 | `INVALID_TOKEN` | `invalid_token` |
 | Meta denies permission | 422 | `PERMISSION_DENIED` | `permission_denied` |
 | Meta ad account not found | 422 | `ACCOUNT_NOT_FOUND` | `not_found` |
