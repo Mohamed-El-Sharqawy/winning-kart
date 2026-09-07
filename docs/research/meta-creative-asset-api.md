@@ -21,7 +21,9 @@ Provenance: all claims below were verified against Meta developer documentation.
 - `GET /v21.0/<video_id>?fields=source,picture` [video]:
   - `source` — "A URL to the raw, playable video file."
   - `picture` — "The URL for the thumbnail picture of the video."
-  - Caveat: the Video node doc carries the banner "This document refers to a feature that was removed after Graph API v3.2" (public video features), yet the field table above is still documented there and remains the read path for ad-account videos.
+  - Live-verified absent (2026-09, Dia Flower `act_1007555864490743`, videos 4489160867997724, 1567409811694268, 2044770136406591): v21.0 answers 200 with `picture` present and `source` missing on every probed video. The field is deprecated in practice; do not build playback on it. The read that remains useful is `picture` (poster).
+  - Playback decision (data-and-sync.md, shipped in #43): the public `https://www.facebook.com/plugins/video.php?href=<watch url>` embed built from the stored `videoId` — Meta-supported player, no token, no extra Graph calls, no persistence. Verified live for both `watch/?v=<id>` and `reel/<id>` href forms.
+  - History: the Video node doc carries the banner "This document refers to a feature that was removed after Graph API v3.2" (public video features); the field table above stayed documented after `source` had already stopped being returned.
 - `GET /<video_id>/thumbnails` returns VideoThumbnail nodes [video-thumbnails]: fields `id`, `height`, `width`, `scale`, `name`, `uri`, `is_preferred`. The doc states token requirements "App or Page" and permissions `pages_read_engagement`, `pages_show_list` (written for Page-owned videos; ad-account videos read with a Marketing API system-user token are the winning-kart case and are not separately documented).
 
 ## Rate-limit accounting (`x-business-use-case-usage`)
@@ -46,7 +48,7 @@ Provenance: all claims below were verified against Meta developer documentation.
 - Documented statements:
   - AdImage.`url` is "A temporary URL which the image can be retrieved at. Do not use this URL in ad creative creation." `url_128` is likewise temporary; in contrast `permalink_url` is "A permanent URL of the image." Source: [ad-image].
   - AdCreative preview iframes: "The API returns an iframe, which is only valid for 24 hours." Source: [previews].
-- NOT documented anywhere I could find: the exact signature lifetime of `thumbnail_url` on a creative and of video `source` URLs. Community reports put them in the "hours" range and note URLs die with 403/expired-signature errors. Treat as unverified; the safe engineering stance is that any stored CDN URL must be re-fetched from the Graph API on demand.
+- NOT documented anywhere I could find: the exact signature lifetime of `thumbnail_url` on a creative. Community reports put it in the "hours" range and note URLs die with 403/expired-signature errors. Treat as unverified; the safe engineering stance is that any stored CDN URL must be re-fetched from the Graph API on demand. Video `source` lifetime is a moot question on v21.0: the field is no longer returned (see "Playable video source").
 
 ## Insights `thumbnail_data`
 
@@ -58,7 +60,7 @@ Provenance: all claims below were verified against Meta developer documentation.
 
 ## Unverified / not established from primary sources
 
-- TTL/signature lifetime of creative `thumbnail_url` and video `source` URLs (only "temporary" is documented, for AdImage).
+- TTL/signature lifetime of creative `thumbnail_url` (only "temporary" is documented, for AdImage). Video `source` is no longer returned by v21.0, so its lifetime no longer matters.
 - Insights `thumbnail_data` field shape and availability in v21.0.
 - Ads Manager deep-link parameter formats.
 - Per-endpoint/per-field rate-limit cost weights (Meta publishes none; call counting is per request).
@@ -67,7 +69,7 @@ Provenance: all claims below were verified against Meta developer documentation.
 
 - Fold creative media fields into the ads listing (`creative{id,name,thumbnail_url,video_id,effective_object_story_id,...}`) instead of the separate account-wide `getCreativeDetails` pass: same call count for pagination, no second endpoint to page, no 50k-cap exposure, and unused creatives never fetched. Keep `act_<id>/adcreatives` only if the account-wide library itself is a product surface.
 - Pass `thumbnail_width`/`thumbnail_height` on creative reads; the 64 px default is too small for dashboards.
-- Persist IDs (creative id, `video_id`, `effective_object_story_id`), never CDN URLs. Resolve `/<video_id>?fields=source,picture` lazily and proxy/cache the bytes at fetch time; refresh = one ads_management call per video. For hot dashboards, a short-lived URL cache (hours) mirrors Meta's own expiry behavior; batch up to 50 video-node reads per HTTP request to cut latency, accepting that BUC accounting is unchanged.
+- Persist IDs (creative id, `video_id`, `effective_object_story_id`), never CDN URLs. Resolve the poster lazily via `/<video_id>?fields=picture` — v21.0 no longer returns `source`, so there are no video bytes to fetch or proxy: playback is the public `plugins/video.php` embed built from the stored `videoId` (decision recorded in data-and-sync.md). Thumbnail/poster refresh stays one ads_management call per video; batch up to 50 reads per HTTP request to cut latency, accepting that BUC accounting is unchanged.
 - `RateGuard` already reads `x-business-use-case-usage`: parse the per-account `ads_management` entry and use `estimated_time_to_regain_access` (minutes) as the backoff signal; treat code 80004 as `rate_limited` alongside code 17/HTTP 429.
 - Carousels/DPA: media lives inside `object_story_spec` (child attachments / `template_data`), so a creative-media feature needs to walk that spec, not just top-level `image_url`.
 - Deep links into Ads Manager can be emitted for human workflows but must be treated as undocumented and tested against the accounts in use.
