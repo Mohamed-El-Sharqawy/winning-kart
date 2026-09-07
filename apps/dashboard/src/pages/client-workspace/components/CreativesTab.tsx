@@ -5,10 +5,12 @@ import type { DateRange } from "@/shared/components/DateRangeControl";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { statusFilterLabel } from "../data/gallery-copy.data";
 import { useAds, useFatigueSummary, type GalleryFilters } from "../services/creatives.service";
+import { useCreativeDrawerUrl } from "../services/use-creative-drawer-url";
 import { useGalleryRepair } from "../services/use-gallery-repair";
 import { useSentinel } from "../services/use-sentinel";
 import type { AdFormat, FatigueFlag, GallerySortKey, StatusFilter } from "../types/creatives.types";
 import { GalleryPrototype } from "../prototype/GalleryPrototype";
+import { CreativeDrawer } from "./CreativeDrawer";
 import { GalleryTable } from "./GalleryTable";
 import type { GalleryRowData } from "./GalleryTable";
 import { GallerySummary } from "./GallerySummary";
@@ -31,10 +33,10 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
   const [searchInput, setSearchInput] = useState("");
   const q = useDebounce(searchInput, 300);
   const [sort, setSort] = useState<SortState>({ key: "spend", direction: "desc" });
-  const [playingKey, setPlayingKey] = useState<string | null>(null);
   const { thumbOverrides, repairThumbnail } = useGalleryRepair(accountId);
-  const { adSet, adSetName, variant } = useSearch({ from: "/clients/$slug" });
+  const { adSet, adSetName, variant, creative } = useSearch({ from: "/clients/$slug" });
   const navigate = useNavigate();
+  const { openCreative, closeCreative } = useCreativeDrawerUrl(clientSlug);
 
   const filters = useMemo<GalleryFilters>(
     () => ({
@@ -73,9 +75,18 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
     rows.length,
   );
 
-  if (variant !== undefined) {
-    return <GalleryPrototype variant={variant} />;
-  }
+  if (variant !== undefined) return <GalleryPrototype variant={variant} />;
+
+  const drawer =
+    creative !== undefined ? (
+      <CreativeDrawer
+        accountId={accountId}
+        adId={creative}
+        range={range}
+        rangeExplicit={rangeExplicit}
+        onClose={closeCreative}
+      />
+    ) : null;
 
   function clearAdSetFilter() {
     void navigate({
@@ -85,56 +96,55 @@ export function CreativesTab({ accountId, range, rangeExplicit, clientSlug }: Cr
     });
   }
 
-  if (ads.isPending) {
-    return <SkeletonRows rows={8} columns={7} />;
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      {summary.data ? <GallerySummary summary={summary.data} /> : null}
-      <GalleryToolbar
-        adSet={adSet}
-        adSetName={adSetName}
-        onClearAdSet={clearAdSetFilter}
-        status={status}
-        onStatus={setStatus}
-        flagFilter={flagFilter}
-        onFlagFilter={setFlagFilter}
-        formatFilter={formatFilter}
-        onFormatFilter={setFormatFilter}
-        searchInput={searchInput}
-        onSearchInput={setSearchInput}
-        rowCount={rows.length}
-      />
-      {rows.length === 0 ? (
-        status === "all" ? (
-          <EmptyState title="No creatives yet — sync the ad account" />
-        ) : (
-          <EmptyState
-            title={`No ${statusFilterLabel(status).toLowerCase()} creatives in this scope`}
-            hint="Switch the status filter to widen the scope."
-          />
-        )
+      {ads.isPending ? (
+        <SkeletonRows rows={8} columns={7} />
       ) : (
         <>
-          <GalleryTable
-            rows={rows}
-            sort={sort}
-            onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))}
-            playingKey={playingKey}
-            onTogglePlay={setPlayingKey}
-            onImageError={repairThumbnail}
-            accountId={accountId}
-            range={range}
-            rangeExplicit={rangeExplicit}
+          {summary.data ? <GallerySummary summary={summary.data} /> : null}
+          <GalleryToolbar
+            adSet={adSet}
+            adSetName={adSetName}
+            onClearAdSet={clearAdSetFilter}
+            status={status}
+            onStatus={setStatus}
+            flagFilter={flagFilter}
+            onFlagFilter={setFlagFilter}
+            formatFilter={formatFilter}
+            onFormatFilter={setFormatFilter}
+            searchInput={searchInput}
+            onSearchInput={setSearchInput}
+            rowCount={rows.length}
           />
-          <div ref={sentinelRef} data-testid="gallery-sentinel" className="h-2" />
-          {ads.isFetchingNextPage ? <p className="text-center text-[13px] text-volt-text-3">Loading more…</p> : null}
-          {!ads.hasNextPage && rows.length > 0 ? (
-            <p className="text-center text-[13px] text-volt-text-3">End of results</p>
-          ) : null}
+          {rows.length === 0 ? (
+            status === "all" ? (
+              <EmptyState title="No creatives yet — sync the ad account" />
+            ) : (
+              <EmptyState
+                title={`No ${statusFilterLabel(status).toLowerCase()} creatives in this scope`}
+                hint="Switch the status filter to widen the scope."
+              />
+            )
+          ) : (
+            <>
+              <GalleryTable
+                rows={rows}
+                sort={sort}
+                onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))}
+                onOpen={openCreative}
+                onImageError={repairThumbnail}
+              />
+              <div ref={sentinelRef} data-testid="gallery-sentinel" className="h-2" />
+              {ads.isFetchingNextPage ? <p className="text-center text-[13px] text-volt-text-3">Loading more…</p> : null}
+              {!ads.hasNextPage && rows.length > 0 ? (
+                <p className="text-center text-[13px] text-volt-text-3">End of results</p>
+              ) : null}
+            </>
+          )}
         </>
       )}
+      {drawer}
     </div>
   );
 }

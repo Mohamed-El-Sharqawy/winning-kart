@@ -19,7 +19,7 @@ export function WorkspaceTabs({ slug, tab }: { slug: string; tab: WorkspaceTab }
           key={id}
           to="/clients/$slug"
           params={{ slug }}
-          search={(prev) => ({ ...prev, tab: id })}
+          search={(prev) => ({ ...prev, tab: id, creative: undefined })}
           aria-current={id === tab ? "page" : undefined}
           className={cn(
             "-mb-px border-b pb-3 pt-1 text-sm transition-colors",

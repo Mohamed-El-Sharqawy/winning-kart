@@ -1,10 +1,7 @@
-import { Fragment } from "react";
-import type { DateRange } from "@/shared/components/DateRangeControl";
 import type { GalleryAd, GallerySortKey } from "../types/creatives.types";
 import { SortHeader } from "./SortHeader";
 import type { SortState } from "./SortHeader";
 import { GalleryRow } from "./GalleryRow";
-import { VideoPlayerRow } from "./VideoPlayerRow";
 
 const COLUMNS: { key: GallerySortKey | null; label: string }[] = [
   { key: null, label: "Creative" },
@@ -25,25 +22,11 @@ export interface GalleryTableProps {
   rows: GalleryRowData[];
   sort: SortState;
   onSort: (key: GallerySortKey) => void;
-  playingKey: string | null;
-  onTogglePlay: (rowKey: string) => void;
+  onOpen: (adId: string) => void;
   onImageError: (adId: string, failedSrc: string | null) => void;
-  accountId: string | null;
-  range: DateRange;
-  rangeExplicit: boolean;
 }
 
-export function GalleryTable({
-  rows,
-  sort,
-  onSort,
-  playingKey,
-  onTogglePlay,
-  onImageError,
-  accountId,
-  range,
-  rangeExplicit,
-}: GalleryTableProps) {
+export function GalleryTable({ rows, sort, onSort, onOpen, onImageError }: GalleryTableProps) {
   return (
     <div className="overflow-x-auto rounded-wk border border-volt-border bg-volt-surface">
       <table className="w-full text-left text-[13px]">
@@ -70,19 +53,7 @@ export function GalleryTable({
         </thead>
         <tbody>
           {rows.map(({ ad, rowKey }) => (
-            <Fragment key={rowKey}>
-              <GalleryRow ad={ad} rowKey={rowKey} onTogglePlay={onTogglePlay} onImageError={onImageError} />
-              {playingKey === rowKey ? (
-                <VideoPlayerRow
-                  ad={ad}
-                  colSpan={COLUMNS.length}
-                  accountId={accountId}
-                  range={range}
-                  rangeExplicit={rangeExplicit}
-                  onClose={() => onTogglePlay(rowKey)}
-                />
-              ) : null}
-            </Fragment>
+            <GalleryRow key={rowKey} ad={ad} onOpen={onOpen} onImageError={onImageError} />
           ))}
         </tbody>
       </table>

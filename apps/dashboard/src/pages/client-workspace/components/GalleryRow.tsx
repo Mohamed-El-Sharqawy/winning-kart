@@ -8,21 +8,28 @@ import { GalleryMediaCell } from "./GalleryMediaCell";
 
 export interface GalleryRowProps {
   ad: GalleryAd;
-  rowKey: string;
-  onTogglePlay: (rowKey: string) => void;
+  onOpen: (adId: string) => void;
   onImageError: (adId: string, failedSrc: string | null) => void;
 }
 
-export function GalleryRow({ ad, rowKey, onTogglePlay, onImageError }: GalleryRowProps) {
+export function GalleryRow({ ad, onOpen, onImageError }: GalleryRowProps) {
   const fatigue = ad.fatigue ? FATIGUE_FLAG_COPY[ad.fatigue.flag] : null;
   return (
-    <tr className="border-b border-volt-border last:border-b-0 hover:bg-volt-surface-2">
+    <tr
+      onClick={() => onOpen(ad.id)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") onOpen(ad.id);
+      }}
+      tabIndex={0}
+      aria-label={`Open ${ad.name}`}
+      className="cursor-pointer border-b border-volt-border last:border-b-0 hover:bg-volt-surface-2 focus-visible:outline focus-visible:outline-volt-primary"
+    >
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
           <GalleryMediaCell
             ad={ad}
             thumbnailUrl={ad.thumbnailUrl}
-            onTogglePlay={() => onTogglePlay(rowKey)}
+            onOpen={onOpen}
             onImageError={onImageError}
           />
           <div className="min-w-0">
