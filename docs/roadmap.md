@@ -63,7 +63,10 @@ reports/attribution depth moves to V2). Deltas noted inline.
 | Shopify connector | OAuth app + webhook + nightly reconciliation | Originally V1; sequencing per captain |
 | CRM ingestion (HubSpot/custom) | Deal-level revenue events | V2 per spec unless re-prioritized |
 
-Sequencing within V1 is chosen by the captain at kickoff of each milestone.
+Sequencing within V1, locked by the captain at V1 kickoff (Sep 2026): Meta OAuth
+connect → Integrations center → Shopify connector → Google Ads adapter → TikTok
+adapter → WooCommerce connector → Snapchat adapter → Pinterest adapter → LinkedIn
+adapter. Read-only scopes on all new V1 connectors; write rails are V2.
 
 ## V2 — depth (re-prioritized from original V1)
 
