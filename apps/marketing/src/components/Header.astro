@@ -5,8 +5,11 @@ import { site } from "../config/site";
 <header class="site-header">
   <div class="inner">
     <a class="brand" href="/">{site.name}</a>
-    <nav class="site-nav" aria-label="Main">
-      {site.nav.map((item) => <a href={item.href}>{item.label}</a>)}
-    </nav>
+    <div class="header-actions">
+      <nav class="site-nav" aria-label="Main">
+        {site.nav.map((item) => <a href={item.href}>{item.label}</a>)}
+      </nav>
+      <a class="login-button" href={site.loginUrl}>Log in</a>
+    </div>
   </div>
 </header>

@@ -1,0 +1,77 @@
+.site-header {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.site-header .inner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.brand:hover {
+  text-decoration: none;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.site-nav {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.site-nav a {
+  color: var(--color-muted);
+  font-size: 0.925rem;
+}
+
+.site-nav a:hover {
+  color: var(--color-text);
+}
+
+.login-button {
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 0.925rem;
+  font-weight: 600;
+  padding: 0.45rem 1.1rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.login-button:hover {
+  color: var(--color-bg);
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+.site-footer {
+  border-top: 1px solid var(--color-border);
+}
+
+.site-footer .inner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
