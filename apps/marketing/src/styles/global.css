@@ -1,15 +1,18 @@
 @import "./chrome.css";
 
 :root {
-  --color-bg: #ffffff;
-  --color-text: #16161d;
-  --color-muted: #5d5d6b;
-  --color-accent: #2f2fdb;
-  --color-border: #e4e4ea;
-  --color-surface: #f7f7f9;
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-bg: #0b0714;
+  --color-text: #f5f3ff;
+  --color-muted: #9d92c9;
+  --color-accent: #8b5cf6;
+  --color-accent-strong: #a78bfa;
+  --color-border: #2c2342;
+  --color-surface: #151022;
+  --color-surface-2: #1a142a;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --container: 64rem;
   --measure: 68ch;
+  --radius-wk: 10px;
 }
 
 * {
@@ -17,7 +20,7 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
@@ -76,6 +79,7 @@ h1 {
 
 .legal h2 {
   font-size: 1.2rem;
+  font-weight: 600;
   line-height: 1.35;
   letter-spacing: -0.01em;
   margin: 0 0 0.6rem;
