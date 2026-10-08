@@ -1,0 +1,12 @@
+---
+import { site } from "../config/site";
+---
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="/">{site.name}</a>
+    <nav class="site-nav" aria-label="Main">
+      {site.nav.map((item) => <a href={item.href}>{item.label}</a>)}
+    </nav>
+  </div>
+</header>

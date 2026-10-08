@@ -1,0 +1,14 @@
+---
+import { site } from "../config/site";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>&copy; {year} {site.name}. All rights reserved.</span>
+    <nav class="site-nav" aria-label="Legal">
+      {site.nav.map((item) => <a href={item.href}>{item.label}</a>)}
+    </nav>
+  </div>
+</footer>
