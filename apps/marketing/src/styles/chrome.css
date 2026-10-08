@@ -44,19 +44,21 @@
 }
 
 .login-button {
-  background: var(--color-text);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
   color: var(--color-bg);
-  font-size: 0.925rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  padding: 0.45rem 1.1rem;
-  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-wk);
   white-space: nowrap;
 }
 
 .login-button:hover {
+  background: var(--color-accent-strong);
+  border-color: var(--color-accent-strong);
   color: var(--color-bg);
   text-decoration: none;
-  opacity: 0.85;
 }
 
 .site-footer {
