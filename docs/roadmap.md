@@ -60,13 +60,17 @@ reports/attribution depth moves to V2). Deltas noted inline.
 | Pinterest Ads adapter | Campaigns, insights behind the same seam | **New platform — not in the original spec; added by captain's direction** |
 | More platforms (as prioritized) | LinkedIn, Google Ads, etc. behind the same seam | Google Ads was originally V1; slot per captain |
 | WooCommerce connector | Automatic order polling (turnkey, no webhook setup required by the store) | Moved up from V2 per captain |
-| Shopify connector | OAuth app + webhook + nightly reconciliation | Originally V1; sequencing per captain |
+| Shopify connector | Custom app per store + webhook + nightly reconciliation | Originally V1; public distribution deferred to the SaaS phase (ADR 0009) |
 | CRM ingestion (HubSpot/custom) | Deal-level revenue events | V2 per spec unless re-prioritized |
 
-Sequencing within V1, locked by the captain at V1 kickoff (Sep 2026): Meta OAuth
-connect → Integrations center → Shopify connector → Google Ads adapter → TikTok
-adapter → WooCommerce connector → Snapchat adapter → Pinterest adapter → LinkedIn
-adapter. Read-only scopes on all new V1 connectors; write rails are V2.
+Sequencing within V1, re-locked by the captain (Oct 2026, paste-first amendment,
+ADR 0009): Integrations center (paste wizards) → Shopify custom-app connector →
+Google Ads adapter → TikTok adapter → WooCommerce connector → Snapchat adapter →
+Pinterest adapter → LinkedIn adapter. Meta continues on the live system-user token
+path; there is no Meta OAuth slice in V1. Authentication is credential-paste first
+for every platform; in-app OAuth Connect is deferred to the public-SaaS phase.
+Write scope per platform is settled by each adapter ticket (map #72, standing
+decision 5).
 
 ## V2 — depth (re-prioritized from original V1)
 
