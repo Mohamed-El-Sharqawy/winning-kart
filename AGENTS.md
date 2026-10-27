@@ -9,6 +9,7 @@ Delivery workflow: each unit of work (ticket, docs change, feature) lands as its
 - No comments in code.
 - No emojis.
 - Keep files under 150 lines; split before growing past that.
+- Apply in every app: DRY, KISS, YAGNI, SOLID, separation of concerns, and the principle of least astonishment. Prefer boring, predictable structure over cleverness.
 - Page-locality: a page owns its components, services, DTOs, transformers, and types under `src/pages/<page>/`; shared code goes under `src/shared/`.
 - API success envelope is always `{ "data": ... }`; paginated lists add `meta` for paging chrome (`{ "data": [...], "meta": { ... } }`, see [docs/api-conventions.md](docs/api-conventions.md)).
 - API errors are RFC 9457 problem+json, never plain text or `{ "error": ... }`.
