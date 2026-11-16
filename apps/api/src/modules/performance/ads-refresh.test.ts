@@ -73,16 +73,28 @@ describe("refreshPageThumbnails", () => {
     expect(resolutions.get("ad-1")).toBe("https://cdn/new.jpg");
   });
 
-  test("propagates resolver failures to the caller", async () => {
+  test("falls back to stored urls when the resolver fails", async () => {
     const refresher = new FakeRefresher();
     refresher.error = new Error("upstream down");
-    expect(
-      refreshPageThumbnails(
-        refresher,
-        [{ id: "ad-1", thumbnailUrl: null, thumbnailResolvedAt: null }],
-        new Date()
-      )
-    ).rejects.toThrow("upstream down");
+    const resolutions = await refreshPageThumbnails(
+      refresher,
+      [{ id: "ad-1", thumbnailUrl: null, thumbnailResolvedAt: null }],
+      new Date()
+    );
+    expect(resolutions.size).toBe(0);
+  });
+
+  test("returns without waiting past the budget for a slow resolver", async () => {
+    const slow = { resolve: () => new Promise<never>(() => {}) };
+    const started = Date.now();
+    const resolutions = await refreshPageThumbnails(
+      slow,
+      [{ id: "ad-1", thumbnailUrl: null, thumbnailResolvedAt: null }],
+      new Date(),
+      20
+    );
+    expect(resolutions.size).toBe(0);
+    expect(Date.now() - started).toBeLessThan(1000);
   });
 });
 

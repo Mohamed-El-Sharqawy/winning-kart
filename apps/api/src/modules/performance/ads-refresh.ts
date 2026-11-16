@@ -22,21 +22,39 @@ export function staleThumbnailIds(
     .map((row) => row.id);
 }
 
-export async function refreshPageThumbnails(
-  refresher: PageRefresher,
-  rows: StaleThumbnailRow[],
-  now: Date
-): Promise<Map<string, string>> {
-  const ids = staleThumbnailIds(rows, now, mediaUrlTtlDays());
-  if (ids.length === 0) {
-    return new Map();
-  }
-  const items = await refresher.resolve(ids);
+export const REFRESH_BUDGET_MS = 3000;
+
+function toThumbnailMap(items: ResolvedMediaItem[]): Map<string, string> {
   return new Map(
     items
       .filter((item): item is ResolvedMediaItem & { thumbnailUrl: string } => item.thumbnailUrl !== null)
       .map((item) => [item.adId, item.thumbnailUrl])
   );
+}
+
+export async function refreshPageThumbnails(
+  refresher: PageRefresher,
+  rows: StaleThumbnailRow[],
+  now: Date,
+  budgetMs: number = REFRESH_BUDGET_MS
+): Promise<Map<string, string>> {
+  const ids = staleThumbnailIds(rows, now, mediaUrlTtlDays());
+  if (ids.length === 0) {
+    return new Map();
+  }
+  const resolved = refresher.resolve(ids).then(toThumbnailMap, (error: unknown) => {
+    console.warn(`thumbnail refresh skipped: ${error instanceof Error ? error.message : String(error)}`);
+    return new Map<string, string>();
+  });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const budget = new Promise<Map<string, string>>((resolve) => {
+    timer = setTimeout(() => resolve(new Map()), budgetMs);
+  });
+  try {
+    return await Promise.race([resolved, budget]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export function applyThumbnailRefresh<T extends Pick<AdItem, "id" | "thumbnailUrl">>(
